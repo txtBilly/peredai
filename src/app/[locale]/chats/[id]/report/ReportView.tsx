@@ -115,6 +115,12 @@ export default function ReportView({
           />
         </label>
 
+        {chatId && (
+          <p className="text-xs leading-relaxed text-muted">
+            By submitting, you consent to sharing this conversation with the Ten2Ten team so we can review it fairly.
+          </p>
+        )}
+
         {phase === 'error' && (
           <p role="alert" className="text-sm text-red-400">
             Something went wrong ({error}). Please try again.

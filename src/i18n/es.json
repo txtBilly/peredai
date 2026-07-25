@@ -313,7 +313,8 @@
     "blockBody": "Este anuncio requiere un puntaje de crédito mínimo de {min}. Tu puntaje verificado es {score}. No se ha cobrado nada y no se usó ningún crédito.",
     "blockCta": "Ver otros anuncios",
     "loading": "Cargando anuncio…",
-    "errorGeneric": "Algo salió mal. Por favor inténtalo de nuevo."
+    "errorGeneric": "Algo salió mal. Por favor inténtalo de nuevo.",
+    "errorUnavailable": "Este anuncio no está disponible."
   },
   "myListings": {
     "title": "Mis anuncios",

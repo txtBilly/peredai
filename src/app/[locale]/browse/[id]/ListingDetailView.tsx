@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter, notFound } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
@@ -108,8 +108,12 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       if (settled) return;
 
       if (listingError || !row || !['active', 'negotiating'].includes(row.status)) {
-        finish();
-        notFound();
+        // Not viewable (missing, or closed/suspended/removed). Show a clear
+        // state rather than notFound() — which, thrown from this async load,
+        // gets swallowed by the catch below and hangs on "Loading…".
+        if (!finish()) return;
+        setError(dd.errorUnavailable);
+        setPhase('error');
         return;
       }
 

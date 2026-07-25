@@ -28,6 +28,7 @@ export async function middleware(req: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
+    pathname.startsWith('/admin') || // non-localized staff area (gated in its layout)
     pathname.includes('.')
   ) {
     return NextResponse.next();

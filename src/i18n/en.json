@@ -313,7 +313,8 @@
     "blockBody": "This listing requires a minimum credit score of {min}. Your verified score is {score}. Nothing has been charged and no credit was used.",
     "blockCta": "Browse other listings",
     "loading": "Loading listing…",
-    "errorGeneric": "Something went wrong. Please try again."
+    "errorGeneric": "Something went wrong. Please try again.",
+    "errorUnavailable": "This listing isn't available."
   },
   "myListings": {
     "title": "My listings",
