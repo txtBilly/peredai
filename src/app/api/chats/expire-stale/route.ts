@@ -1,18 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 
-// Sweeps chat deadlines via the sweep_chat_deadlines() DB function (service
-// role): auto-frees chats where the seeker never sent a first message within
-// 24h, and chats whose lister close request went unconfirmed for 24h.
+// Sweeps chat deadlines via the sweep_chat_deadlines() DB function: auto-frees
+// first-message no-shows and lister-close timeouts, and auto-confirms pending
+// successes past 24h.
 //
-// Not wired to a scheduler yet. To run it automatically, either:
-//   - Supabase pg_cron:  select cron.schedule('chat-deadlines', '*/15 * * * *',
-//       $$ select sweep_chat_deadlines(); $$);  (runs the function directly, no
-//       need for this route), or
-//   - an external scheduler (Vercel Cron / GitHub Actions) hitting this route.
-// This mirrors the still-unwired background-check expire-stale sweep; both
-// should be put on the same schedule before launch.
-export async function POST() {
+// The state changes are already scheduled directly in Postgres via pg_cron
+// (`select cron.schedule('chat-deadlines','*/15 * * * *', $$ select
+// sweep_chat_deadlines(); $$)`). This route stays as an on-demand entry point
+// and, once deployed, the place to attach notification fan-out (expiry_warn /
+// listing_freed) via pg_net. Gated by CRON_SECRET when set.
+export async function POST(req: NextRequest) {
+  const secret = process.env.CRON_SECRET;
+  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
   try {
     const admin = createAdminClient();
     const { data, error } = await admin.rpc('sweep_chat_deadlines');
