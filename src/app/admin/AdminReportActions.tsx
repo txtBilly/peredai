@@ -26,7 +26,7 @@ export default function AdminReportActions({ reportId }: { reportId: string }) {
   }
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-4">
+    <div className="flex flex-wrap items-center gap-4">
       <button
         type="button"
         disabled={busy}

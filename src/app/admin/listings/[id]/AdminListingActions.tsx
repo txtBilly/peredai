@@ -9,6 +9,11 @@ export default function AdminListingActions({ listingId, status }: { listingId: 
   const [error, setError] = useState('');
 
   async function moderate(newStatus: 'active' | 'suspended') {
+    const message =
+      newStatus === 'suspended'
+        ? 'Hide (suspend) this listing? It will be removed from Browse.'
+        : 'Restore this listing to active?';
+    if (!window.confirm(message)) return;
     setBusy(true);
     setError('');
     const res = await fetch(`/api/admin/listings/${listingId}/moderate`, {

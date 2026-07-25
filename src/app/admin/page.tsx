@@ -70,26 +70,28 @@ export default async function AdminReportsPage() {
                 )}
               </div>
               {r.detail && <p className="mb-3 text-sm text-muted">{r.detail}</p>}
-              <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted">
-                {r.chat_id && (
-                  <Link
-                    href={`/admin/chats/${r.chat_id}`}
-                    className="rounded-full border border-gold/50 px-3 py-1.5 font-medium text-gold ring-1 ring-inset ring-gold/20 transition hover:bg-gold/10"
-                  >
-                    View chat →
-                  </Link>
-                )}
-                {r.listing_id && (
-                  <Link
-                    href={`/admin/listings/${r.listing_id}`}
-                    className="rounded-full border border-white/20 px-3 py-1.5 font-medium text-paper transition hover:border-white/40"
-                  >
-                    View listing →
-                  </Link>
-                )}
-                <span>{new Date(r.created_at).toLocaleString()}</span>
+              <div className="mb-3 text-xs text-muted">{new Date(r.created_at).toLocaleString()}</div>
+              <div className="flex flex-wrap items-center gap-4">
+                <AdminReportActions reportId={r.id} />
+                <div className="ml-auto flex flex-wrap items-center gap-3 text-xs">
+                  {r.chat_id && (
+                    <Link
+                      href={`/admin/chats/${r.chat_id}`}
+                      className="rounded-full border border-gold/50 px-3 py-1.5 font-medium text-gold ring-1 ring-inset ring-gold/20 transition hover:bg-gold/10"
+                    >
+                      View chat →
+                    </Link>
+                  )}
+                  {r.listing_id && (
+                    <Link
+                      href={`/admin/listings/${r.listing_id}`}
+                      className="rounded-full border border-white/20 px-3 py-1.5 font-medium text-paper transition hover:border-white/40"
+                    >
+                      View listing →
+                    </Link>
+                  )}
+                </div>
               </div>
-              <AdminReportActions reportId={r.id} />
             </div>
           ))}
         </div>

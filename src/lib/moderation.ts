@@ -1,5 +1,6 @@
 import { createAdminClient } from './supabase/server';
 import { refundCreditForReport } from './credits';
+import { notify } from './notify';
 
 // Report review consequences (Session 5). All service-role and idempotent; the
 // UI that triggers these lands in Session 6. Confirming a report:
@@ -83,6 +84,13 @@ export async function confirmReport(
     }
   }
 
+  // Tell the reporter their report was actioned (transactional; best-effort).
+  try {
+    await notify.reportReviewed(report.reporter_id, true);
+  } catch (e) {
+    console.error('[moderation] reporter notify failed', e);
+  }
+
   return { ok: true };
 }
 
@@ -91,12 +99,19 @@ export async function dismissReport(
   reviewerId: string | null
 ): Promise<{ ok: true } | { error: string }> {
   const admin = createAdminClient();
-  const { data: report } = await admin.from('reports').select('status').eq('id', reportId).maybeSingle();
+  const { data: report } = await admin.from('reports').select('status, reporter_id').eq('id', reportId).maybeSingle();
   if (!report) return { error: 'report_not_found' };
   if (report.status !== 'open') return { ok: true };
   await admin
     .from('reports')
     .update({ status: 'dismissed', reviewed_by: reviewerId, reviewed_at: new Date().toISOString() })
     .eq('id', reportId);
+
+  try {
+    await notify.reportReviewed(report.reporter_id, false);
+  } catch (e) {
+    console.error('[moderation] reporter notify failed', e);
+  }
+
   return { ok: true };
 }

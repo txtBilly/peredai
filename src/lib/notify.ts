@@ -40,6 +40,17 @@ async function dispatch(userId: string, event: NotifyEvent, sms: string, email?:
   await Promise.allSettled(jobs);
 }
 
+// Transactional send — always delivered (not preference-gated), for outcomes
+// the member needs to know about regardless of their marketing prefs.
+async function sendDirect(userId: string, sms: string, email: EmailContent): Promise<void> {
+  const admin = createAdminClient();
+  const { data: profile } = await admin.from('profiles').select('phone, email').eq('id', userId).maybeSingle();
+  const jobs: Promise<unknown>[] = [];
+  if (profile?.phone) jobs.push(sendSms(profile.phone, sms));
+  if (profile?.email) jobs.push(sendEmail({ to: profile.email, subject: email.subject, html: email.html }));
+  await Promise.allSettled(jobs);
+}
+
 export const notify = {
   // A verified seeker connected to a listing → tell the lister.
   bidAccepted(listerId: string, area: string) {
@@ -71,6 +82,16 @@ export const notify = {
     return dispatch(userId, 'expiry_warn', msg, {
       subject: 'Your chat is expiring soon',
       html: `<p>${msg}</p>`,
+    });
+  },
+  // A report the member filed was reviewed (transactional — always sent).
+  reportReviewed(reporterId: string, confirmed: boolean) {
+    const outcome = confirmed
+      ? 'We reviewed your report and took action. Thanks for helping keep Ten2Ten safe.'
+      : 'We reviewed your report and didn’t find a violation this time. Thanks for flagging it.';
+    return sendDirect(reporterId, `Ten2Ten: ${outcome}`, {
+      subject: 'Your report was reviewed',
+      html: `<p>${outcome}</p>`,
     });
   },
 };

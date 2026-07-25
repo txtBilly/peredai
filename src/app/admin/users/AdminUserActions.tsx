@@ -8,7 +8,14 @@ export default function AdminUserActions({ userId, shadowBanned }: { userId: str
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
 
+  const CONFIRM: Record<'ban' | 'unban' | 'refund', string> = {
+    ban: 'Shadow-ban this member? They’ll be hidden across the platform.',
+    unban: 'Remove the shadow-ban on this member?',
+    refund: 'Grant this member +1 contact credit?',
+  };
+
   async function act(action: 'ban' | 'unban' | 'refund') {
+    if (!window.confirm(CONFIRM[action])) return;
     setBusy(true);
     setMsg('');
     const res = await fetch(`/api/admin/users/${userId}/action`, {
