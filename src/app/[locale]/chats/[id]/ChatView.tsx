@@ -161,6 +161,8 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
     // Show my own message immediately, and notify the other party directly.
     setMessages((cur) => (cur.some((x) => x.id === msg.id) ? cur : [...cur, msg]));
     channelRef.current?.send({ type: 'broadcast', event: 'message', payload: msg });
+    // Notify the other party per their prefs (fire-and-forget).
+    fetch(`/api/chats/${id}/notify-message`, { method: 'POST' }).catch(() => {});
     // A seeker reply re-engages the chat and cancels a pending close request
     // (the DB trigger does this too; mirror it locally for immediate feedback).
     if (role === 'seeker') {
@@ -302,15 +304,20 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
           <h1 className="font-display text-2xl text-paper">{otherName}</h1>
           {listingLine && <p className="text-sm text-muted">{listingLine}</p>}
         </div>
-        {isActive && role === 'seeker' && !successReported && (
-          <button
-            type="button"
-            onClick={() => setCloseOpen((v) => !v)}
-            className="shrink-0 rounded-lg border border-white/15 px-3 py-1.5 text-sm text-paper transition hover:border-white/30"
-          >
-            Close chat
-          </button>
-        )}
+        <div className="flex shrink-0 items-center gap-3">
+          <Link href={`/${locale}/chats/${id}/report`} className="text-sm text-muted hover:text-paper">
+            Report
+          </Link>
+          {isActive && role === 'seeker' && !successReported && (
+            <button
+              type="button"
+              onClick={() => setCloseOpen((v) => !v)}
+              className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-paper transition hover:border-white/30"
+            >
+              Close chat
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Disclosure */}
@@ -488,9 +495,12 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
           </button>
         </form>
       ) : (
-        <p className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3 text-center text-sm text-muted">
-          {closedLabel}
-        </p>
+        <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3 text-center text-sm text-muted">
+          <p className="mb-2">{closedLabel}</p>
+          <Link href={`/${locale}/chats/${id}/rate`} className="text-gold hover:underline">
+            Rate this conversation
+          </Link>
+        </div>
       )}
     </main>
   );

@@ -15,7 +15,9 @@ export default async function AccountPage({ params }: { params: { locale: string
   const supabase = createClient();
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_first_name, full_name, email, verification_status, rating_avg, rating_count, created_at')
+    .select(
+      'display_first_name, full_name, email, verification_status, bg_check_completed_at, bg_check_expires_at, rating_avg, rating_count, created_at'
+    )
     .eq('id', user.id)
     .single();
 
@@ -26,6 +28,13 @@ export default async function AccountPage({ params }: { params: { locale: string
   const creditBalance = (ledger ?? []).reduce((sum, r) => sum + (r.amount ?? 0), 0);
 
   const verificationStatus = profile?.verification_status ?? 'unverified';
+  // Role-based verification: listers verify by government ID (verification_status),
+  // seekers by the background check. A member is "verified" if they've passed
+  // either — so a bg-checked seeker no longer shows as unverified.
+  const bgVerified =
+    !!profile?.bg_check_completed_at &&
+    (!profile.bg_check_expires_at || new Date(profile.bg_check_expires_at) > new Date());
+  const isVerified = verificationStatus === 'verified' || bgVerified;
   const memberSince = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString(locale === 'es' ? 'es-US' : 'en-US', {
         month: 'long', year: 'numeric',
@@ -46,7 +55,7 @@ export default async function AccountPage({ params }: { params: { locale: string
             <h1 className="font-display text-2xl text-paper">
               {profile?.display_first_name ?? user.email}
             </h1>
-            {verificationStatus === 'verified' && <VerifiedBadge />}
+            {isVerified && <VerifiedBadge />}
           </div>
           <p className="text-sm text-muted">{profile?.email ?? user.email}</p>
           {memberSince && (
@@ -57,7 +66,7 @@ export default async function AccountPage({ params }: { params: { locale: string
 
       {/* Verification status card */}
       <div className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
-        verificationStatus === 'verified'
+        isVerified
           ? 'border-sage/30 bg-sage/10 text-sage'
           : verificationStatus === 'pending'
           ? 'border-gold/30 bg-gold/10 text-gold'
@@ -67,12 +76,12 @@ export default async function AccountPage({ params }: { params: { locale: string
       }`}>
         <div className="flex items-center justify-between">
           <span>
-            {verificationStatus === 'verified' && (<><span aria-hidden="true">✓ </span>{a.verifiedBadge}</>)}
-            {verificationStatus === 'pending' && (<><span aria-hidden="true">⏳ </span>{a.pending}</>)}
-            {verificationStatus === 'failed' && (<><span aria-hidden="true">✗ </span>{a.failed}</>)}
-            {verificationStatus === 'unverified' && (<><span aria-hidden="true">○ </span>{a.unverified}</>)}
+            {isVerified && (<><span aria-hidden="true">✓ </span>{a.verifiedBadge}</>)}
+            {!isVerified && verificationStatus === 'pending' && (<><span aria-hidden="true">⏳ </span>{a.pending}</>)}
+            {!isVerified && verificationStatus === 'failed' && (<><span aria-hidden="true">✗ </span>{a.failed}</>)}
+            {!isVerified && verificationStatus === 'unverified' && (<><span aria-hidden="true">○ </span>{a.unverified}</>)}
           </span>
-          {verificationStatus !== 'verified' && (
+          {!isVerified && (
             <Link
               href={`/${locale}/verify`}
               className="ml-4 rounded-lg bg-gold px-3 py-1 text-xs font-medium text-ink hover:brightness-110"

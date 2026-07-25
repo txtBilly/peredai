@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { notify } from '@/lib/notify';
 
 // Atomic Connect: opens a chat by calling the open_connect_chat DB function,
 // which consumes a credit, locks the listing, and snapshots the disclosed
@@ -44,6 +45,22 @@ export async function POST(req: NextRequest) {
     const status = code === 'connect_failed' ? 500 : 409;
     if (status === 500) console.error('[connect] open_connect_chat failed', error);
     return NextResponse.json({ error: code }, { status });
+  }
+
+  // Notify the lister that a verified seeker connected (fire-and-forget — a
+  // notification failure must not fail the connect).
+  try {
+    const admin = createAdminClient();
+    const { data: listing } = await admin
+      .from('listings')
+      .select('lister_id, neighborhood')
+      .eq('id', listingId)
+      .maybeSingle();
+    if (listing?.lister_id) {
+      await notify.bidAccepted(listing.lister_id, listing.neighborhood ?? 'your area');
+    }
+  } catch (e) {
+    console.error('[connect] notify failed', e);
   }
 
   return NextResponse.json({ chatId: data });
