@@ -248,10 +248,18 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
           <input
             id="phone"
             type="tel"
+            inputMode="tel"
             autoComplete="tel"
             required
+            maxLength={16}
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              // Keep only digits and a single leading '+', and cap at the E.164
+              // maximum (+ and up to 15 digits = 16 chars).
+              let v = e.target.value.replace(/[^\d+]/g, '');
+              v = v.replace(/(?!^)\+/g, '');
+              setPhone(v.slice(0, 16));
+            }}
             placeholder={d.onboarding.phonePlaceholder}
             className={fieldClass}
           />

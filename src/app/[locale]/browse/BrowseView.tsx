@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { getDictionary } from '@/i18n/config';
@@ -53,6 +54,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   const [typeFilter, setTypeFilter] = useState<'all' | ListingTypeValue>('all');
   const [filters, setFilters] = useState<BrowseFilters>(EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [view, setView] = useState<'grid' | 'list'>('grid');
 
   const [cards, setCards] = useState<ListingCardData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -261,6 +263,21 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         </p>
       )}
 
+      <div className="mb-4 flex justify-end gap-1">
+        {(['grid', 'list'] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setView(v)}
+            className={`rounded-lg border px-3 py-1.5 text-xs capitalize transition ${
+              view === v ? 'border-gold bg-gold/10 text-gold' : 'border-white/15 text-muted hover:border-white/30'
+            }`}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted">{b.loading}</p>
       ) : cards.length === 0 ? (
@@ -268,10 +285,38 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           <p className="mb-1 font-display text-xl text-paper">{b.noResultsTitle}</p>
           <p className="text-sm text-muted">{b.noResultsBody}</p>
         </div>
-      ) : (
+      ) : view === 'grid' ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
             <ListingCard key={card.id} listing={card} onToggleFavourite={handleToggleFavourite} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-ink/40">
+          {cards.map((card) => (
+            <Link
+              key={card.id}
+              href={card.href}
+              className="flex items-center justify-between gap-4 px-4 py-3 transition hover:bg-white/5"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="truncate font-medium text-paper">{card.neighborhood || '—'}</span>
+                  {card.verified && <span className="text-xs text-sage">✓</span>}
+                  {card.negotiating && (
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-ink">
+                      {card.negotiatingLabel}
+                    </span>
+                  )}
+                </div>
+                <p className="truncate text-xs text-muted">
+                  {[card.crossStreets, card.typeLabel, card.availableLabel, card.minCreditScoreLabel]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+              <span className="shrink-0 text-sm font-medium text-paper">{card.rentLabel}</span>
+            </Link>
           ))}
         </div>
       )}

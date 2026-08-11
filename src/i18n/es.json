@@ -40,12 +40,12 @@
     "freeTextPlaceholder": "Cuéntanos sobre el lugar que esperas encontrar.",
     "phone": "Número de móvil",
     "phoneHint": "Te enviaremos coincidencias por mensaje. Aplican tarifas estándar.",
-    "email": "Correo electrónico (opcional)",
+    "email": "Correo electrónico",
     "submit": "Enviar",
     "submitting": "Enviando…",
     "successTitle": "Estás en la lista.",
     "successBody": "Te enviaremos un mensaje en cuanto un lugar coincida con lo que buscas. Sin spam — solo coincidencias reales.",
-    "errorRequired": "Agrega un barrio y tu número de móvil para que podamos contactarte.",
+    "errorRequired": "Agrega un barrio, tu número de móvil y un correo electrónico válido para que podamos contactarte.",
     "errorGeneric": "Algo salió mal. Inténtalo de nuevo en un momento."
   },
   "footer": {
@@ -119,7 +119,13 @@
     "failedReasonMismatch": "La información proporcionada no coincidió con nuestros registros.",
     "failedReasonDefault": "Por favor inténtalo de nuevo o contacta soporte.",
     "retryCta": "Intentar de nuevo",
+    "refreshCta": "Verificar estado",
     "errorGeneric": "Algo salió mal. Por favor inténtalo de nuevo."
+  },
+  "banned": {
+    "title": "Tu cuenta ha sido suspendida",
+    "body": "Esta cuenta ya no puede usar Ten2Ten. Si crees que es un error, contacta con soporte.",
+    "signOut": "Cerrar sesión"
   },
   "onboarding": {
     "title": "Cuéntanos sobre ti",
@@ -246,7 +252,8 @@
     "amenityOutdoor": "Espacio exterior",
     "amenityNoFee": "Sin comisión",
     "minCreditScoreLabel": "Puntaje de crédito mínimo",
-    "minCreditScoreHint": "Opcional — déjalo en blanco si no requieres uno.",
+    "minCreditScoreHint": "Opcional — déjalo en blanco si no requieres uno. Debe ser 300–850.",
+    "errorMinScoreRange": "El puntaje de crédito mínimo debe estar entre 300 y 850.",
     "gratitudeLabel": "Monto de agradecimiento",
     "gratitudeHint": "Agradecimiento fuera de la plataforma a la persona que se va. No facilitamos ni verificamos esto.",
     "contactNameLabel": "Nombre de contacto",
@@ -270,7 +277,10 @@
     "retryCta": "Intentar de nuevo",
     "successTitle": "Tu anuncio está publicado",
     "successBody": "Ahora es visible para los buscadores en Explorar.",
-    "backToAccount": "Volver a la cuenta"
+    "backToAccount": "Volver a la cuenta",
+    "reviewPendingTitle": "Tu cuenta está en revisión",
+    "reviewPendingBody": "Necesitamos revisar tu cuenta antes de que puedas publicar un anuncio. Mientras tanto, puedes explorar y conectar. Te contactaremos pronto.",
+    "reviewPendingCta": "Explorar anuncios"
   },
   "browse": {
     "title": "Explorar",

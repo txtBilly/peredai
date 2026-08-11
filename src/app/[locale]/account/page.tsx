@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { isLocale, getDictionary } from '@/i18n/config';
+import type { Locale } from '@/i18n/config';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
+import SiteHeader from '@/components/SiteHeader';
 
 export default async function AccountPage({ params }: { params: { locale: string } }) {
   if (!isLocale(params.locale)) notFound();
@@ -42,7 +44,9 @@ export default async function AccountPage({ params }: { params: { locale: string
     : null;
 
   return (
-    <main className="mx-auto max-w-lg px-5 py-16">
+    <>
+      <SiteHeader locale={locale as Locale} />
+      <main className="mx-auto max-w-lg px-5 py-16">
       <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
 
       {/* Profile summary */}
@@ -133,6 +137,7 @@ export default async function AccountPage({ params }: { params: { locale: string
           {a.signOut}
         </button>
       </form>
-    </main>
+      </main>
+    </>
   );
 }

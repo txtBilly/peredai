@@ -24,7 +24,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
   const l = d.listing;
   const router = useRouter();
 
-  const [phase, setPhase] = useState<'checking' | 'loading' | 'ready' | 'published' | 'error'>('checking');
+  const [phase, setPhase] = useState<'checking' | 'loading' | 'ready' | 'published' | 'error' | 'pending_review'>('checking');
   const [listingId, setListingId] = useState<string | null>(null);
   const [listingStatus, setListingStatus] = useState<'draft' | 'active' | 'negotiating'>('draft');
   const [retryKey, setRetryKey] = useState(0);
@@ -115,7 +115,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('verification_status, full_name, phone')
+        .select('verification_status, full_name, phone, duplicate_review, is_shadow_banned')
         .eq('id', user.id)
         .single();
       if (settled) return;
@@ -123,6 +123,16 @@ export default function ListForm({ locale }: { locale: Locale }) {
       if (profile?.verification_status !== 'verified') {
         if (!finish()) return;
         router.replace(`/${locale}/verify?next=list`);
+        return;
+      }
+
+      // Restricted accounts — suspected duplicates AND (silently) shadow-banned
+      // members — can browse and Connect but can't publish a listing. The DB
+      // trigger enforces this too; this just shows the review screen instead of
+      // a failed publish. Full-banned users never reach here (locked out).
+      if (profile?.duplicate_review || profile?.is_shadow_banned) {
+        if (!finish()) return;
+        setPhase('pending_review');
         return;
       }
 
@@ -361,6 +371,16 @@ export default function ListForm({ locale }: { locale: Locale }) {
       return;
     }
 
+    // Credit score is a FICO/VantageScore value — reject anything outside the
+    // real 300–850 range so a lister can't set an unreachable minimum.
+    if (minCreditScore) {
+      const score = parseInt(minCreditScore, 10);
+      if (Number.isNaN(score) || score < 300 || score > 850) {
+        setError(l.errorMinScoreRange);
+        return;
+      }
+    }
+
     setPublishing(true);
     const supabase = createClient();
     const { error: publishError } = await supabase
@@ -394,6 +414,12 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
     setPublishing(false);
     if (publishError) {
+      // DB trigger blocks a restricted account (duplicate review or shadow/full
+      // ban) from publishing — show the review screen rather than a raw error.
+      if (publishError.message?.includes('account_restricted')) {
+        setPhase('pending_review');
+        return;
+      }
       setError(publishError.message || l.errorGeneric);
       return;
     }
@@ -429,6 +455,16 @@ export default function ListForm({ locale }: { locale: Locale }) {
     if (availableFrom < todayStr()) {
       setError(l.errorPastDate);
       return;
+    }
+
+    // Credit score is a FICO/VantageScore value — reject anything outside the
+    // real 300–850 range so a lister can't set an unreachable minimum.
+    if (minCreditScore) {
+      const score = parseInt(minCreditScore, 10);
+      if (Number.isNaN(score) || score < 300 || score > 850) {
+        setError(l.errorMinScoreRange);
+        return;
+      }
     }
 
     setPublishing(true);
@@ -494,6 +530,25 @@ export default function ListForm({ locale }: { locale: Locale }) {
         >
           {l.retryCta}
         </button>
+      </main>
+    );
+  }
+
+  if (phase === 'pending_review') {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
+        <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15">
+          <span className="text-2xl text-amber-400">⏳</span>
+        </div>
+        <h1 className="mb-2 font-display text-2xl text-paper">{l.reviewPendingTitle}</h1>
+        <p className="mb-8 text-sm text-muted">{l.reviewPendingBody}</p>
+        <Link
+          href={`/${locale}/browse`}
+          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110"
+        >
+          {l.reviewPendingCta}
+        </Link>
       </main>
     );
   }
@@ -839,7 +894,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
               <input
                 id="min-credit-score"
                 type="number"
-                min={0}
+                min={300}
+                max={850}
                 step={1}
                 value={minCreditScore}
                 onChange={(e) => setMinCreditScore(e.target.value)}

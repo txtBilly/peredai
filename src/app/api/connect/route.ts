@@ -15,6 +15,7 @@ const KNOWN_ERRORS = new Set([
   'below_min_score',
   'no_credits',
   'active_chat_exists',
+  'account_restricted',
 ]);
 
 export async function POST(req: NextRequest) {

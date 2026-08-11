@@ -11,7 +11,7 @@ const IntakeSchema = z.object({
   must_haves: z.array(z.string()).default([]),
   free_text: z.string().max(2000).optional(),
   phone: z.string().min(10),
-  email: z.string().email().optional(),
+  email: z.string().email(),
   preferred_locale: z.enum(['en', 'es']).default('en'),
 });
 

@@ -42,13 +42,25 @@ export default function IntakeForm({ dict, locale }: Props) {
     );
   }
 
+  // Clears a lingering validation error the moment the user starts fixing a
+  // required field — otherwise the red message stays up after they've typed a
+  // neighborhood/phone/email, making it look like the form ignored their input.
+  function clearError() {
+    if (status === 'error') {
+      setStatus('idle');
+      setErrorMsg('');
+    }
+  }
+
   async function handleSubmit() {
     const hoods = neighborhoods
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
 
-    if (hoods.length === 0 || phone.trim().length < 10) {
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+    if (hoods.length === 0 || phone.trim().length < 10 || !emailOk) {
       setStatus('error');
       setErrorMsg(t.errorRequired);
       return;
@@ -69,7 +81,7 @@ export default function IntakeForm({ dict, locale }: Props) {
           must_haves: mustHaves,
           free_text: freeText || undefined,
           phone: phone.trim(),
-          email: email.trim() || undefined,
+          email: email.trim(),
           preferred_locale: locale,
         }),
       });
@@ -96,6 +108,10 @@ export default function IntakeForm({ dict, locale }: Props) {
   const fieldClass =
     'w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-paper placeholder:text-muted/60 focus:border-gold focus:outline-none';
   const labelClass = 'mb-1.5 block text-sm font-medium text-paper/90';
+  // Today in the user's local time (not UTC) as YYYY-MM-DD, so the date picker
+  // disables any day before today.
+  const nowLocal = new Date();
+  const minMoveIn = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
 
   return (
     <div className="space-y-5">
@@ -108,7 +124,10 @@ export default function IntakeForm({ dict, locale }: Props) {
           className={fieldClass}
           placeholder={t.neighborhoodsHint}
           value={neighborhoods}
-          onChange={(e) => setNeighborhoods(e.target.value)}
+          onChange={(e) => {
+            setNeighborhoods(e.target.value);
+            clearError();
+          }}
         />
       </div>
 
@@ -146,7 +165,10 @@ export default function IntakeForm({ dict, locale }: Props) {
               id="budget"
               type="number"
               inputMode="numeric"
-              className={fieldClass + ' pl-8'}
+              className={
+                fieldClass +
+                ' pl-8 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+              }
               placeholder="3000"
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
@@ -160,6 +182,7 @@ export default function IntakeForm({ dict, locale }: Props) {
           <input
             id="movein"
             type="date"
+            min={minMoveIn}
             className={fieldClass}
             value={moveIn}
             onChange={(e) => setMoveIn(e.target.value)}
@@ -213,7 +236,10 @@ export default function IntakeForm({ dict, locale }: Props) {
             className={fieldClass}
             placeholder="+1 (917) 555-0142"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              clearError();
+            }}
           />
           <p className="mt-1 text-xs text-muted">{t.phoneHint}</p>
         </div>
@@ -227,7 +253,10 @@ export default function IntakeForm({ dict, locale }: Props) {
             className={fieldClass}
             placeholder="you@email.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearError();
+            }}
           />
         </div>
       </div>

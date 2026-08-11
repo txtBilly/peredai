@@ -234,6 +234,9 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           listing_unavailable: 'This listing is no longer available.',
           own_listing: "You can't connect to your own listing.",
           listing_not_found: 'Listing not found.',
+          // Deliberately vague — a shadow-banned member must not learn they're
+          // restricted. Reads like a transient glitch.
+          account_restricted: 'We couldn’t complete that right now. Please try again later.',
         };
         setConnectError(reasons[data?.error] ?? `${dd.connectErrorGeneric} (${data?.error ?? 'error'})`);
         setConnecting(false);

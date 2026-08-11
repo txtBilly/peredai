@@ -13,9 +13,5 @@ export default function LocaleLayout({
   params: { locale: string };
 }) {
   if (!isLocale(params.locale)) notFound();
-  return (
-    <html lang={params.locale}>
-      <body>{children}</body>
-    </html>
-  );
+  return <>{children}</>;
 }

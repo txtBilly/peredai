@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { isLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import SiteHeader from '@/components/SiteHeader';
+import { redirectIfBanned } from '@/lib/auth';
 
 // Same ssr:false pattern as /list: this page's content depends on a
 // client-only first fetch (search/filters against Supabase, plus the
@@ -18,9 +19,10 @@ const BrowseView = dynamic(() => import('./BrowseView'), {
   ),
 });
 
-export default function BrowsePage({ params }: { params: { locale: string } }) {
+export default async function BrowsePage({ params }: { params: { locale: string } }) {
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
+  await redirectIfBanned(locale);
   return (
     <>
       <SiteHeader locale={locale} />

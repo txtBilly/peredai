@@ -27,5 +27,11 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  // Root layout owns <html>/<body> (required by Next). Per-route sections
+  // ([locale], /admin) are nested layouts and must not render them.
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
 }

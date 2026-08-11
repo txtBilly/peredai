@@ -40,12 +40,12 @@
     "freeTextPlaceholder": "Tell us about the place you're hoping to find.",
     "phone": "Mobile number",
     "phoneHint": "We'll text you matches. Standard rates apply.",
-    "email": "Email (optional)",
+    "email": "Email",
     "submit": "Send it",
     "submitting": "Sending…",
     "successTitle": "You're on the list.",
     "successBody": "We'll text you the moment a place matches what you're looking for. No spam — only real matches.",
-    "errorRequired": "Add a neighborhood and your mobile number so we can reach you.",
+    "errorRequired": "Add a neighborhood, your mobile number, and a valid email so we can reach you.",
     "errorGeneric": "Something went wrong. Try again in a moment."
   },
   "footer": {
@@ -119,7 +119,13 @@
     "failedReasonMismatch": "The information provided didn't match our records.",
     "failedReasonDefault": "Please try again or contact support.",
     "retryCta": "Try again",
+    "refreshCta": "Check status",
     "errorGeneric": "Something went wrong. Please try again."
+  },
+  "banned": {
+    "title": "Your account has been suspended",
+    "body": "This account is no longer able to use Ten2Ten. If you think this is a mistake, contact support.",
+    "signOut": "Sign out"
   },
   "onboarding": {
     "title": "Tell us about yourself",
@@ -246,7 +252,8 @@
     "amenityOutdoor": "Outdoor space",
     "amenityNoFee": "No fee",
     "minCreditScoreLabel": "Minimum credit score",
-    "minCreditScoreHint": "Optional — leave blank if you don't require one.",
+    "minCreditScoreHint": "Optional — leave blank if you don't require one. Must be 300–850.",
+    "errorMinScoreRange": "Minimum credit score must be between 300 and 850.",
     "gratitudeLabel": "Gratitude amount",
     "gratitudeHint": "Off-platform thank-you to the person leaving. We don't facilitate or verify this.",
     "contactNameLabel": "Contact name",
@@ -270,7 +277,10 @@
     "retryCta": "Try again",
     "successTitle": "Your listing is live",
     "successBody": "It's now visible to seekers on Browse.",
-    "backToAccount": "Back to account"
+    "backToAccount": "Back to account",
+    "reviewPendingTitle": "Your account is under review",
+    "reviewPendingBody": "We need to review your account before you can publish a listing. You can still browse and connect in the meantime. We'll follow up shortly.",
+    "reviewPendingCta": "Browse listings"
   },
   "browse": {
     "title": "Browse",

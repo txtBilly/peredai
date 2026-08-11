@@ -21,6 +21,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ ok: true });
   }
 
+  if (action === 'full_ban' || action === 'lift_full_ban') {
+    const banning = action === 'full_ban';
+    const { error } = await admin
+      .from('profiles')
+      .update({ is_banned: banning, banned_at: banning ? new Date().toISOString() : null })
+      .eq('id', params.id);
+    if (error) return NextResponse.json({ error: 'action_failed' }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'clear_review') {
+    // Clears the suspected-duplicate flag so the member can publish listings.
+    const { error } = await admin
+      .from('profiles')
+      .update({ duplicate_review: false, duplicate_reason: null, duplicate_matched_id: null })
+      .eq('id', params.id);
+    if (error) return NextResponse.json({ error: 'action_failed' }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   if (action === 'refund') {
     const { error } = await admin.from('credit_ledger').insert({
       seeker_id: params.id,

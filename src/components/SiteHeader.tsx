@@ -19,6 +19,9 @@ export default function SiteHeader({ locale }: { locale: Locale }) {
         <Link href={`/${locale}/browse`} className="hover:text-paper">
           {dict.nav.browse}
         </Link>
+        <Link href={`/${locale}/welcome`} className="hover:text-paper">
+          How it works
+        </Link>
         <Link href={`/${locale}/list`} className="hover:text-paper">
           {dict.nav.list}
         </Link>

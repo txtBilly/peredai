@@ -2,6 +2,7 @@ import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
 import { isLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
+import SiteHeader from '@/components/SiteHeader';
 
 // The listing form is entirely client-driven (auth check + Supabase reads,
 // nothing server-fetchable) and was hitting hydration mismatches on its
@@ -23,5 +24,11 @@ const ListForm = dynamic(() => import('./ListForm'), {
 
 export default function ListPage({ params }: { params: { locale: string } }) {
   if (!isLocale(params.locale)) notFound();
-  return <ListForm locale={params.locale as Locale} />;
+  const locale = params.locale as Locale;
+  return (
+    <>
+      <SiteHeader locale={locale} />
+      <ListForm locale={locale} />
+    </>
+  );
 }
