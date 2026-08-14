@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getDictionary, isLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { notFound } from 'next/navigation';
-import IntakeForm from '@/components/IntakeForm';
+import SiteHeader from '@/components/SiteHeader';
 
 // Public marketing landing — the acquisition front door. Anonymous visitors land
 // on Browse by default; this lives at /welcome and is linked from the nav and
@@ -11,7 +11,6 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const dict = getDictionary(locale);
-  const otherLocale = locale === 'en' ? 'es' : 'en';
 
   const steps = [
     { n: '1', title: 'Find a place leaving soon', body: 'Browse verified apartments being passed on directly by the current renter.' },
@@ -19,40 +18,87 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
     { n: '3', title: 'Meet & take it over', body: 'Chat, arrange a viewing, and take the lease. No broker, no broker fee.' },
   ];
 
+  const benefits = [
+    'Skip the middleman — little to no cost',
+    'Arrange your move-in/out dates with more flexibility',
+    'Agree on the furniture',
+  ];
+
+  const reviews = [
+    {
+      quote: 'Found my Astoria one-bedroom in a week — no broker, no fee, just messaged the guy moving out. Wild that this actually works.',
+      name: 'Maya R.',
+      detail: 'Astoria',
+    },
+    {
+      quote: 'I was moving cross-country and handed my Bushwick place to someone verified in two days. So much easier than posting a sublet.',
+      name: 'Devin K.',
+      detail: 'Bushwick',
+    },
+    {
+      quote: 'Everyone’s background-checked, so it actually felt safe meeting up. Took over a lease in the LES and skipped the broker fee entirely.',
+      name: 'Priya S.',
+      detail: 'Lower East Side',
+    },
+    {
+      quote: 'Listed my Williamsburg one-bed the day before I moved out and had three verified people messaging within hours. Zero broker drama.',
+      name: 'Andre M.',
+      detail: 'Williamsburg',
+    },
+    {
+      quote: 'As a first-time renter this felt way less sketchy than Craigslist. The verified badges and real names made all the difference.',
+      name: 'Sofia L.',
+      detail: 'Harlem',
+    },
+    {
+      quote: 'Took over a rent-stabilized place in Sunnyside directly from the last tenant. Saved a full month’s rent in fees. Still can’t believe it.',
+      name: 'Marcus T.',
+      detail: 'Sunnyside',
+    },
+  ];
+
   return (
     <main className="min-h-screen">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-        <Link href={`/${locale}`} className="font-display text-xl text-paper">
-          {dict.brand.name}
-        </Link>
-        <nav className="flex items-center gap-5 text-sm text-muted">
-          <Link href={`/${locale}/browse`} className="hover:text-paper">{dict.nav.browse}</Link>
-          <Link href={`/${locale}/list`} className="hover:text-paper">{dict.nav.list}</Link>
-          <Link href={`/${locale}/signin`} className="hover:text-paper">{dict.nav.signIn}</Link>
-          <Link
-            href={`/${otherLocale}/welcome`}
-            className="rounded-full border border-white/15 px-3 py-1 uppercase hover:border-white/40"
-          >
-            {otherLocale}
-          </Link>
-        </nav>
-      </header>
+      <SiteHeader locale={locale} />
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-5 pb-8 pt-10 sm:pt-16">
-        <p className="mb-4 text-sm uppercase tracking-wide text-gold">{dict.home.heroEyebrow}</p>
-        <h1 className="max-w-3xl font-display text-4xl leading-tight text-paper sm:text-6xl">{dict.home.heroTitle}</h1>
-        <p className="mt-5 max-w-xl text-lg text-muted">{dict.home.heroSubtitle}</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">{dict.home.heroEyebrow}</p>
+        <h1 className="font-display text-4xl font-bold leading-tight text-ink sm:text-6xl">
+          {(() => {
+            // Break after the opening question ("Moving soon?" / "¿Te mudas pronto?")
+            // so the second clause drops to its own line.
+            const idx = dict.home.heroTitle.indexOf('? ');
+            if (idx === -1) return dict.home.heroTitle;
+            return (
+              <>
+                {dict.home.heroTitle.slice(0, idx + 1)}
+                <br />
+                {/* Second line ~20% smaller so it fits on one line. */}
+                <span className="text-3xl sm:text-5xl">{dict.home.heroTitle.slice(idx + 2)}</span>
+              </>
+            );
+          })()}
+        </h1>
+        <p className="mt-5 max-w-3xl text-xl leading-relaxed text-muted">{dict.home.heroSubtitle}</p>
+        <ul className="mt-5 flex flex-col gap-2.5 text-lg text-ink/90">
+          {benefits.map((b) => (
+            <li key={b} className="flex items-start gap-2.5">
+              <span className="mt-0.5 text-xl font-bold text-leaf" aria-hidden="true">✓</span>
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href={`/${locale}/browse`}
-            className="rounded-lg bg-gold px-6 py-3 font-semibold text-ink transition hover:brightness-110"
+            className="rounded-lg bg-gradient-cobalt px-6 py-3 font-semibold text-white transition hover:brightness-110"
           >
             Find a place
           </Link>
           <Link
             href={`/${locale}/list`}
-            className="rounded-lg border border-white/20 px-6 py-3 font-medium text-paper transition hover:border-white/40"
+            className="rounded-lg border border-black/20 px-6 py-3 font-medium text-ink transition hover:border-black/40"
           >
             List your apartment
           </Link>
@@ -61,15 +107,15 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
 
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-5 py-10">
-        <h2 className="mb-6 font-display text-2xl text-paper">How it works</h2>
+        <h2 className="mb-6 font-display text-3xl font-bold text-ink">How it works</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {steps.map((s) => (
-            <div key={s.n} className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-gold/15 font-display text-gold">
+            <div key={s.n} className="rounded-2xl border border-black/10 bg-black/[0.02] p-6">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-cobalt/15 font-display text-lg font-bold text-cobalt">
                 {s.n}
               </div>
-              <p className="mb-1 font-medium text-paper">{s.title}</p>
-              <p className="text-sm text-muted">{s.body}</p>
+              <p className="mb-1.5 text-lg font-semibold text-ink">{s.title}</p>
+              <p className="text-base leading-relaxed text-muted">{s.body}</p>
             </div>
           ))}
         </div>
@@ -77,28 +123,62 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
 
       {/* Trust */}
       <section className="mx-auto max-w-6xl px-5 py-6">
-        <div className="flex flex-wrap gap-6 text-sm text-paper/80">
-          <span className="flex items-center gap-2"><span className="text-sage">✓</span> {dict.home.trustVerified}</span>
-          <span className="flex items-center gap-2"><span className="text-sage">✓</span> {dict.home.trustNoFee}</span>
-          <span className="flex items-center gap-2"><span className="text-sage">✓</span> {dict.home.trustGratitude}</span>
+        <div className="flex flex-wrap items-center gap-x-10 gap-y-2 font-display text-xl font-semibold text-ink">
+          <span className="flex items-center gap-2.5 whitespace-nowrap"><span className="text-2xl text-leaf">✓</span> {dict.home.trustVerified}</span>
+          <span className="flex items-center gap-2.5 whitespace-nowrap"><span className="text-2xl text-leaf">✓</span> {dict.home.trustGratitude}</span>
         </div>
       </section>
 
-      {/* Intake — cold-start */}
-      <section className="mx-auto max-w-2xl px-5 py-10">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
-          <h2 className="font-display text-2xl text-paper">{dict.intake.title}</h2>
-          <p className="mb-6 mt-1 text-muted">{dict.intake.subtitle}</p>
-          <IntakeForm dict={dict} locale={locale} />
+      {/* Reviews */}
+      <section className="mx-auto max-w-6xl px-5 py-12">
+        <h2 className="mb-6 font-display text-2xl font-bold text-ink">Loved by New Yorkers</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {reviews.map((r, i) => {
+            const hues = [
+              { edge: 'rgba(27,77,228,0.55)', glow: 'rgba(27,77,228,0.14)' },   // cobalt
+              { edge: 'rgba(236,72,153,0.50)', glow: 'rgba(236,72,153,0.13)' }, // pink
+              { edge: 'rgba(16,185,129,0.50)', glow: 'rgba(16,185,129,0.13)' }, // emerald
+              { edge: 'rgba(245,158,11,0.55)', glow: 'rgba(245,158,11,0.14)' }, // amber
+              { edge: 'rgba(124,58,237,0.55)', glow: 'rgba(124,58,237,0.14)' }, // violet
+              { edge: 'rgba(6,182,212,0.50)', glow: 'rgba(6,182,212,0.13)' },   // cyan
+            ];
+            const h = hues[i % hues.length];
+            return (
+              <div
+                key={r.name}
+                className="h-full rounded-2xl p-[1px] shadow-sm"
+                // Gradient border anchored at the top-left corner (matches the glow),
+                // so the top AND left edges stay colored and fade to a neutral hairline.
+                style={{ background: `radial-gradient(140% 140% at 0% 0%, ${h.edge}, rgba(0,0,0,0.10) 55%)` }}
+              >
+                <figure
+                  className="flex h-full flex-col rounded-[15px] p-5"
+                  // Soft colored glow radiating from the top-left corner into white.
+                  style={{ background: `radial-gradient(125% 95% at 0% 0%, ${h.glow}, transparent 55%), #ffffff` }}
+                >
+                  <div className="mb-3 flex gap-0.5 text-amber-400" aria-label="5 out of 5 stars">
+                    {'★★★★★'.split('').map((s, k) => (
+                      <span key={k} aria-hidden="true">{s}</span>
+                    ))}
+                  </div>
+                  <blockquote className="mb-4 text-sm leading-relaxed text-ink/80">“{r.quote}”</blockquote>
+                  <figcaption className="mt-auto">
+                    <span className="text-sm font-medium text-ink">{r.name}</span>
+                    <span className="text-xs text-muted"> · {r.detail}</span>
+                  </figcaption>
+                </figure>
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {/* Footer */}
       <footer className="mx-auto max-w-6xl px-5 py-12">
         <div className="flex flex-wrap gap-5 text-sm text-muted">
-          <Link href={`/${locale}/terms`} className="hover:text-paper">{dict.footer.terms}</Link>
-          <Link href={`/${locale}/privacy`} className="hover:text-paper">{dict.footer.privacy}</Link>
-          <Link href={`/${locale}/safety`} className="hover:text-paper">{dict.footer.safety}</Link>
+          <Link href={`/${locale}/terms`} className="hover:text-ink">{dict.footer.terms}</Link>
+          <Link href={`/${locale}/privacy`} className="hover:text-ink">{dict.footer.privacy}</Link>
+          <Link href={`/${locale}/safety`} className="hover:text-ink">{dict.footer.safety}</Link>
         </div>
         <p className="mt-4 max-w-2xl text-xs leading-relaxed text-muted/70">{dict.footer.rights}</p>
       </footer>

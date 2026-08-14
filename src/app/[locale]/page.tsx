@@ -35,7 +35,7 @@ export default function Home({ params }: { params: { locale: string } }) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-5 text-center">
-      <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <p className="text-sm text-muted">Loading…</p>
     </main>
   );

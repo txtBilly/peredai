@@ -47,11 +47,11 @@ export default function ResetConfirmPage({ params }: { params: { locale: string 
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-16">
-      <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-      <h1 className="mb-8 font-display text-3xl text-paper">{d.auth.resetTitle}</h1>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <h1 className="mb-8 font-display text-3xl text-ink">{d.auth.resetTitle}</h1>
 
       {status === 'done' ? (
-        <p className="rounded-lg border border-sage/40 bg-sage/10 px-4 py-3 text-sm text-sage">
+        <p className="rounded-lg border border-leaf/40 bg-leaf/10 px-4 py-3 text-sm text-leaf">
           {d.auth.newPasswordSuccess}
         </p>
       ) : (
@@ -69,12 +69,12 @@ export default function ResetConfirmPage({ params }: { params: { locale: string 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={d.auth.newPasswordPlaceholder}
-              className="w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold"
+              className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
             />
           </div>
 
           {error && (
-            <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+            <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
               {error}
             </p>
           )}
@@ -82,7 +82,7 @@ export default function ResetConfirmPage({ params }: { params: { locale: string 
           <button
             type="submit"
             disabled={status === 'submitting'}
-            className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-50"
+            className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
             {status === 'submitting' ? d.auth.newPasswordSubmitting : d.auth.newPasswordSubmit}
           </button>

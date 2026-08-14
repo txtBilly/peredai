@@ -47,20 +47,25 @@ export default async function AccountPage({ params }: { params: { locale: string
     <>
       <SiteHeader locale={locale as Locale} />
       <main className="mx-auto max-w-lg px-5 py-16">
-      <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
 
       {/* Profile summary */}
       <div className="mb-8 flex items-start gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/10 font-display text-xl text-paper">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black/[0.05] font-display text-xl text-ink">
           {profile?.display_first_name?.[0]?.toUpperCase() ?? '?'}
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-display text-2xl text-paper">
+            <h1 className="font-display text-2xl text-ink">
               {profile?.display_first_name ?? user.email}
             </h1>
             {isVerified && <VerifiedBadge />}
           </div>
+          {isVerified && profile?.full_name && (
+            <p className="mt-0.5 text-sm text-ink">
+              <span className="text-muted">{a.verifiedAs}</span> {profile.full_name}
+            </p>
+          )}
           <p className="text-sm text-muted">{profile?.email ?? user.email}</p>
           {memberSince && (
             <p className="mt-0.5 text-xs text-muted">{a.memberSince} {memberSince}</p>
@@ -71,12 +76,12 @@ export default async function AccountPage({ params }: { params: { locale: string
       {/* Verification status card */}
       <div className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
         isVerified
-          ? 'border-sage/30 bg-sage/10 text-sage'
+          ? 'border-leaf/30 bg-leaf/10 text-leaf'
           : verificationStatus === 'pending'
-          ? 'border-gold/30 bg-gold/10 text-gold'
+          ? 'border-cobalt/30 bg-cobalt/10 text-cobalt'
           : verificationStatus === 'failed'
-          ? 'border-red-500/30 bg-red-500/10 text-red-400'
-          : 'border-white/10 bg-white/5 text-muted'
+          ? 'border-red-300 bg-red-50 text-red-600'
+          : 'border-black/10 bg-black/[0.03] text-muted'
       }`}>
         <div className="flex items-center justify-between">
           <span>
@@ -88,7 +93,7 @@ export default async function AccountPage({ params }: { params: { locale: string
           {!isVerified && (
             <Link
               href={`/${locale}/verify`}
-              className="ml-4 rounded-lg bg-gold px-3 py-1 text-xs font-medium text-ink hover:brightness-110"
+              className="ml-4 rounded-lg bg-gradient-cobalt px-3 py-1 text-xs font-medium text-white hover:brightness-110"
             >
               {a.verifyNow}
             </Link>
@@ -97,15 +102,16 @@ export default async function AccountPage({ params }: { params: { locale: string
       </div>
 
       {/* Contact credits */}
-      <div className="mb-6 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+      <div className="mb-6 flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.03] px-4 py-3">
         <span className="text-sm text-muted">{a.creditsLabel}</span>
-        <span className="font-display text-xl text-paper">{creditBalance}</span>
+        <span className="font-display text-xl text-ink">{creditBalance}</span>
       </div>
 
       {/* Nav links */}
       <nav aria-label="Account navigation">
-        <ul className="flex flex-col divide-y divide-white/[0.08] rounded-xl border border-white/10">
+        <ul className="flex flex-col divide-y divide-black/[0.08] rounded-xl border border-black/10">
           {([
+            { href: `/${locale}/saved`, label: a.savedPlaces, icon: '♡', danger: false },
             { href: `/${locale}/account/profile`, label: a.editProfile, icon: '✎', danger: false },
             { href: `/${locale}/account/notifications`, label: a.notifications, icon: '🔔', danger: false },
             { href: `/${locale}/account/delete`, label: a.deleteAccount, icon: '⊗', danger: true },
@@ -113,8 +119,8 @@ export default async function AccountPage({ params }: { params: { locale: string
             <li key={href}>
               <Link
                 href={href}
-                className={`flex items-center justify-between px-4 py-3.5 text-sm transition hover:bg-white/5 ${
-                  danger ? 'text-red-400' : 'text-paper'
+                className={`flex items-center justify-between px-4 py-3.5 text-sm transition hover:bg-black/[0.03] ${
+                  danger ? 'text-red-600' : 'text-ink'
                 }`}
               >
                 <span className="flex items-center gap-3">
@@ -132,7 +138,7 @@ export default async function AccountPage({ params }: { params: { locale: string
       <form action="/api/auth/signout" method="POST" className="mt-6">
         <button
           type="submit"
-          className="w-full rounded-lg border border-white/15 px-5 py-3 text-sm text-muted transition hover:border-white/30 hover:text-paper"
+          className="w-full rounded-lg border border-black/15 px-5 py-3 text-sm text-muted transition hover:border-black/30 hover:text-ink"
         >
           {a.signOut}
         </button>

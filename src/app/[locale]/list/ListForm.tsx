@@ -12,7 +12,7 @@ import { LISTING_TYPES, listingTypeLabels, type ListingTypeValue } from '@/lib/l
 const MAX_EXTRA_PHOTOS = 5;
 
 const fieldClass =
-  'w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold';
+  'w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt';
 const labelClass = 'mb-1.5 block text-sm text-muted';
 
 function todayStr() {
@@ -43,6 +43,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
   const [monthlyRent, setMonthlyRent] = useState('');
   const [sqft, setSqft] = useState('');
   const [floor, setFloor] = useState('');
+  const [bathrooms, setBathrooms] = useState('');
   const [description, setDescription] = useState('');
   const [availableFrom, setAvailableFrom] = useState('');
   const [petsOk, setPetsOk] = useState(false);
@@ -54,6 +55,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
   const [noFee, setNoFee] = useState(true);
   const [minCreditScore, setMinCreditScore] = useState('');
   const [gratitudeAmount, setGratitudeAmount] = useState('');
+  // Contact name is locked to the lister's verified identity (they must be
+  // verified to list), so it's not user-editable.
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [confirmAvailability, setConfirmAvailability] = useState(false);
@@ -66,6 +69,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState('');
   const [activeCount, setActiveCount] = useState(0);
+  const [activeListingId, setActiveListingId] = useState<string | null>(null);
   const [yearlyCount, setYearlyCount] = useState(0);
 
   const photoLabels = {
@@ -126,6 +130,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
         return;
       }
 
+      // Verified — the contact name is always their verified legal name, never
+      // free-typed. Draft-loaded values below don't override this.
+      setContactName(profile.full_name ?? '');
+
       // Restricted accounts — suspected duplicates AND (silently) shadow-banned
       // members — can browse and Connect but can't publish a listing. The DB
       // trigger enforces this too; this just shows the review screen instead of
@@ -138,13 +146,14 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
       setPhase('loading');
 
-      const { count: active } = await supabase
+      const { data: activeRows } = await supabase
         .from('listings')
-        .select('id', { count: 'exact', head: true })
+        .select('id')
         .eq('lister_id', user.id)
         .in('status', ['active', 'negotiating']);
       if (settled) return;
-      setActiveCount(active ?? 0);
+      setActiveCount(activeRows?.length ?? 0);
+      setActiveListingId(activeRows?.[0]?.id ?? null);
 
       const oneYearAgo = new Date();
       oneYearAgo.setDate(oneYearAgo.getDate() - 365);
@@ -220,6 +229,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
       setMonthlyRent(draft.monthly_rent != null ? String(draft.monthly_rent) : '');
       setSqft(draft.sqft != null ? String(draft.sqft) : '');
       setFloor(draft.floor ?? '');
+      setBathrooms(draft.bathrooms != null ? String(draft.bathrooms) : '');
       setDescription(draft.description ?? '');
       setAvailableFrom(draft.available_from ?? '');
       setPetsOk(!!draft.pets_ok);
@@ -231,7 +241,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
       setNoFee(draft.no_fee ?? true);
       setMinCreditScore(draft.min_credit_score != null ? String(draft.min_credit_score) : '');
       setGratitudeAmount(draft.gratitude_amount != null ? String(draft.gratitude_amount) : '');
-      setContactName(draft.contact_name ?? profile?.full_name ?? '');
+      // Contact name stays locked to the verified identity, not the draft value.
+      setContactName(profile?.full_name ?? '');
       setContactPhone(draft.contact_phone ?? profile?.phone ?? '');
 
       const { data: existingPhotos } = await supabase
@@ -287,6 +298,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
           monthly_rent: monthlyRent ? parseInt(monthlyRent, 10) : null,
           sqft: sqft ? parseInt(sqft, 10) : null,
           floor: floor.trim() || null,
+          bathrooms: bathrooms ? parseFloat(bathrooms) : null,
           description: description.trim() || null,
           available_from: availableFrom || null,
           pets_ok: petsOk,
@@ -316,6 +328,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
     monthlyRent,
     sqft,
     floor,
+    bathrooms,
     description,
     availableFrom,
     petsOk,
@@ -394,6 +407,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
         monthly_rent: parseInt(monthlyRent, 10),
         sqft: sqft ? parseInt(sqft, 10) : null,
         floor: floor.trim() || null,
+        bathrooms: bathrooms ? parseFloat(bathrooms) : null,
         description: description.trim() || null,
         available_from: availableFrom,
         pets_ok: petsOk,
@@ -480,6 +494,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
         monthly_rent: parseInt(monthlyRent, 10),
         sqft: sqft ? parseInt(sqft, 10) : null,
         floor: floor.trim() || null,
+        bathrooms: bathrooms ? parseFloat(bathrooms) : null,
         description: description.trim() || null,
         available_from: availableFrom,
         pets_ok: petsOk,
@@ -507,7 +522,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (phase === 'checking' || phase === 'loading') {
     return (
       <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <p className="text-sm text-muted">{phase === 'checking' ? l.checkingVerification : l.loadingDraft}</p>
       </main>
     );
@@ -516,8 +531,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (phase === 'error') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <p role="alert" className="mb-6 text-sm text-red-400">
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <p role="alert" className="mb-6 text-sm text-red-600">
           {error || l.errorLoadTimeout}
         </p>
         <button
@@ -526,7 +541,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
             setPhase('checking');
             setRetryKey((k) => k + 1);
           }}
-          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110"
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110"
         >
           {l.retryCta}
         </button>
@@ -537,15 +552,15 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (phase === 'pending_review') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15">
-          <span className="text-2xl text-amber-400">⏳</span>
+          <span className="text-2xl text-amber-700">⏳</span>
         </div>
-        <h1 className="mb-2 font-display text-2xl text-paper">{l.reviewPendingTitle}</h1>
+        <h1 className="mb-2 font-display text-2xl text-ink">{l.reviewPendingTitle}</h1>
         <p className="mb-8 text-sm text-muted">{l.reviewPendingBody}</p>
         <Link
           href={`/${locale}/browse`}
-          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110"
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110"
         >
           {l.reviewPendingCta}
         </Link>
@@ -556,15 +571,15 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (phase === 'published') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-sage/20">
-          <span className="text-2xl text-sage">✓</span>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-leaf/20">
+          <span className="text-2xl text-leaf">✓</span>
         </div>
-        <h1 className="mb-2 font-display text-3xl text-paper">{l.successTitle}</h1>
+        <h1 className="mb-2 font-display text-3xl text-ink">{l.successTitle}</h1>
         <p className="mb-8 text-sm text-muted">{l.successBody}</p>
         <Link
           href={`/${locale}/account`}
-          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110"
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110"
         >
           {l.backToAccount}
         </Link>
@@ -575,12 +590,12 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (isLocked) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <h1 className="mb-2 font-display text-2xl text-paper">{l.editTitle}</h1>
-        <p className="mb-8 text-sm text-amber-300">{l.editLockedNegotiating}</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <h1 className="mb-2 font-display text-2xl text-ink">{l.editTitle}</h1>
+        <p className="mb-8 text-sm text-amber-700">{l.editLockedNegotiating}</p>
         <Link
           href={`/${locale}/list/mine`}
-          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110"
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110"
         >
           {l.backToMine}
         </Link>
@@ -607,8 +622,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
     <main className="mx-auto max-w-2xl px-5 py-16">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <p className="mb-1 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-          <h1 className="font-display text-3xl text-paper">{isEditingActive ? l.editTitle : l.title}</h1>
+          <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+          <h1 className="font-display text-3xl text-ink">{isEditingActive ? l.editTitle : l.title}</h1>
         </div>
         <p className="text-xs text-muted" role="status">
           {!isEditingActive && (saveStatus === 'saving' ? l.saving : saveStatus === 'saved' ? l.saved : '')}
@@ -616,12 +631,23 @@ export default function ListForm({ locale }: { locale: Locale }) {
       </div>
 
       {!isEditingActive && activeCount > 0 && (
-        <p role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <p role="alert" className="mb-6 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
           {l.blockActiveListing}
+          {activeListingId && (
+            <>
+              {' '}
+              <Link
+                href={`/${locale}/browse/${activeListingId}`}
+                className="font-semibold text-cobalt underline decoration-cobalt/40 underline-offset-2 hover:decoration-cobalt"
+              >
+                {l.viewActiveListing}
+              </Link>
+            </>
+          )}
         </p>
       )}
       {!isEditingActive && activeCount === 0 && yearlyCount >= 3 && (
-        <p role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <p role="alert" className="mb-6 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
           {l.blockYearlyLimit}
         </p>
       )}
@@ -629,7 +655,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
       <form onSubmit={isEditingActive ? handleSaveActive : handlePublish} noValidate className="flex flex-col gap-10">
         {/* Photos */}
         <section>
-          <h2 className="mb-4 font-display text-xl text-paper">{l.sectionPhotos}</h2>
+          <h2 className="mb-4 font-display text-xl text-ink">{l.sectionPhotos}</h2>
           <div className="flex flex-col gap-5">
             {listingId && (
               <>
@@ -698,7 +724,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
         {/* Location */}
         <section>
-          <h2 className="mb-4 font-display text-xl text-paper">{l.sectionLocation}</h2>
+          <h2 className="mb-4 font-display text-xl text-ink">{l.sectionLocation}</h2>
           <div className="flex flex-col gap-5">
             <div>
               <label htmlFor="neighborhood" className={labelClass}>
@@ -761,7 +787,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
         {/* The apartment */}
         <section>
-          <h2 className="mb-4 font-display text-xl text-paper">{l.sectionApartment}</h2>
+          <h2 className="mb-4 font-display text-xl text-ink">{l.sectionApartment}</h2>
           <div className="flex flex-col gap-5">
             <div>
               <label htmlFor="type" className={labelClass}>
@@ -774,11 +800,11 @@ export default function ListForm({ locale }: { locale: Locale }) {
                 onChange={(e) => setType(e.target.value as ListingTypeValue)}
                 className={fieldClass}
               >
-                <option value="" className="bg-ink">
+                <option value="" className="bg-white">
                   {l.typePlaceholder}
                 </option>
                 {typeOptions.map(({ value, label }) => (
-                  <option key={value} value={value} className="bg-ink">
+                  <option key={value} value={value} className="bg-white">
                     {label}
                   </option>
                 ))}
@@ -800,7 +826,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
               />
               <p className="mt-1 text-xs text-muted">{l.rentHint}</p>
             </div>
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-3 gap-5">
               <div>
                 <label htmlFor="floor" className={labelClass}>
                   {l.floorLabel}
@@ -810,6 +836,20 @@ export default function ListForm({ locale }: { locale: Locale }) {
                   type="text"
                   value={floor}
                   onChange={(e) => setFloor(e.target.value)}
+                  className={fieldClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="bathrooms" className={labelClass}>
+                  {l.bathroomsLabel}
+                </label>
+                <input
+                  id="bathrooms"
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={bathrooms}
+                  onChange={(e) => setBathrooms(e.target.value)}
                   className={fieldClass}
                 />
               </div>
@@ -860,15 +900,15 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
         {/* Amenities */}
         <section>
-          <h2 className="mb-4 font-display text-xl text-paper">{l.sectionAmenities}</h2>
+          <h2 className="mb-4 font-display text-xl text-ink">{l.sectionAmenities}</h2>
           <div className="flex flex-wrap gap-2">
             {amenities.map(({ checked, onChange, label }) => (
               <label
                 key={label}
                 className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm transition ${
                   checked
-                    ? 'border-gold bg-gold text-ink'
-                    : 'border-white/15 text-muted hover:border-white/30 hover:text-paper'
+                    ? 'border-cobalt bg-gradient-cobalt text-white'
+                    : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
                 }`}
               >
                 <input
@@ -885,7 +925,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
         {/* Terms */}
         <section>
-          <h2 className="mb-4 font-display text-xl text-paper">{l.sectionTerms}</h2>
+          <h2 className="mb-4 font-display text-xl text-ink">{l.sectionTerms}</h2>
           <div className="flex flex-col gap-5">
             <div>
               <label htmlFor="min-credit-score" className={labelClass}>
@@ -923,7 +963,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
         {/* Contact */}
         <section>
-          <h2 className="mb-4 font-display text-xl text-paper">{l.sectionContact}</h2>
+          <h2 className="mb-4 font-display text-xl text-ink">{l.sectionContact}</h2>
           <div className="flex flex-col gap-5">
             <div>
               <label htmlFor="contact-name" className={labelClass}>
@@ -933,10 +973,12 @@ export default function ListForm({ locale }: { locale: Locale }) {
                 id="contact-name"
                 type="text"
                 required
+                readOnly
+                aria-readonly="true"
                 value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                className={fieldClass}
+                className={`${fieldClass} cursor-not-allowed bg-black/[0.04] text-muted`}
               />
+              <p className="mt-1 text-xs text-muted">{l.contactNameVerifiedHint}</p>
             </div>
             <div>
               <label htmlFor="contact-phone" className={labelClass}>
@@ -958,7 +1000,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
                 required
                 checked={confirmAvailability}
                 onChange={(e) => setConfirmAvailability(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/30 bg-ink/40 accent-gold"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/30 bg-white accent-cobalt"
               />
               <span>{l.confirmAvailability}</span>
             </label>
@@ -968,7 +1010,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
                 required
                 checked={confirmAccuracy}
                 onChange={(e) => setConfirmAccuracy(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/30 bg-ink/40 accent-gold"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/30 bg-white accent-cobalt"
               />
               <span>{l.confirmAccuracy}</span>
             </label>
@@ -976,7 +1018,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
         </section>
 
         {error && (
-          <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
           </p>
         )}
@@ -984,7 +1026,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
         <button
           type="submit"
           disabled={publishing || (!isEditingActive && (activeCount > 0 || yearlyCount >= 3))}
-          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-50"
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
         >
           {publishing
             ? isEditingActive

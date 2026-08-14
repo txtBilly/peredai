@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { listingPhotoUrl, listingTypeLabel } from '@/lib/listings';
-import { VerifiedBadge } from '@/components/VerifiedBadge';
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
@@ -30,6 +29,7 @@ type ListingDetail = {
   monthly_rent: number | null;
   floor: string | null;
   sqft: number | null;
+  bathrooms: number | null;
   description: string | null;
   available_from: string | null;
   pets_ok: boolean | null;
@@ -66,6 +66,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   const [lister, setLister] = useState<Lister | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [favourited, setFavourited] = useState(false);
+  const [activePhoto, setActivePhoto] = useState(0);
   const [seekerCreditScore, setSeekerCreditScore] = useState<number | null>(null);
   const [seekerVerified, setSeekerVerified] = useState(false);
   const [seekerCreditBalance, setSeekerCreditBalance] = useState(0);
@@ -73,6 +74,9 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   const [listingChatId, setListingChatId] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState('');
+  const [notifyRequested, setNotifyRequested] = useState(false);
+  const [notifyBusy, setNotifyBusy] = useState(false);
+  const [notifyError, setNotifyError] = useState('');
 
   useEffect(() => {
     let settled = false;
@@ -101,7 +105,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       const { data: row, error: listingError } = await supabase
         .from('listings')
         .select(
-          'id, lister_id, neighborhood, cross_streets, zip, type, monthly_rent, floor, sqft, description, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, min_credit_score, gratitude_amount, status'
+          'id, lister_id, neighborhood, cross_streets, zip, type, monthly_rent, floor, sqft, bathrooms, description, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, min_credit_score, gratitude_amount, status'
         )
         .eq('id', id)
         .single();
@@ -249,10 +253,49 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
     }
   }
 
+  // Waitlist for a listing that's currently "in conversation": we favourite it
+  // (the saved-listing set is what the "listing freed" alert notifies) so the
+  // seeker gets an email the moment it returns to the market.
+  async function handleNotifyAvailable() {
+    if (!userId) {
+      router.push(`/${locale}/signin`);
+      return;
+    }
+    setNotifyError('');
+    setNotifyBusy(true);
+    const supabase = createClient();
+    // Already saved → they're already on the alert list; otherwise add them.
+    // A duplicate (23505) is fine — it means they were already favourited.
+    if (!favourited) {
+      const { error: favError } = await supabase
+        .from('favourites')
+        .insert({ seeker_id: userId, listing_id: id });
+      if (favError && favError.code !== '23505') {
+        setNotifyBusy(false);
+        setNotifyError(dd.notifyAvailableError);
+        return;
+      }
+    }
+    // Make sure a notification pref row exists so the "listing freed" alert can
+    // actually reach them. Seed defaults only when absent — never overwrite an
+    // existing choice. (Defaults enable email for listing_freed.)
+    const { data: prefRow } = await supabase
+      .from('notification_prefs')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!prefRow) {
+      await supabase.from('notification_prefs').insert({ user_id: userId });
+    }
+    setNotifyBusy(false);
+    setFavourited(true);
+    setNotifyRequested(true);
+  }
+
   if (phase === 'loading') {
     return (
       <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+        <p className="mb-2 font-mono text-xs uppercase tracking-wide text-cobalt">ten2ten</p>
         <p className="text-sm text-muted">{dd.loading}</p>
       </main>
     );
@@ -261,8 +304,8 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   if (phase === 'error' || !listing) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <p role="alert" className="text-sm text-red-400">
+        <p className="mb-4 font-mono text-xs uppercase tracking-wide text-cobalt">ten2ten</p>
+        <p role="alert" className="text-sm text-red-600">
           {error || dd.errorGeneric}
         </p>
       </main>
@@ -318,29 +361,53 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
     !isOwner && seekerVerified && !blockedBelowMin && seekerCreditBalance >= 1 && !hasActiveChat;
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-16">
-      <Link href={`/${locale}/browse`} className="mb-6 inline-block text-sm text-muted hover:text-paper">
+    <main className="mx-auto max-w-3xl px-5 py-10">
+      <Link
+        href={`/${locale}/browse`}
+        className="mb-6 inline-block font-mono text-xs uppercase tracking-wide text-muted hover:text-cobalt"
+      >
         ‹ {dd.backToBrowse}
       </Link>
 
       {photos.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {photos.map((url, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
+        <div className="mb-6">
+          {/* Main image */}
+          <div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-black/[0.04]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              key={url}
-              src={url}
+              src={photos[Math.min(activePhoto, photos.length - 1)]}
               alt=""
-              className={`aspect-[4/3] w-full rounded-xl object-cover ${i === 0 ? 'col-span-2 sm:col-span-2 sm:row-span-2' : ''}`}
+              className="h-full w-full object-cover"
             />
-          ))}
+          </div>
+
+          {/* Thumbnails */}
+          {photos.length > 1 && (
+            <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-5">
+              {photos.map((url, i) => (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => setActivePhoto(i)}
+                  aria-label={`Show photo ${i + 1}`}
+                  aria-current={i === activePhoto}
+                  className={`aspect-[4/3] w-full overflow-hidden rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt ${
+                    i === activePhoto ? 'ring-2 ring-cobalt' : 'opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      <div className="mb-2 flex items-start justify-between gap-3">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl text-paper">{listing.neighborhood}</h1>
-          <p className="text-muted">
+          <h1 className="font-display text-3xl font-bold text-ink">{listing.neighborhood}</h1>
+          <p className="text-[1.4rem] leading-snug text-ink/80">
             {listing.cross_streets}
             {listing.zip ? ` · ${listing.zip}` : ''}
           </p>
@@ -350,37 +417,51 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           aria-pressed={favourited}
           aria-label={favourited ? b.favouriteRemove : b.favouriteAdd}
           onClick={handleToggleFavourite}
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 transition ${
-            favourited ? 'text-gold' : 'text-muted hover:text-paper'
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/15 transition ${
+            favourited ? 'text-cobalt' : 'text-ink/40 hover:text-cobalt'
           }`}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill={favourited ? 'currentColor' : 'none'} aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={favourited ? 'url(#heartGrad)' : 'none'} aria-hidden="true">
+            <defs>
+              <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#A21CAF" />
+                <stop offset="1" stopColor="#EC4899" />
+              </linearGradient>
+            </defs>
             <path
               d="M12 20.5s-7.5-4.6-10-9.3C.6 8 2 4.5 5.4 3.6c2-.5 4 .3 5.1 2 .3.4.7.4 1 0 1.1-1.7 3.1-2.5 5.1-2 3.4.9 4.8 4.4 3.4 7.6-2.5 4.7-10 9.3-10 9.3Z"
-              stroke="currentColor"
-              strokeWidth="1.6"
+              stroke="url(#heartGrad)"
+              strokeWidth="1.8"
               strokeLinejoin="round"
             />
           </svg>
         </button>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-2 text-paper">
-        <span className="text-xl font-medium">
+      <div className="mb-6 flex flex-wrap items-baseline gap-2 text-lg">
+        <span className="font-display text-2xl font-bold text-ink">
           {listing.monthly_rent != null ? `$${listing.monthly_rent.toLocaleString('en-US')}/mo` : ''}
         </span>
-        <span className="text-muted">·</span>
-        <span className="text-muted">{typeLabel}</span>
+        <span className="text-ink/50">·</span>
+        <span className="text-ink/80">{typeLabel}</span>
+        {listing.bathrooms != null && (
+          <>
+            <span className="text-ink/50">·</span>
+            <span className="text-ink/80">
+              {listing.bathrooms} {l.bathroomsLabel.toLowerCase()}
+            </span>
+          </>
+        )}
         {listing.floor && (
           <>
-            <span className="text-muted">·</span>
-            <span className="text-muted">{l.floorLabel}: {listing.floor}</span>
+            <span className="text-ink/50">·</span>
+            <span className="text-ink/80">{l.floorLabel}: {listing.floor}</span>
           </>
         )}
         {listing.sqft != null && (
           <>
-            <span className="text-muted">·</span>
-            <span className="text-muted">{listing.sqft} {l.sqftLabel.toLowerCase()}</span>
+            <span className="text-ink/50">·</span>
+            <span className="text-ink/80">{listing.sqft} {l.sqftLabel.toLowerCase()}</span>
           </>
         )}
       </div>
@@ -388,7 +469,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       {amenityLabels.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">
           {amenityLabels.map((label) => (
-            <span key={label} className="rounded-full border border-white/10 px-3 py-1 text-sm text-muted">
+            <span key={label} className="rounded-full border border-black/10 bg-white px-4 py-1.5 text-base text-ink/80">
               {label}
             </span>
           ))}
@@ -397,66 +478,102 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
 
       {listing.description && (
         <div className="mb-6">
-          <h2 className="mb-2 font-display text-lg text-paper">{l.descriptionLabel}</h2>
-          <p className="whitespace-pre-wrap text-sm text-muted">{listing.description}</p>
+          <h2 className="mb-2 font-display text-2xl font-bold text-ink">{l.descriptionLabel}</h2>
+          <p className="whitespace-pre-wrap text-xl leading-relaxed text-ink/80">{listing.description}</p>
         </div>
       )}
 
-      <div className="mb-6 flex flex-col gap-1 text-sm text-muted">
-        {availableLabel && <p>{l.availableFromLabel}: {availableLabel}</p>}
-        {listing.min_credit_score != null && <p>{b.minCreditScore.replace('{score}', String(listing.min_credit_score))}</p>}
-        {listing.gratitude_amount != null && (
+      <div className="mb-6 flex flex-col gap-2 text-xl leading-relaxed text-ink/80">
+        {(availableLabel || listing.min_credit_score != null) && (
           <p>
-            {l.gratitudeLabel}: ${listing.gratitude_amount.toLocaleString('en-US')} — {l.gratitudeHint}
+            {availableLabel && <>{l.availableFromLabel}: {availableLabel}</>}
+            {availableLabel && listing.min_credit_score != null && <span className="px-2 text-muted">·</span>}
+            {listing.min_credit_score != null && b.minCreditScore.replace('{score}', String(listing.min_credit_score))}
           </p>
+        )}
+        {listing.gratitude_amount != null && (
+          <div>
+            <p>{l.gratitudeLabel}: ${listing.gratitude_amount.toLocaleString('en-US')}</p>
+            <p className="mt-1 text-base text-muted">{l.gratitudeHint}</p>
+          </div>
         )}
       </div>
 
       {lister && (
-        <div className="mb-8 rounded-2xl border border-white/10 bg-ink/40 p-4">
-          <p className="mb-1 text-xs uppercase tracking-wide text-muted">{dd.listedBy}</p>
-          <div className="mb-1 flex items-center gap-2">
-            <span className="font-medium text-paper">{lister.display_first_name}</span>
-            {lister.is_verified && <VerifiedBadge />}
+        <div className="mb-8 rounded-xl border border-black/10 bg-white px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="font-mono text-[11px] uppercase tracking-wide text-muted">{dd.listedBy}</span>
+            <span className="font-semibold text-ink">{lister.display_first_name}</span>
+            {lister.is_verified && <span className="text-sm font-semibold text-leaf">✓ verified</span>}
           </div>
-          <p className="text-sm text-muted">{ratingLabel}</p>
-          {languageNames && (
-            <p className="text-sm text-muted">
-              {dd.languagesLabel}: {languageNames}
-            </p>
-          )}
+          <p className="mt-1 text-sm text-muted">
+            {ratingLabel}
+            {languageNames ? ` · ${dd.languagesLabel}: ${languageNames}` : ''}
+          </p>
         </div>
       )}
 
       {isOwner ? (
-        <div className="rounded-2xl border border-white/10 bg-ink/40 p-4">
+        <div className="rounded-xl border border-black/10 bg-white p-4">
           <p className="mb-2 text-sm text-muted">{dd.ownerNote}</p>
           <div className="flex flex-wrap gap-3">
             {listingChatId && (
               <Link
                 href={`/${locale}/chats/${listingChatId}`}
-                className="inline-block rounded-lg bg-gold px-4 py-2 text-sm font-medium text-ink transition hover:brightness-110"
+                className="inline-block rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
               >
                 {dd.goToChat}
               </Link>
             )}
             <Link
               href={`/${locale}/list/mine`}
-              className="inline-block rounded-lg border border-white/15 px-4 py-2 text-sm text-paper transition hover:bg-white/5"
+              className="inline-block rounded-lg border border-black/15 bg-white px-4 py-2 text-sm text-ink transition hover:border-black/30"
             >
               {dd.ownerCta}
             </Link>
           </div>
         </div>
       ) : hasActiveChat ? (
-        <div className="rounded-2xl border border-white/10 bg-ink/40 p-4">
+        <div className="rounded-xl border border-black/10 bg-white p-4">
           <p className="mb-2 text-sm text-muted">{dd.activeChatNote}</p>
           <Link
             href={`/${locale}/chats/${activeChatId}`}
-            className="inline-block rounded-lg border border-white/15 px-4 py-2 text-sm text-paper transition hover:bg-white/5"
+            className="inline-block rounded-lg border border-black/15 bg-white px-4 py-2 text-sm text-ink transition hover:border-black/30"
           >
             {dd.goToChat}
           </Link>
+        </div>
+      ) : listing.status === 'negotiating' ? (
+        <div className="rounded-xl border border-black/10 bg-white p-4">
+          <p className="mb-1 flex items-center gap-2 font-semibold text-ink">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cobalt opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-cobalt" />
+            </span>
+            {dd.negotiatingTitle}
+          </p>
+          <p className="mb-3 text-sm text-muted">{dd.negotiatingBody}</p>
+          {notifyRequested ? (
+            <p className="rounded-lg border border-leaf/30 bg-leaf/10 px-4 py-2.5 text-sm font-medium text-leaf">
+              ✓ {dd.notifyAvailableConfirm}
+            </p>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleNotifyAvailable}
+                disabled={notifyBusy}
+                className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              >
+                {dd.notifyAvailableCta}
+              </button>
+              {notifyError && (
+                <p role="alert" className="mt-2 text-sm text-red-600">
+                  {notifyError}
+                </p>
+              )}
+            </>
+          )}
         </div>
       ) : canDirectConnect ? (
         <div>
@@ -464,27 +581,27 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
             type="button"
             onClick={handleConnect}
             disabled={connecting}
-            className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-60"
+            className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
           >
             {connecting ? dd.connecting : dd.connectCta}
           </button>
           {connectError && (
-            <p role="alert" className="mt-2 text-sm text-red-400">
+            <p role="alert" className="mt-2 text-sm text-red-600">
               {connectError}
             </p>
           )}
         </div>
       ) : blockedBelowMin ? (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
-          <p className="mb-1 font-medium text-amber-300">{dd.blockTitle}</p>
-          <p className="mb-3 text-sm text-amber-200/80">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+          <p className="mb-1 font-semibold text-amber-800">{dd.blockTitle}</p>
+          <p className="mb-3 text-sm text-amber-700">
             {dd.blockBody
               .replace('{min}', String(listing.min_credit_score))
               .replace('{score}', String(seekerCreditScore))}
           </p>
           <Link
             href={`/${locale}/browse`}
-            className="inline-block rounded-lg border border-amber-400/40 px-4 py-2 text-sm text-amber-200 transition hover:bg-amber-500/10"
+            className="inline-block rounded-lg border border-amber-400 px-4 py-2 text-sm text-amber-800 transition hover:bg-amber-100"
           >
             {dd.blockCta}
           </Link>
@@ -497,7 +614,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           <input type="hidden" name="listing_id" value={id} />
           <button
             type="submit"
-            className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110"
+            className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-semibold text-white transition hover:brightness-110"
           >
             {dd.connectCta}
           </button>

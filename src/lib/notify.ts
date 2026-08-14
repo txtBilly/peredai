@@ -51,6 +51,43 @@ async function sendDirect(userId: string, sms: string, email: EmailContent): Pro
   await Promise.allSettled(jobs);
 }
 
+// Fan-out helper: email everyone who saved a listing that just returned to the
+// market. Shared by the seeker-triggered notify-freed route and the stale-chat
+// sweep. No-ops unless the listing is currently active. Returns the recipient
+// count. Pass excludeIds to skip people who already know (e.g. whoever closed).
+export async function dispatchListingFreed(listingId: string, excludeIds: string[] = []): Promise<number> {
+  const admin = createAdminClient();
+  const { data: listing } = await admin
+    .from('listings')
+    .select('lister_id, neighborhood, status')
+    .eq('id', listingId)
+    .maybeSingle();
+  if (!listing || listing.status !== 'active') return 0;
+
+  const { data: favourites } = await admin.from('favourites').select('seeker_id').eq('listing_id', listingId);
+  const area = listing.neighborhood ?? 'your area';
+  const seekerIds = Array.from(
+    new Set(
+      (favourites ?? [])
+        .map((f) => f.seeker_id)
+        .filter((sid): sid is string => !!sid && sid !== listing.lister_id && !excludeIds.includes(sid))
+    )
+  );
+
+  // Light up the Saved-nav red dot for these savers (cleared when they open the
+  // Saved page). Service-role update — bypasses RLS.
+  if (seekerIds.length > 0) {
+    await admin
+      .from('favourites')
+      .update({ freed_unseen: true })
+      .eq('listing_id', listingId)
+      .in('seeker_id', seekerIds);
+  }
+
+  await Promise.allSettled(seekerIds.map((sid) => notify.listingFreed(sid, area)));
+  return seekerIds.length;
+}
+
 export const notify = {
   // A verified seeker connected to a listing → tell the lister.
   bidAccepted(listerId: string, area: string) {

@@ -132,7 +132,7 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
   if (phase === 'loading') {
     return (
       <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <p className="text-sm text-muted">{m.loading}</p>
       </main>
     );
@@ -141,8 +141,8 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
   if (phase === 'error') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <p role="alert" className="text-sm text-red-400">
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <p role="alert" className="text-sm text-red-600">
           {error || m.errorGeneric}
         </p>
       </main>
@@ -152,15 +152,15 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
   return (
     <main className="mx-auto max-w-2xl px-5 py-16">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="font-display text-3xl text-paper">{m.title}</h1>
+        <h1 className="font-display text-3xl text-ink">{m.title}</h1>
         <p className="text-sm text-muted">{m.yearlyCounter.replace('{count}', String(yearlyCount))}</p>
       </div>
 
       <section className="mb-10">
-        <h2 className="mb-4 font-display text-xl text-paper">{m.currentSectionTitle}</h2>
+        <h2 className="mb-4 font-display text-xl text-ink">{m.currentSectionTitle}</h2>
         {activeListing ? (
-          <div className="flex gap-4 rounded-2xl border border-white/10 bg-ink/40 p-4">
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white/5">
+          <div className="flex gap-4 rounded-2xl border border-black/10 bg-white p-4">
+            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-black/[0.03]">
               {activePhotoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={activePhotoUrl} alt="" className="h-full w-full object-cover" />
@@ -168,8 +168,8 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
             </div>
             <div className="flex flex-1 flex-col gap-1">
               <div className="flex items-center gap-2">
-                <p className="font-medium text-paper">{activeListing.neighborhood}</p>
-                <span className="rounded-full bg-gold/20 px-2 py-0.5 text-xs text-gold">
+                <p className="font-medium text-ink">{activeListing.neighborhood}</p>
+                <span className="rounded-full bg-cobalt/20 px-2 py-0.5 text-xs text-cobalt">
                   {activeListing.status === 'negotiating' ? b.statusNegotiating : m.statusActive}
                 </span>
               </div>
@@ -182,7 +182,7 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
                 {activeChatId ? (
                   <Link
                     href={`/${locale}/chats/${activeChatId}`}
-                    className="self-start text-sm text-gold hover:underline"
+                    className="self-start text-sm text-cobalt hover:underline"
                   >
                     {m.chatCta}
                   </Link>
@@ -190,7 +190,7 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
                   <button
                     type="button"
                     onClick={() => setChatStub(true)}
-                    className="self-start text-sm text-gold hover:underline"
+                    className="self-start text-sm text-cobalt hover:underline"
                   >
                     {m.chatCta}
                   </button>
@@ -198,7 +198,7 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
                 {activeListing.status === 'active' && (
                   <Link
                     href={`/${locale}/list?id=${activeListing.id}`}
-                    className="self-start text-sm text-gold hover:underline"
+                    className="self-start text-sm text-cobalt hover:underline"
                   >
                     {m.editCta}
                   </Link>
@@ -208,11 +208,11 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/10 bg-ink/40 p-6 text-center">
+          <div className="rounded-2xl border border-black/10 bg-white p-6 text-center">
             <p className="mb-3 text-sm text-muted">{m.noActiveListing}</p>
             <Link
               href={`/${locale}/list`}
-              className="inline-block rounded-lg bg-gold px-5 py-2.5 font-medium text-ink transition hover:brightness-110"
+              className="inline-block rounded-lg bg-gradient-cobalt px-5 py-2.5 font-medium text-white transition hover:brightness-110"
             >
               {m.createCta}
             </Link>
@@ -221,16 +221,16 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
       </section>
 
       <section>
-        <h2 className="mb-4 font-display text-xl text-paper">{m.draftsSectionTitle}</h2>
+        <h2 className="mb-4 font-display text-xl text-ink">{m.draftsSectionTitle}</h2>
         {drafts.length > 0 ? (
           <div className="flex flex-col gap-3">
             {drafts.map((draft) => (
               <div
                 key={draft.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-ink/40 p-4"
+                className="flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-white p-4"
               >
                 <div>
-                  <p className="font-medium text-paper">{draft.neighborhood || m.draftUntitled}</p>
+                  <p className="font-medium text-ink">{draft.neighborhood || m.draftUntitled}</p>
                   <p className="text-sm text-muted">
                     {draft.cross_streets}
                     {draft.type ? ` · ${listingTypeLabel(draft.type, l)}` : ''}
@@ -238,7 +238,7 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
                 </div>
                 <Link
                   href={`/${locale}/list?id=${draft.id}`}
-                  className="shrink-0 rounded-lg border border-white/15 px-4 py-2 text-sm text-paper hover:border-white/30"
+                  className="shrink-0 rounded-lg border border-black/15 px-4 py-2 text-sm text-ink hover:border-black/30"
                 >
                   {m.editCta}
                 </Link>

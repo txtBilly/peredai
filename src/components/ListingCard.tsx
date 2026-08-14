@@ -1,15 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { VerifiedBadge } from '@/components/VerifiedBadge';
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? 'url(#heartGrad)' : 'none'} aria-hidden="true">
+      <defs>
+        <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#A21CAF" />
+          <stop offset="1" stopColor="#EC4899" />
+        </linearGradient>
+      </defs>
       <path
         d="M12 20.5s-7.5-4.6-10-9.3C.6 8 2 4.5 5.4 3.6c2-.5 4 .3 5.1 2 .3.4.7.4 1 0 1.1-1.7 3.1-2.5 5.1-2 3.4.9 4.8 4.4 3.4 7.6-2.5 4.7-10 9.3-10 9.3Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
+        stroke="url(#heartGrad)"
+        strokeWidth="1.8"
         strokeLinejoin="round"
       />
     </svg>
@@ -29,6 +34,7 @@ export type ListingCardData = {
   amenityLabels: string[];
   availableLabel: string | null;
   minCreditScoreLabel: string | null;
+  gratuityLabel: string | null;
   verified: boolean;
   favourited: boolean;
   favouriteAddLabel: string;
@@ -43,51 +49,77 @@ export function ListingCard({
   onToggleFavourite: (id: string, currentlyFavourited: boolean) => void;
 }) {
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-white/10 bg-ink/40">
+    <article className="relative overflow-hidden rounded-xl border border-black/[0.08] bg-white">
       <Link href={listing.href} className="block">
-        <div className="relative aspect-[4/3] w-full bg-white/5">
+        <div className="relative aspect-[4/3] w-full bg-black/[0.04]">
           {listing.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={listing.photoUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-muted/60">—</div>
+            <div className="flex h-full w-full items-center justify-center text-xs text-ink/25">—</div>
+          )}
+          {listing.availableLabel && (
+            <span className="absolute left-2.5 top-2.5 rounded-md bg-black/70 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+              {listing.availableLabel}
+            </span>
           )}
           {listing.negotiating && (
-            <span className="absolute left-2 top-2 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-ink shadow-sm">
+            <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-cobalt shadow-sm backdrop-blur">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cobalt opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cobalt" />
+              </span>
               {listing.negotiatingLabel}
             </span>
           )}
         </div>
 
-        <div className="flex flex-col gap-2 p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="font-display text-lg text-paper">{listing.neighborhood}</p>
-              <p className="text-sm text-muted">{listing.crossStreets}</p>
-            </div>
-            {listing.verified && <VerifiedBadge />}
+        <div className="flex flex-col gap-2 p-5">
+          {/* Price leads, StreetEasy-style */}
+          <div className="mb-0.5 font-display text-2xl font-bold leading-tight text-ink">{listing.rentLabel}</div>
+
+          {/* Facts row: type · min credit */}
+          <div className="text-[15px] leading-snug text-ink">
+            <span className="font-semibold">{listing.typeLabel}</span>
+            {listing.minCreditScoreLabel && (
+              <>
+                <span className="px-1.5 text-muted">|</span>
+                <span className="text-muted">{listing.minCreditScoreLabel}</span>
+              </>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-paper">
-            <span className="font-medium">{listing.rentLabel}</span>
-            <span className="text-muted">·</span>
-            <span className="text-muted">{listing.typeLabel}</span>
+          {/* Address */}
+          <div className="text-[15px] leading-snug text-ink">
+            {listing.neighborhood}
+            {listing.crossStreets ? `, ${listing.crossStreets}` : ''}
           </div>
 
-          {(listing.amenityLabels.length > 0 || listing.availableLabel) && (
-            <div className="flex flex-wrap gap-1.5 text-xs text-muted">
+          {/* Amenity chiclets */}
+          {listing.amenityLabels.length > 0 && (
+            <div className="mt-0.5 flex flex-wrap gap-1.5">
               {listing.amenityLabels.map((label) => (
-                <span key={label} className="rounded-full border border-white/10 px-2 py-0.5">
+                <span
+                  key={label}
+                  className="rounded-md border border-black/10 bg-black/[0.02] px-2 py-0.5 text-xs font-medium text-ink/70"
+                >
                   {label}
                 </span>
               ))}
-              {listing.availableLabel && (
-                <span className="rounded-full border border-white/10 px-2 py-0.5">{listing.availableLabel}</span>
-              )}
             </div>
           )}
 
-          {listing.minCreditScoreLabel && <p className="text-xs text-muted">{listing.minCreditScoreLabel}</p>}
+          {/* Verified ID + Gratuity */}
+          {(listing.verified || listing.gratuityLabel) && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              {listing.verified && <span className="text-sm font-semibold text-leaf">✓ Verified ID</span>}
+              {listing.gratuityLabel && (
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  Gratuity {listing.gratuityLabel}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </Link>
 
@@ -96,8 +128,8 @@ export function ListingCard({
         aria-pressed={listing.favourited}
         aria-label={listing.favourited ? listing.favouriteRemoveLabel : listing.favouriteAddLabel}
         onClick={() => onToggleFavourite(listing.id, listing.favourited)}
-        className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-ink/70 backdrop-blur transition ${
-          listing.favourited ? 'text-gold' : 'text-paper hover:text-gold'
+        className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/85 backdrop-blur transition ${
+          listing.favourited ? 'text-cobalt' : 'text-ink/60 hover:text-cobalt'
         }`}
       >
         <HeartIcon filled={listing.favourited} />

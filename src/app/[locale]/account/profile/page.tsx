@@ -107,17 +107,17 @@ export default function EditProfilePage({ params }: { params: { locale: string }
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-5">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-cobalt border-t-transparent" />
       </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-lg px-5 py-16">
-      <p className="mb-1 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+      <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <div className="mb-8 flex items-center gap-3">
-        <Link href={`/${locale}/account`} className="text-muted hover:text-paper" aria-label={d.common.back}>‹</Link>
-        <h1 className="font-display text-3xl text-paper">{p.title}</h1>
+        <Link href={`/${locale}/account`} className="text-muted hover:text-ink" aria-label={d.common.back}>‹</Link>
+        <h1 className="font-display text-3xl text-ink">{p.title}</h1>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
@@ -131,7 +131,7 @@ export default function EditProfilePage({ params }: { params: { locale: string }
             onChange={(e) => setFullName(e.target.value)}
             disabled={nameLocked}
             aria-describedby={nameLocked ? 'full-name-locked' : undefined}
-            className="w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt disabled:cursor-not-allowed disabled:opacity-60"
           />
           {nameLocked && (
             <p id="full-name-locked" className="mt-1.5 text-xs text-muted">
@@ -148,7 +148,7 @@ export default function EditProfilePage({ params }: { params: { locale: string }
             autoComplete="given-name"
             value={displayFirstName}
             onChange={(e) => setDisplayFirstName(e.target.value)}
-            className="w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           />
         </div>
 
@@ -160,7 +160,7 @@ export default function EditProfilePage({ params }: { params: { locale: string }
             autoComplete="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           />
         </div>
 
@@ -172,8 +172,8 @@ export default function EditProfilePage({ params }: { params: { locale: string }
                 key={value}
                 className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm transition ${
                   spokenLanguages.includes(value)
-                    ? 'border-gold bg-gold text-ink'
-                    : 'border-white/15 text-muted hover:border-white/30 hover:text-paper'
+                    ? 'border-cobalt bg-gradient-cobalt text-white'
+                    : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
                 }`}
               >
                 <input type="checkbox" value={value} checked={spokenLanguages.includes(value)}
@@ -190,20 +190,20 @@ export default function EditProfilePage({ params }: { params: { locale: string }
             id="locale"
             value={preferredLocale}
             onChange={(e) => setPreferredLocale(e.target.value as 'en' | 'es')}
-            className="w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           >
-            <option value="en" className="bg-ink">{p.localeEn}</option>
-            <option value="es" className="bg-ink">{p.localeEs}</option>
+            <option value="en" className="bg-white">{p.localeEn}</option>
+            <option value="es" className="bg-white">{p.localeEs}</option>
           </select>
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
           </p>
         )}
         {status === 'saved' && (
-          <p role="status" className="rounded-lg border border-sage/30 bg-sage/10 px-3 py-2 text-sm text-sage">
+          <p role="status" className="rounded-lg border border-leaf/30 bg-leaf/10 px-3 py-2 text-sm text-leaf">
             {p.saved}
           </p>
         )}
@@ -211,7 +211,7 @@ export default function EditProfilePage({ params }: { params: { locale: string }
         <button
           type="submit"
           disabled={status === 'saving'}
-          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-50"
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
         >
           {status === 'saving' ? p.saving : p.save}
         </button>

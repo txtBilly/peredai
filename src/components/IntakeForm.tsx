@@ -95,19 +95,19 @@ export default function IntakeForm({ dict, locale }: Props) {
 
   if (status === 'success') {
     return (
-      <div className="rounded-2xl border border-sage/40 bg-sage/10 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-sage/20 text-2xl text-sage">
+      <div className="rounded-2xl border border-leaf/40 bg-leaf/10 p-8 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-leaf/20 text-2xl text-leaf">
           ✓
         </div>
-        <h2 className="mb-2 font-display text-2xl text-paper">{t.successTitle}</h2>
+        <h2 className="mb-2 font-display text-2xl text-ink">{t.successTitle}</h2>
         <p className="text-muted">{t.successBody}</p>
       </div>
     );
   }
 
   const fieldClass =
-    'w-full rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-paper placeholder:text-muted/60 focus:border-gold focus:outline-none';
-  const labelClass = 'mb-1.5 block text-sm font-medium text-paper/90';
+    'w-full rounded-lg border border-black/15 bg-black/[0.03] px-4 py-3 text-ink placeholder:text-muted/60 focus:border-cobalt focus:outline-none';
+  const labelClass = 'mb-1.5 block text-sm font-medium text-ink/90';
   // Today in the user's local time (not UTC) as YYYY-MM-DD, so the date picker
   // disables any day before today.
   const nowLocal = new Date();
@@ -142,8 +142,8 @@ export default function IntakeForm({ dict, locale }: Props) {
               className={
                 'rounded-lg border px-3 py-2.5 text-sm transition ' +
                 (type === opt.value
-                  ? 'border-gold bg-gold/15 text-paper'
-                  : 'border-white/15 bg-white/5 text-muted hover:border-white/30')
+                  ? 'border-cobalt bg-cobalt/15 text-ink'
+                  : 'border-black/15 bg-black/[0.03] text-muted hover:border-black/30')
               }
             >
               {t[opt.key as keyof typeof t]}
@@ -201,8 +201,8 @@ export default function IntakeForm({ dict, locale }: Props) {
               className={
                 'rounded-full border px-4 py-2 text-sm transition ' +
                 (mustHaves.includes(opt.value)
-                  ? 'border-gold bg-gold/15 text-paper'
-                  : 'border-white/15 bg-white/5 text-muted hover:border-white/30')
+                  ? 'border-cobalt bg-cobalt/15 text-ink'
+                  : 'border-black/15 bg-black/[0.03] text-muted hover:border-black/30')
               }
             >
               {t[opt.key as keyof typeof t]}
@@ -262,7 +262,7 @@ export default function IntakeForm({ dict, locale }: Props) {
       </div>
 
       {status === 'error' && (
-        <p className="text-sm text-red-300" role="alert">
+        <p className="text-sm text-red-700" role="alert">
           {errorMsg}
         </p>
       )}
@@ -271,7 +271,7 @@ export default function IntakeForm({ dict, locale }: Props) {
         type="button"
         onClick={handleSubmit}
         disabled={status === 'submitting'}
-        className="w-full rounded-lg bg-gold px-6 py-3.5 font-medium text-ink transition hover:bg-gold/90 disabled:opacity-60"
+        className="w-full rounded-lg bg-gradient-cobalt px-6 py-3.5 font-medium text-white transition hover:bg-cobalt/90 disabled:opacity-60"
       >
         {status === 'submitting' ? t.submitting : t.submit}
       </button>

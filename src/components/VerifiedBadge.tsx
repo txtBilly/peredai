@@ -1,7 +1,7 @@
 export function VerifiedBadge({ className = '' }: { className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full bg-sage/20 px-2 py-0.5 text-xs font-medium text-sage ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full bg-leaf/15 py-1 pl-2.5 pr-3.5 text-xs font-medium text-leaf ${className}`}
       aria-label="Identity verified"
     >
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">

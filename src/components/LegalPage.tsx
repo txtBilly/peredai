@@ -14,11 +14,11 @@ export default function LegalPage({
 }) {
   return (
     <main className="mx-auto max-w-2xl px-5 py-16">
-      <Link href={`/${locale}/welcome`} className="text-sm text-muted hover:text-paper">
+      <Link href={`/${locale}/welcome`} className="text-sm text-muted hover:text-ink">
         ‹ Back
       </Link>
-      <h1 className="mb-2 mt-4 font-display text-3xl text-paper">{title}</h1>
-      <p className="mb-8 text-xs text-amber-300/80">
+      <h1 className="mb-2 mt-4 font-display text-3xl text-ink">{title}</h1>
+      <p className="mb-8 text-xs text-amber-700/80">
         Draft placeholder — final copy is pending legal review before public launch.
       </p>
       <div className="space-y-4 text-sm leading-relaxed text-muted">{children}</div>

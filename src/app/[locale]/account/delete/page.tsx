@@ -86,25 +86,25 @@ export default function DeletePage({ params }: { params: { locale: string } }) {
 
   return (
     <main className="mx-auto max-w-lg px-5 py-16">
-      <p className="mb-1 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+      <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <div className="mb-8 flex items-center gap-3">
-        <Link href={`/${locale}/account`} className="text-muted hover:text-paper" aria-label={d.common.back}>‹</Link>
-        <h1 className="font-display text-3xl text-paper">{del.title}</h1>
+        <Link href={`/${locale}/account`} className="text-muted hover:text-ink" aria-label={d.common.back}>‹</Link>
+        <h1 className="font-display text-3xl text-ink">{del.title}</h1>
       </div>
 
       {/* Warning */}
-      <p className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+      <p className="mb-6 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
         {del.warning}
       </p>
 
       {/* Guard notices */}
       {guard === 'active_chat' && (
-        <p role="alert" className="mb-6 rounded-xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold">
+        <p role="alert" className="mb-6 rounded-xl border border-cobalt/30 bg-cobalt/10 px-4 py-3 text-sm text-cobalt">
           {del.guardActiveChat}
         </p>
       )}
       {guard === 'active_listing' && (
-        <p role="alert" className="mb-6 rounded-xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold">
+        <p role="alert" className="mb-6 rounded-xl border border-cobalt/30 bg-cobalt/10 px-4 py-3 text-sm text-cobalt">
           {del.guardActiveListing}
         </p>
       )}
@@ -114,7 +114,7 @@ export default function DeletePage({ params }: { params: { locale: string } }) {
         type="button"
         onClick={handleExport}
         disabled={exportStatus === 'exporting'}
-        className="mb-8 w-full rounded-lg border border-white/15 px-5 py-3 text-sm text-muted transition hover:border-white/30 hover:text-paper disabled:opacity-50"
+        className="mb-8 w-full rounded-lg border border-black/15 px-5 py-3 text-sm text-muted transition hover:border-black/30 hover:text-ink disabled:opacity-50"
       >
         {exportStatus === 'exporting' ? del.exporting : del.exportCta}
       </button>
@@ -132,12 +132,12 @@ export default function DeletePage({ params }: { params: { locale: string } }) {
             onChange={(e) => setConfirm(e.target.value)}
             placeholder={del.confirmPlaceholder}
             autoComplete="off"
-            className="w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           />
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
           </p>
         )}

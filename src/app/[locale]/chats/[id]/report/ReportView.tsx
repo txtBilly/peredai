@@ -61,12 +61,12 @@ export default function ReportView({
   if (phase === 'done') {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <h1 className="mb-2 font-display text-2xl text-paper">Report received</h1>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <h1 className="mb-2 font-display text-2xl text-ink">Report received</h1>
         <p className="mb-8 text-sm text-muted">
           Thanks — our team will review it. Messages are never deleted, so we can see exactly what happened.
         </p>
-        <Link href={backHref} className="text-sm text-gold hover:underline">
+        <Link href={backHref} className="text-sm text-cobalt hover:underline">
           Back
         </Link>
       </main>
@@ -75,8 +75,8 @@ export default function ReportView({
 
   return (
     <main className="mx-auto max-w-md px-5 py-12">
-      <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-      <h1 className="mb-2 font-display text-2xl text-paper">Report</h1>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <h1 className="mb-2 font-display text-2xl text-ink">Report</h1>
       <p className="mb-6 text-sm text-muted">
         Ten2Ten community is built on trust and safety. Tell us more. We got you.
       </p>
@@ -87,7 +87,7 @@ export default function ReportView({
             <label
               key={r.value}
               className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition ${
-                reason === r.value ? 'border-gold bg-gold/10 text-paper' : 'border-white/15 text-muted hover:border-white/30'
+                reason === r.value ? 'border-cobalt bg-cobalt/10 text-ink' : 'border-black/15 text-muted hover:border-black/30'
               }`}
             >
               <input
@@ -96,7 +96,7 @@ export default function ReportView({
                 value={r.value}
                 checked={reason === r.value}
                 onChange={() => setReason(r.value)}
-                className="h-4 w-4 accent-gold"
+                className="h-4 w-4 accent-cobalt"
               />
               {r.label}
             </label>
@@ -111,7 +111,7 @@ export default function ReportView({
             value={detail}
             onChange={(e) => setDetail(e.target.value)}
             placeholder="A few details help our team review this fairly."
-            className="rounded-lg border border-white/15 bg-ink/40 px-3 py-2 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="rounded-lg border border-black/15 bg-white px-3 py-2 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           />
         </label>
 
@@ -122,7 +122,7 @@ export default function ReportView({
         )}
 
         {phase === 'error' && (
-          <p role="alert" className="text-sm text-red-400">
+          <p role="alert" className="text-sm text-red-600">
             Something went wrong ({error}). Please try again.
           </p>
         )}
@@ -131,11 +131,11 @@ export default function ReportView({
           <button
             type="submit"
             disabled={!reason || !detail.trim() || phase === 'submitting'}
-            className="rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-50"
+            className="rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
             {phase === 'submitting' ? 'Submitting…' : 'Submit report'}
           </button>
-          <Link href={backHref} className="text-sm text-muted hover:text-paper">
+          <Link href={backHref} className="text-sm text-muted hover:text-ink">
             Cancel
           </Link>
         </div>

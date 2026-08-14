@@ -85,17 +85,17 @@ export default function NotificationsPage({ params }: { params: { locale: string
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg items-center justify-center px-5">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-cobalt border-t-transparent" />
       </main>
     );
   }
 
   return (
     <main className="mx-auto max-w-lg px-5 py-16">
-      <p className="mb-1 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+      <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <div className="mb-8 flex items-center gap-3">
-        <Link href={`/${locale}/account`} className="text-muted hover:text-paper" aria-label={common.back}>‹</Link>
-        <h1 className="font-display text-3xl text-paper">{n.title}</h1>
+        <Link href={`/${locale}/account`} className="text-muted hover:text-ink" aria-label={common.back}>‹</Link>
+        <h1 className="font-display text-3xl text-ink">{n.title}</h1>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2">
@@ -110,9 +110,9 @@ export default function NotificationsPage({ params }: { params: { locale: string
         {EVENT_KEYS.map((eventKey) => (
           <div
             key={eventKey}
-            className="grid grid-cols-[1fr_repeat(3,3rem)] items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3"
+            className="grid grid-cols-[1fr_repeat(3,3rem)] items-center gap-2 rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3"
           >
-            <span className="text-sm text-paper">{n[eventKey]}</span>
+            <span className="text-sm text-ink">{n[eventKey]}</span>
             {CHANNELS.map((channel) => {
               const checked = prefs[eventKey].includes(channel);
               const id = `${eventKey}-${channel}`;
@@ -124,7 +124,7 @@ export default function NotificationsPage({ params }: { params: { locale: string
                     checked={checked}
                     onChange={() => toggleChannel(eventKey, channel)}
                     aria-label={`${n[eventKey]} via ${n[channel]}`}
-                    className="h-4 w-4 cursor-pointer accent-gold"
+                    className="h-4 w-4 cursor-pointer accent-cobalt"
                   />
                 </div>
               );
@@ -133,12 +133,12 @@ export default function NotificationsPage({ params }: { params: { locale: string
         ))}
 
         {error && (
-          <p role="alert" className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          <p role="alert" className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
           </p>
         )}
         {status === 'saved' && (
-          <p role="status" className="mt-2 rounded-lg border border-sage/30 bg-sage/10 px-3 py-2 text-sm text-sage">
+          <p role="status" className="mt-2 rounded-lg border border-leaf/30 bg-leaf/10 px-3 py-2 text-sm text-leaf">
             {n.saved}
           </p>
         )}
@@ -146,7 +146,7 @@ export default function NotificationsPage({ params }: { params: { locale: string
         <button
           type="submit"
           disabled={status === 'saving'}
-          className="mt-4 w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-50"
+          className="mt-4 w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
         >
           {status === 'saving' ? n.saving : n.save}
         </button>

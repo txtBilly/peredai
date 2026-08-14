@@ -113,21 +113,21 @@ export default function VerifyView({ locale }: { locale: Locale }) {
   if (phase === 'pass') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <h1 className="mb-2 font-display text-2xl text-paper">Verified</h1>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <h1 className="mb-2 font-display text-2xl text-ink">Verified</h1>
         <p className="mb-6 text-sm text-muted">
           Background check passed{creditScore != null ? ` — credit score ${creditScore}` : ''}. 3 contact credits
           added to your account.
         </p>
         {blockedMinScore != null ? (
           <>
-            <p className="mb-6 max-w-sm text-sm text-amber-300">
+            <p className="mb-6 max-w-sm text-sm text-amber-700">
               This listing requires a minimum credit score of {blockedMinScore}, so you can’t connect to it. Your
               credits and verification work on listings you match.
             </p>
             <Link
               href={`/${locale}/browse`}
-              className="w-full max-w-xs rounded-lg bg-gold px-5 py-3 text-center font-medium text-ink transition hover:brightness-110"
+              className="w-full max-w-xs rounded-lg bg-gradient-cobalt px-5 py-3 text-center font-medium text-white transition hover:brightness-110"
             >
               Browse listings
             </Link>
@@ -135,7 +135,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
         ) : (
           <Link
             href={listingHref}
-            className="w-full max-w-xs rounded-lg bg-gold px-5 py-3 text-center font-medium text-ink transition hover:brightness-110"
+            className="w-full max-w-xs rounded-lg bg-gradient-cobalt px-5 py-3 text-center font-medium text-white transition hover:brightness-110"
           >
             {listingId ? 'Back to the listing' : 'Browse listings'}
           </Link>
@@ -147,10 +147,10 @@ export default function VerifyView({ locale }: { locale: Locale }) {
   if (phase === 'failed') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <h1 className="mb-2 font-display text-2xl text-paper">Check failed</h1>
-        <p className="mb-6 text-sm text-red-400">{message}</p>
-        <Link href={listingHref} className="text-sm text-gold underline-offset-4 hover:underline">
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <h1 className="mb-2 font-display text-2xl text-ink">Check failed</h1>
+        <p className="mb-6 text-sm text-red-600">{message}</p>
+        <Link href={listingHref} className="text-sm text-cobalt underline-offset-4 hover:underline">
           {listingId ? 'Back to the listing' : 'Browse listings'}
         </Link>
       </main>
@@ -159,20 +159,20 @@ export default function VerifyView({ locale }: { locale: Locale }) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-16">
-      <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-      <h1 className="mb-2 font-display text-2xl text-paper">Verify your identity</h1>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <h1 className="mb-2 font-display text-2xl text-ink">Verify your identity</h1>
       <p className="mb-6 text-sm text-muted">
         This runs a one-time identity and credit-score check. Your SSN and full credit report are never shared with
         listers.
       </p>
 
       {phase === 'retry' && (
-        <p role="status" className="mb-4 text-sm text-amber-400">
+        <p role="status" className="mb-4 text-sm text-amber-700">
           {message}
         </p>
       )}
       {phase === 'error' && (
-        <p role="alert" className="mb-4 text-sm text-red-400">
+        <p role="alert" className="mb-4 text-sm text-red-600">
           {message}
         </p>
       )}
@@ -184,7 +184,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
             required
             value={legalName}
             onChange={(e) => setLegalName(e.target.value)}
-            className="rounded-lg border border-white/15 bg-ink/40 px-3 py-2 text-paper"
+            className="rounded-lg border border-black/15 bg-white px-3 py-2 text-ink"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-muted">
@@ -196,7 +196,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
             min={minDob}
             max={maxDob}
             onChange={(e) => setDob(e.target.value)}
-            className="rounded-lg border border-white/15 bg-ink/40 px-3 py-2 text-paper"
+            className="rounded-lg border border-black/15 bg-white px-3 py-2 text-ink"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-muted">
@@ -209,7 +209,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
             maxLength={11}
             pattern="\d{3}-\d{2}-\d{4}"
             placeholder="XXX-XX-XXXX"
-            className="rounded-lg border border-white/15 bg-ink/40 px-3 py-2 text-paper"
+            className="rounded-lg border border-black/15 bg-white px-3 py-2 text-ink"
           />
         </label>
 
@@ -219,7 +219,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
             <select
               value={mockOutcome}
               onChange={(e) => setMockOutcome(e.target.value)}
-              className="rounded-lg border border-white/15 bg-ink/40 px-3 py-2 text-paper"
+              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-ink"
             >
               <option value="">(use MOCK_BG_CHECK_RESULT env default)</option>
               {MOCK_OUTCOMES.map((o) => (
@@ -234,7 +234,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
         <button
           type="submit"
           disabled={phase === 'submitting'}
-          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-60"
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-60"
         >
           {phase === 'submitting' ? 'Checking…' : 'Submit'}
         </button>

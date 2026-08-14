@@ -51,6 +51,28 @@ export async function middleware(req: NextRequest) {
     ) ?? defaultLocale;
   const bare = stripLocale(pathname);
 
+  // Pre-launch passcode gate — active ONLY when SITE_PASSCODE is set. Until
+  // then this whole block is skipped, so normal dev is unaffected. A visitor
+  // without the unlock cookie is sent to the /gate splash; the gate page itself
+  // is always reachable so they can enter the code.
+  const passcode = process.env.SITE_PASSCODE;
+  if (passcode) {
+    const isGate = bare === '/gate';
+    const unlocked = req.cookies.get('t2t_gate')?.value === (await gateToken(passcode));
+    if (!unlocked && !isGate) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/${locale}/gate`;
+      url.search = `?next=${encodeURIComponent(pathname)}`;
+      return NextResponse.redirect(url);
+    }
+    if (unlocked && isGate) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/${locale}`;
+      url.search = '';
+      return NextResponse.redirect(url);
+    }
+  }
+
   const isProtected = PROTECTED.some((p) => bare === p || bare.startsWith(p + '/'));
   const isAuthOnly = AUTH_ONLY.some((p) => bare === p || bare.startsWith(p + '/'));
 
@@ -102,6 +124,17 @@ export async function middleware(req: NextRequest) {
   }
 
   return response;
+}
+
+// Deterministic unlock token for the passcode gate. The cookie stores this hash
+// (not the raw code); middleware (edge) and /api/gate (node) compute it the same
+// way so they agree. This is a soft pre-launch gate, not a security boundary.
+async function gateToken(passcode: string): Promise<string> {
+  const data = new TextEncoder().encode(`ten2ten-gate:${passcode}`);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 export const config = {

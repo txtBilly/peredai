@@ -34,6 +34,7 @@ type ListingRow = {
   no_fee: boolean | null;
   walk_up: boolean | null;
   min_credit_score: number | null;
+  gratitude_amount: number | null;
   status: string;
 };
 
@@ -80,7 +81,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         let query = supabase
           .from('listings')
           .select(
-            'id, lister_id, neighborhood, cross_streets, zip, type, monthly_rent, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, min_credit_score, status'
+            'id, lister_id, neighborhood, cross_streets, zip, type, monthly_rent, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, min_credit_score, gratitude_amount, status'
           )
           .in('status', ['active', 'negotiating'])
           .order('created_at', { ascending: false })
@@ -177,6 +178,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
               : null,
             minCreditScoreLabel:
               row.min_credit_score != null ? b.minCreditScore.replace('{score}', String(row.min_credit_score)) : null,
+            gratuityLabel:
+              row.gratitude_amount != null ? `$${row.gratitude_amount.toLocaleString('en-US')}` : null,
             verified: verifiedListers.has(row.lister_id),
             favourited: favouritedIds.has(row.id),
             favouriteAddLabel: b.favouriteAdd,
@@ -218,108 +221,190 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     ...LISTING_TYPES.map((value) => ({ value, label: typeLabels[value] })),
   ];
 
-  return (
-    <main className="mx-auto max-w-5xl px-5 py-16">
-      <h1 className="mb-6 font-display text-3xl text-paper">{b.title}</h1>
+  // Active-filter chips: one per applied filter, each removable; plus Reset all.
+  const amenityChips: [keyof BrowseFilters, string][] = [
+    ['laundry', l.amenityLaundry],
+    ['petsOk', l.amenityPetsOk],
+    ['elevator', l.amenityElevator],
+    ['walkUp', l.amenityWalkUp],
+    ['doorman', l.amenityDoorman],
+    ['outdoor', l.amenityOutdoor],
+    ['noFee', l.amenityNoFee],
+  ];
+  const activeChips: { key: string; label: string; remove: () => void }[] = [];
+  if (searchText.trim())
+    activeChips.push({ key: 'q', label: `"${searchText.trim()}"`, remove: () => setSearchText('') });
+  if (typeFilter !== 'all')
+    activeChips.push({ key: 'type', label: typeLabels[typeFilter], remove: () => setTypeFilter('all') });
+  if (filters.rentMin)
+    activeChips.push({ key: 'rmin', label: `≥ $${filters.rentMin}`, remove: () => setFilters((f) => ({ ...f, rentMin: '' })) });
+  if (filters.rentMax)
+    activeChips.push({ key: 'rmax', label: `≤ $${filters.rentMax}`, remove: () => setFilters((f) => ({ ...f, rentMax: '' })) });
+  if (filters.zip.trim())
+    activeChips.push({ key: 'zip', label: filters.zip.trim(), remove: () => setFilters((f) => ({ ...f, zip: '' })) });
+  if (filters.moveInBy)
+    activeChips.push({ key: 'move', label: `by ${filters.moveInBy}`, remove: () => setFilters((f) => ({ ...f, moveInBy: '' })) });
+  amenityChips.forEach(([key, label]) => {
+    if (filters[key]) activeChips.push({ key, label, remove: () => setFilters((f) => ({ ...f, [key]: false })) });
+  });
+  const resetAll = () => {
+    setSearchText('');
+    setTypeFilter('all');
+    setFilters(EMPTY_FILTERS);
+  };
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+  return (
+    <main className="mx-auto max-w-6xl px-5 pb-16 pt-6">
+      {/* Search + filters + view toggle */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           type="search"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           placeholder={b.searchPlaceholder}
           aria-label={b.searchPlaceholder}
-          className="w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold sm:flex-1"
+          className="w-full rounded-lg border border-black/15 bg-white px-4 py-3 text-base text-ink placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-cobalt sm:flex-1"
         />
         <button
           type="button"
           onClick={() => setFiltersOpen(true)}
-          className="shrink-0 rounded-lg border border-white/15 px-4 py-2.5 text-sm text-paper hover:border-white/30"
+          className="shrink-0 rounded-lg border border-black/15 bg-white px-4 py-3 text-base font-medium text-ink hover:border-black/30"
         >
           {b.filtersCta}
         </button>
+        <div className="flex shrink-0 gap-1">
+          {(['list', 'grid'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              aria-pressed={view === v}
+              className={`rounded-lg border px-3 py-3 text-sm capitalize transition ${
+                view === v ? 'border-cobalt bg-cobalt/10 font-semibold text-cobalt' : 'border-black/15 text-muted hover:border-black/30'
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="mb-8 flex flex-wrap gap-2">
-        {typeChips.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setTypeFilter(value)}
-            className={`rounded-full border px-4 py-1.5 text-sm transition ${
-              typeFilter === value
-                ? 'border-gold bg-gold text-ink'
-                : 'border-white/15 text-muted hover:border-white/30 hover:text-paper'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Type tabs — selected state: filled cobalt + bold white, unselected: outlined */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {typeChips.map(({ value, label }) => {
+          const selected = typeFilter === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setTypeFilter(value)}
+              aria-pressed={selected}
+              className={`rounded-full px-5 py-2 text-[15px] transition ${
+                selected
+                  ? 'bg-cobalt font-bold text-white shadow-sm ring-1 ring-cobalt'
+                  : 'border border-black/20 bg-white font-medium text-ink hover:border-black/40'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Active filter chips */}
+      {activeChips.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {activeChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={chip.remove}
+              className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/[0.03] px-3 py-1.5 text-sm text-ink/80 hover:border-black/25"
+            >
+              {chip.label}
+              <span className="text-cobalt" aria-hidden="true">✕</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={resetAll}
+            className="font-mono text-[11px] font-semibold uppercase tracking-wide text-red-500 hover:text-red-600"
+          >
+            {b.clearFiltersCta}
+          </button>
+        </div>
+      )}
 
       {error && (
-        <p role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+        <p role="alert" className="mt-6 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
           {error}
         </p>
       )}
 
-      <div className="mb-4 flex justify-end gap-1">
-        {(['grid', 'list'] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => setView(v)}
-            className={`rounded-lg border px-3 py-1.5 text-xs capitalize transition ${
-              view === v ? 'border-gold bg-gold/10 text-gold' : 'border-white/15 text-muted hover:border-white/30'
-            }`}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <p className="text-sm text-muted">{b.loading}</p>
-      ) : cards.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-ink/40 p-8 text-center">
-          <p className="mb-1 font-display text-xl text-paper">{b.noResultsTitle}</p>
-          <p className="text-sm text-muted">{b.noResultsBody}</p>
-        </div>
-      ) : view === 'grid' ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((card) => (
-            <ListingCard key={card.id} listing={card} onToggleFavourite={handleToggleFavourite} />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-ink/40">
-          {cards.map((card) => (
-            <Link
-              key={card.id}
-              href={card.href}
-              className="flex items-center justify-between gap-4 px-4 py-3 transition hover:bg-white/5"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-medium text-paper">{card.neighborhood || '—'}</span>
-                  {card.verified && <span className="text-xs text-sage">✓</span>}
-                  {card.negotiating && (
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-ink">
-                      {card.negotiatingLabel}
-                    </span>
-                  )}
-                </div>
-                <p className="truncate text-xs text-muted">
-                  {[card.crossStreets, card.typeLabel, card.availableLabel, card.minCreditScoreLabel]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
+      <div className="mt-6">
+        {loading ? (
+          <p className="font-mono text-sm text-muted">{b.loading}</p>
+        ) : cards.length === 0 ? (
+          <div className="rounded-xl border border-black/10 bg-white p-8 text-center">
+            <p className="mb-1 font-display text-xl font-bold text-ink">{b.noResultsTitle}</p>
+            <p className="text-sm text-muted">{b.noResultsBody}</p>
+          </div>
+        ) : view === 'grid' ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {cards.map((card) => (
+              <ListingCard key={card.id} listing={card} onToggleFavourite={handleToggleFavourite} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col divide-y divide-black/[0.07] overflow-hidden rounded-xl border border-black/10 bg-white">
+            {cards.map((card) => (
+              <div key={card.id} className="flex items-center gap-2 px-4 py-3 transition hover:bg-black/[0.02]">
+                <Link href={card.href} className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-base font-bold text-cobalt">{card.neighborhood || '—'}</span>
+                      {card.negotiating && (
+                        <span className="rounded-full bg-cobalt px-2 py-0.5 text-[11px] font-semibold text-white">
+                          {card.negotiatingLabel}
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate font-mono text-[13px] text-muted">
+                      {[card.crossStreets, card.typeLabel, card.availableLabel, card.minCreditScoreLabel]
+                        .filter(Boolean)
+                        .join(' · ')}
+                      {card.verified && <span className="font-semibold text-leaf"> · ✓ verified</span>}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-display text-lg font-bold text-ink">{card.rentLabel}</span>
+                </Link>
+                <button
+                  type="button"
+                  aria-pressed={card.favourited}
+                  aria-label={card.favourited ? card.favouriteRemoveLabel : card.favouriteAddLabel}
+                  onClick={() => handleToggleFavourite(card.id, card.favourited)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:bg-black/[0.05]"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill={card.favourited ? 'url(#heartGradList)' : 'none'} aria-hidden="true">
+                    <defs>
+                      <linearGradient id="heartGradList" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stopColor="#A21CAF" />
+                        <stop offset="1" stopColor="#EC4899" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M12 20.5s-7.5-4.6-10-9.3C.6 8 2 4.5 5.4 3.6c2-.5 4 .3 5.1 2 .3.4.7.4 1 0 1.1-1.7 3.1-2.5 5.1-2 3.4.9 4.8 4.4 3.4 7.6-2.5 4.7-10 9.3-10 9.3Z"
+                      stroke="url(#heartGradList)"
+                      strokeWidth="1.8"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
               </div>
-              <span className="shrink-0 text-sm font-medium text-paper">{card.rentLabel}</span>
-            </Link>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       <FiltersSheet
         open={filtersOpen}

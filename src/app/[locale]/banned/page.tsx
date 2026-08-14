@@ -9,16 +9,16 @@ export default function BannedPage({ params }: { params: { locale: string } }) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-      <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
+      <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15">
-        <span className="text-2xl text-red-400">⛔</span>
+        <span className="text-2xl text-red-600">⛔</span>
       </div>
-      <h1 className="mb-2 font-display text-2xl text-paper">{b.title}</h1>
+      <h1 className="mb-2 font-display text-2xl text-ink">{b.title}</h1>
       <p className="mb-8 text-sm text-muted">{b.body}</p>
       <form action="/api/auth/signout" method="POST" className="w-full">
         <button
           type="submit"
-          className="w-full rounded-lg border border-white/15 px-5 py-3 text-sm text-muted transition hover:border-white/30 hover:text-paper"
+          className="w-full rounded-lg border border-black/15 px-5 py-3 text-sm text-muted transition hover:border-black/30 hover:text-ink"
         >
           {b.signOut}
         </button>

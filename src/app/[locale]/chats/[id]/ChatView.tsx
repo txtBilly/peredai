@@ -30,6 +30,8 @@ type Listing = {
   contact_phone: string | null;
   monthly_rent: number | null;
   type: string | null;
+  available_from: string | null;
+  gratitude_amount: number | null;
 };
 
 type Message = { id: string; sender_id: string; body: string; created_at: string };
@@ -93,7 +95,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       const [{ data: lst }, { data: msgs }] = await Promise.all([
         supabase
           .from('listings')
-          .select('neighborhood, full_address, contact_name, contact_phone, monthly_rent, type')
+          .select('neighborhood, full_address, contact_name, contact_phone, monthly_rent, type, available_from, gratitude_amount')
           .eq('id', c.listing_id)
           .maybeSingle(),
         supabase
@@ -171,6 +173,13 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
     setBody('');
   }
 
+  // When a conversation ends without a deal the listing goes back on the market.
+  // Tell everyone who saved it (fire-and-forget — never blocks the close flow).
+  function notifyListingFreed() {
+    if (!chat?.listing_id) return;
+    fetch(`/api/listings/${chat.listing_id}/notify-freed`, { method: 'POST' }).catch(() => {});
+  }
+
   async function handleClose(reason: 'closed_success' | 'closed_didnt_work') {
     setClosing(true);
     setActionError('');
@@ -182,6 +191,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
     }
     setChat((c) => (c ? { ...c, status: reason } : c));
     setCloseOpen(false);
+    if (reason === 'closed_didnt_work') notifyListingFreed();
   }
 
   async function handleRequestClose() {
@@ -232,6 +242,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
     }
     // Declining frees the listing immediately and closes the chat.
     setChat((c) => (c ? { ...c, status: 'closed_didnt_work', seeker_success_at: null } : c));
+    notifyListingFreed();
   }
 
   async function handleConfirmClose() {
@@ -244,6 +255,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       return;
     }
     setChat((c) => (c ? { ...c, status: 'closed_didnt_work' } : c));
+    notifyListingFreed();
   }
 
   if (phase === 'loading') {
@@ -257,11 +269,11 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
   if (phase === 'error' || !chat) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <p role="alert" className="mb-6 text-sm text-red-400">
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <p role="alert" className="mb-6 text-sm text-red-600">
           This conversation isn’t available.
         </p>
-        <Link href={`/${locale}/browse`} className="text-sm text-gold hover:underline">
+        <Link href={`/${locale}/browse`} className="text-sm text-cobalt hover:underline">
           Back to Browse
         </Link>
       </main>
@@ -280,15 +292,26 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
   const listerCanRequest =
     role === 'lister' && isActive && !closeRequested && !successReported && seekerIdleHrs >= 24;
   const otherName = role === 'seeker' ? listing?.contact_name ?? '—' : chat.disclosed_seeker_name ?? '—';
+  const gratuityLabel =
+    listing?.gratitude_amount != null && listing.gratitude_amount > 0
+      ? `$${listing.gratitude_amount.toLocaleString('en-US')}`
+      : null;
   const listingLine = listing
     ? [
-        listing.neighborhood,
         listing.type ? listingTypeLabel(listing.type, l) : null,
         listing.monthly_rent != null ? `$${listing.monthly_rent.toLocaleString('en-US')}/mo` : null,
+        gratuityLabel ? `${gratuityLabel} one-time gratuity` : null,
       ]
         .filter(Boolean)
         .join(' · ')
     : '';
+  const availableLabel = listing?.available_from
+    ? new Date(listing.available_from).toLocaleDateString(locale === 'es' ? 'es-US' : 'en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
   const closedLabel =
     chat.status === 'closed_success'
       ? 'This conversation was closed — marked as a success.'
@@ -298,21 +321,39 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col px-5 py-8">
-      {/* Header */}
+      {/* Header: identity card + actions */}
       <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl text-paper">{otherName}</h1>
-          {listingLine && <p className="text-sm text-muted">{listingLine}</p>}
+        <div className="min-w-0 flex-1 rounded-xl border border-black/10 bg-white p-3 text-sm">
+          {role === 'seeker' ? (
+            <div className="space-y-3">
+              <p className="flex items-center gap-x-2">
+                <span className="text-[1.23rem] font-bold text-ink">{otherName}</span>
+                <span className="font-semibold text-leaf">✓ Verified ID</span>
+                <span className="text-muted">· verified by Stripe</span>
+              </p>
+              {listing?.full_address && (
+                <p className="text-[1.26rem] text-ink">
+                  <span className="text-ink">Address:</span> {listing.full_address}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted">
+              <span className="text-ink">Seeker:</span> {chat.disclosed_seeker_name ?? '—'} · Credit band:{' '}
+              {creditBand(chat.disclosed_credit_score)} ·{' '}
+              {chat.disclosed_bg_status === 'verified' ? 'Verified' : '—'}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <Link href={`/${locale}/chats/${id}/report`} className="text-sm text-muted hover:text-paper">
+          <Link href={`/${locale}/chats/${id}/report`} className="text-sm text-muted hover:text-ink">
             Report
           </Link>
           {isActive && role === 'seeker' && !successReported && (
             <button
               type="button"
               onClick={() => setCloseOpen((v) => !v)}
-              className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-paper transition hover:border-white/30"
+              className="rounded-lg border border-black/15 px-3 py-1.5 text-sm text-ink transition hover:border-black/30"
             >
               Close chat
             </button>
@@ -320,38 +361,33 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
         </div>
       </div>
 
-      {/* Disclosure */}
-      <div className="mb-4 rounded-xl border border-white/10 bg-ink/40 p-3 text-sm">
-        {role === 'seeker' ? (
-          <p className="text-muted">
-            {listing?.full_address && (
-              <>
-                <span className="text-paper">Address:</span> {listing.full_address}
-              </>
-            )}
-            {listing?.contact_phone && <> · Phone: {listing.contact_phone}</>}
-          </p>
-        ) : (
-          <p className="text-muted">
-            <span className="text-paper">Seeker:</span> {chat.disclosed_seeker_name ?? '—'} · Credit band:{' '}
-            {creditBand(chat.disclosed_credit_score)} ·{' '}
-            {chat.disclosed_bg_status === 'verified' ? 'Verified' : '—'}
-          </p>
+      {/* Listing summary */}
+      <div className="mb-4">
+        {listing?.neighborhood && (
+          <h1 className="font-display text-2xl">
+            <Link href={`/${locale}/browse/${chat.listing_id}`} className="text-cobalt underline decoration-cobalt/40 underline-offset-4 hover:decoration-cobalt">
+              {listing.neighborhood}
+            </Link>
+          </h1>
+        )}
+        {listingLine && <p className="mt-1.5 text-[1.26rem] text-ink">{listingLine}</p>}
+        {availableLabel && (
+          <p className="mt-1.5 text-[1.26rem] text-ink">Available: {availableLabel}</p>
         )}
       </div>
 
       {/* Pending success — seeker reported "got the place", awaiting the lister */}
       {isActive && successReported && role === 'seeker' && (
-        <div className="mb-4 rounded-xl border border-gold/30 bg-gold/5 p-4">
-          <p className="mb-1 font-medium text-paper">You reported getting the place.</p>
+        <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
+          <p className="mb-1 font-medium text-ink">You reported getting the place.</p>
           <p className="text-xs text-muted">
             Waiting for the lister to confirm. If they don’t respond, it closes automatically after 24 hours.
           </p>
         </div>
       )}
       {isActive && successReported && role === 'lister' && (
-        <div className="mb-4 rounded-xl border border-gold/30 bg-gold/5 p-4">
-          <p className="mb-1 font-medium text-paper">{otherName} reported getting the place.</p>
+        <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
+          <p className="mb-1 font-medium text-ink">{otherName} reported getting the place.</p>
           <p className="mb-3 text-xs text-muted">
             Confirm to take your listing off-market, or decline if that’s not right. If you do nothing, it closes
             automatically after 24 hours.
@@ -361,7 +397,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
               type="button"
               disabled={closing}
               onClick={handleConfirmSuccess}
-              className="rounded-lg bg-gold px-4 py-2 text-sm font-medium text-ink transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-60"
             >
               Confirm — take off-market
             </button>
@@ -369,7 +405,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
               type="button"
               disabled={closing}
               onClick={handleDeclineSuccess}
-              className="rounded-lg border border-white/15 px-4 py-2 text-sm text-paper transition hover:border-white/30 disabled:opacity-60"
+              className="rounded-lg border border-black/15 px-4 py-2 text-sm text-ink transition hover:border-black/30 disabled:opacity-60"
             >
               Decline
             </button>
@@ -379,8 +415,8 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
 
       {/* Lister close-request / seeker confirm */}
       {isActive && closeRequested && role === 'seeker' && (
-        <div className="mb-4 rounded-xl border border-gold/30 bg-gold/5 p-4">
-          <p className="mb-1 font-medium text-paper">The lister asked to close this chat.</p>
+        <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
+          <p className="mb-1 font-medium text-ink">The lister asked to close this chat.</p>
           <p className="mb-3 text-xs text-muted">
             Confirm to release it, or just send a message to keep it active. If you do nothing, it closes
             automatically after 24 hours.
@@ -389,25 +425,25 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
             type="button"
             disabled={closing}
             onClick={handleConfirmClose}
-            className="rounded-lg bg-gold px-4 py-2 text-sm font-medium text-ink transition hover:brightness-110 disabled:opacity-60"
+            className="rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-60"
           >
             Confirm close
           </button>
         </div>
       )}
       {isActive && closeRequested && role === 'lister' && (
-        <div className="mb-4 rounded-xl border border-white/10 bg-ink/40 p-3 text-sm text-muted">
+        <div className="mb-4 rounded-xl border border-black/10 bg-white p-3 text-sm text-muted">
           Close requested — the seeker has 24h to respond or the chat auto-frees.
         </div>
       )}
       {listerCanRequest && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-ink/40 p-3">
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-white p-3">
           <p className="text-sm text-muted">The seeker hasn’t replied in over 24 hours.</p>
           <button
             type="button"
             disabled={closing}
             onClick={handleRequestClose}
-            className="shrink-0 rounded-lg border border-white/15 px-3 py-1.5 text-sm text-paper transition hover:border-white/30 disabled:opacity-60"
+            className="shrink-0 rounded-lg border border-black/15 px-3 py-1.5 text-sm text-ink transition hover:border-black/30 disabled:opacity-60"
           >
             Request close
           </button>
@@ -416,8 +452,8 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
 
       {/* Close panel */}
       {closeOpen && isActive && role === 'seeker' && (
-        <div className="mb-4 rounded-xl border border-gold/30 bg-gold/5 p-4">
-          <p className="mb-1 font-medium text-paper">How did it go?</p>
+        <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
+          <p className="mb-1 font-medium text-ink">How did it go?</p>
           <p className="mb-3 text-xs text-muted">
             “Didn’t work out” uses this credit and lets you open your next one.
           </p>
@@ -426,7 +462,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
               type="button"
               disabled={closing}
               onClick={handleReportSuccess}
-              className="rounded-lg bg-gold px-4 py-2 text-sm font-medium text-ink transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-60"
             >
               Got the place
             </button>
@@ -434,7 +470,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
               type="button"
               disabled={closing}
               onClick={() => handleClose('closed_didnt_work')}
-              className="rounded-lg border border-white/15 px-4 py-2 text-sm text-paper transition hover:border-white/30 disabled:opacity-60"
+              className="rounded-lg border border-black/15 px-4 py-2 text-sm text-ink transition hover:border-black/30 disabled:opacity-60"
             >
               Didn’t work out
             </button>
@@ -443,9 +479,32 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       )}
 
       {/* Safety message — pinned first in the thread */}
-      <div className="mb-3 rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3 text-xs leading-relaxed text-muted">
-        Keep the conversation on Ten2Ten. Never share sensitive financial details, and meet in a safe, public way.
-      </div>
+      <ul className="mb-3 list-disc space-y-1 rounded-lg border border-black/10 bg-black/[0.02] py-3 pl-8 pr-4 text-xs leading-relaxed text-muted">
+        <li>Keep the conversation on Ten2Ten.</li>
+        <li>Never share sensitive financial details, and meet in a safe, public space.</li>
+        <li>Verify by asking for physical ID when you meet in person.</li>
+        {role === 'seeker' ? (
+          <>
+            <li>Ask if the gratuity is negotiable.</li>
+            <li>Don’t pay in advance.</li>
+            <li>Ask for a receipt for any money paid.</li>
+            <li>Your credit score has been shared with the lister already.</li>
+          </>
+        ) : (
+          <>
+            <li>Communicate with the landlord to make sure the prospective tenant can meet the requirements.</li>
+            <li>
+              We’ve shared a verified credit-score range for this prospective renter — ask them for the precise
+              figure if you need it.
+            </li>
+            <li>
+              Don’t take any advances until you’re certain the tenant is a good fit, and before discussing important
+              details such as the move-in date.
+            </li>
+            <li>Be honest when disclosing any critical details about the place, to the best of your knowledge.</li>
+          </>
+        )}
+      </ul>
 
       {/* Thread */}
       <div className="flex-1 space-y-3 overflow-y-auto py-2">
@@ -458,7 +517,9 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
               <div key={m.id} className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
                 <div
                   className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
-                    mine ? 'bg-gold text-ink' : 'border border-white/10 bg-ink/40 text-paper'
+                    mine
+                      ? 'bg-gradient-cobalt text-white'
+                      : 'bg-gradient-to-br from-fuchsia-600 to-pink-500 text-white'
                   }`}
                 >
                   {m.body}
@@ -472,7 +533,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       </div>
 
       {actionError && (
-        <p role="alert" className="mb-2 text-sm text-red-400">
+        <p role="alert" className="mb-2 text-sm text-red-600">
           {actionError}
         </p>
       )}
@@ -484,20 +545,20 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Write a message…"
-            className="flex-1 rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           />
           <button
             type="submit"
             disabled={sending || !body.trim()}
-            className="rounded-lg bg-gold px-5 py-2.5 font-medium text-ink transition hover:brightness-110 disabled:opacity-50"
+            className="rounded-lg bg-gradient-cobalt px-5 py-2.5 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
             Send
           </button>
         </form>
       ) : (
-        <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3 text-center text-sm text-muted">
+        <div className="mt-2 rounded-lg border border-black/10 bg-black/[0.02] px-4 py-3 text-center text-sm text-muted">
           <p className="mb-2">{closedLabel}</p>
-          <Link href={`/${locale}/chats/${id}/rate`} className="text-gold hover:underline">
+          <Link href={`/${locale}/chats/${id}/rate`} className="text-cobalt hover:underline">
             Rate this conversation
           </Link>
         </div>

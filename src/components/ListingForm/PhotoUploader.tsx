@@ -113,14 +113,14 @@ export function PhotoUploader({
     <div>
       <p className="mb-1.5 text-sm text-muted">
         {label}
-        {required && <span className="text-gold"> *</span>}
+        {required && <span className="text-cobalt"> *</span>}
       </p>
       <div className="flex items-center gap-3">
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={photo.url} alt={label} className="h-20 w-20 rounded-lg object-cover" />
         ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-white/20 text-xs text-muted/60">
+          <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-black/20 text-xs text-muted/60">
             {busy ? '…' : ''}
           </div>
         )}
@@ -129,7 +129,7 @@ export function PhotoUploader({
             type="button"
             disabled={busy}
             onClick={() => inputRef.current?.click()}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-paper hover:border-white/30 disabled:opacity-50"
+            className="rounded-lg border border-black/15 px-3 py-1.5 text-sm text-ink hover:border-black/30 disabled:opacity-50"
           >
             {busy ? labels.uploading : photo ? labels.replace : labels.upload}
           </button>
@@ -138,7 +138,7 @@ export function PhotoUploader({
               type="button"
               disabled={busy}
               onClick={handleRemove}
-              className="text-xs text-muted hover:text-red-400"
+              className="text-xs text-muted hover:text-red-600"
             >
               {labels.remove}
             </button>
@@ -147,7 +147,7 @@ export function PhotoUploader({
         <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       </div>
       {error && (
-        <p role="alert" className="mt-1 text-xs text-red-400">
+        <p role="alert" className="mt-1 text-xs text-red-600">
           {error}
         </p>
       )}

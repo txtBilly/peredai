@@ -98,6 +98,7 @@ create table listings (
   id                uuid primary key default uuid_generate_v4(),
   lister_id         uuid not null references profiles(id) on delete cascade,
   status            listing_status not null default 'draft',
+  lister_unseen     boolean not null default false,  -- status changed; drives List-nav red dot
 
   -- Location: street number is NEVER shown until a chat opens.
   neighborhood      text,                            -- "Williamsburg, Brooklyn"
@@ -110,6 +111,7 @@ create table listings (
   monthly_rent      int,                             -- USD
   sqft              int,
   floor             text,
+  bathrooms         numeric(3,1),                    -- e.g. 1, 1.5, 2
   available_from    date,
   move_out_window_start date,
   move_out_window_end   date,
@@ -155,9 +157,11 @@ create index on listing_photos (listing_id);
 
 -- Seekers favouriting a listing (to be notified when it frees up)
 create table favourites (
-  seeker_id   uuid not null references profiles(id) on delete cascade,
-  listing_id  uuid not null references listings(id) on delete cascade,
-  created_at  timestamptz not null default now(),
+  seeker_id    uuid not null references profiles(id) on delete cascade,
+  listing_id   uuid not null references listings(id) on delete cascade,
+  created_at   timestamptz not null default now(),
+  -- Set true when a saved listing reopens; drives the Saved-nav red dot.
+  freed_unseen boolean not null default false,
   primary key (seeker_id, listing_id)
 );
 

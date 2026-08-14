@@ -46,10 +46,10 @@ export default function RateView({ locale, chatId }: { locale: Locale; chatId: s
   if (phase === 'done') {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <h1 className="mb-2 font-display text-2xl text-paper">Thanks for the feedback</h1>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <h1 className="mb-2 font-display text-2xl text-ink">Thanks for the feedback</h1>
         <p className="mb-8 text-sm text-muted">Your rating helps keep the community trustworthy.</p>
-        <Link href={backHref} className="text-sm text-gold hover:underline">
+        <Link href={backHref} className="text-sm text-cobalt hover:underline">
           Back
         </Link>
       </main>
@@ -58,8 +58,8 @@ export default function RateView({ locale, chatId }: { locale: Locale; chatId: s
 
   return (
     <main className="mx-auto max-w-md px-5 py-12">
-      <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-      <h1 className="mb-2 font-display text-2xl text-paper">How was it?</h1>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <h1 className="mb-2 font-display text-2xl text-ink">How was it?</h1>
       <p className="mb-6 text-sm text-muted">Rate your experience. Two confirmed bad reports lead to removal.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -71,7 +71,7 @@ export default function RateView({ locale, chatId }: { locale: Locale; chatId: s
               onClick={() => setStars(n)}
               onMouseEnter={() => setHover(n)}
               aria-label={`${n} star${n > 1 ? 's' : ''}`}
-              className={`text-3xl transition ${(hover || stars) >= n ? 'text-gold' : 'text-white/20'}`}
+              className={`text-3xl transition ${(hover || stars) >= n ? 'text-cobalt' : 'text-white/20'}`}
             >
               ★
             </button>
@@ -84,12 +84,12 @@ export default function RateView({ locale, chatId }: { locale: Locale; chatId: s
             rows={4}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="rounded-lg border border-white/15 bg-ink/40 px-3 py-2 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="rounded-lg border border-black/15 bg-white px-3 py-2 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           />
         </label>
 
         {phase === 'error' && (
-          <p role="alert" className="text-sm text-red-400">
+          <p role="alert" className="text-sm text-red-600">
             Something went wrong ({error}). Please try again.
           </p>
         )}
@@ -98,11 +98,11 @@ export default function RateView({ locale, chatId }: { locale: Locale; chatId: s
           <button
             type="submit"
             disabled={stars < 1 || phase === 'submitting'}
-            className="rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-50"
+            className="rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
             {phase === 'submitting' ? 'Submitting…' : 'Submit rating'}
           </button>
-          <Link href={backHref} className="text-sm text-muted hover:text-paper">
+          <Link href={backHref} className="text-sm text-muted hover:text-ink">
             Skip
           </Link>
         </div>

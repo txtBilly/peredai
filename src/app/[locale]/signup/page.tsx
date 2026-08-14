@@ -147,17 +147,17 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
   if (status === 'confirm') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-16">
-        <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-        <div className="rounded-2xl border border-sage/40 bg-sage/10 p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-sage/20">
-            <span className="text-2xl text-sage">✓</span>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <div className="rounded-2xl border border-leaf/40 bg-leaf/10 p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-leaf/20">
+            <span className="text-2xl text-leaf">✓</span>
           </div>
-          <h1 className="mb-2 font-display text-2xl text-paper">{d.auth.confirmTitle}</h1>
+          <h1 className="mb-2 font-display text-2xl text-ink">{d.auth.confirmTitle}</h1>
           <p className="text-sm text-muted">{d.auth.confirmBody.replace('{email}', email)}</p>
         </div>
         <p className="mt-6 text-center text-sm text-muted">
           {d.auth.haveAccount}{' '}
-          <Link href={`/${locale}/signin`} className="text-paper underline-offset-2 hover:underline">
+          <Link href={`/${locale}/signin`} className="text-ink underline-offset-2 hover:underline">
             {d.auth.signInLink}
           </Link>
         </p>
@@ -166,13 +166,13 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
   }
 
   const fieldClass =
-    'w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold';
+    'w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt';
   const labelClass = 'mb-1.5 block text-sm text-muted';
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-5 py-16">
-      <p className="mb-2 text-sm uppercase tracking-wide text-gold">Ten2Ten</p>
-      <h1 className="mb-8 font-display text-3xl text-paper">{d.auth.signUp}</h1>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <h1 className="mb-8 font-display text-3xl text-ink">{d.auth.signUp}</h1>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div>
@@ -274,8 +274,8 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
                 key={value}
                 className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm transition ${
                   spokenLanguages.includes(value)
-                    ? 'border-gold bg-gold text-ink'
-                    : 'border-white/15 text-muted hover:border-white/30 hover:text-paper'
+                    ? 'border-cobalt bg-gradient-cobalt text-white'
+                    : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
                 }`}
               >
                 <input
@@ -299,8 +299,8 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
                 key={value}
                 className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm transition ${
                   intent === value
-                    ? 'border-gold bg-gold text-ink'
-                    : 'border-white/15 text-muted hover:border-white/30 hover:text-paper'
+                    ? 'border-cobalt bg-gradient-cobalt text-white'
+                    : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
                 }`}
               >
                 <input
@@ -323,24 +323,24 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
             required
             checked={consented}
             onChange={(e) => setConsented(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/30 bg-ink/40 accent-gold"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/30 bg-white accent-cobalt"
           />
           <span>
             {renderTemplate(d.auth.consentTemplate, {
               terms: (
-                <Link href={`/${locale}/terms`} className="text-paper underline-offset-2 hover:underline">
+                <Link href={`/${locale}/terms`} className="text-ink underline-offset-2 hover:underline">
                   {d.auth.consentTermsLabel}
                 </Link>
               ),
               privacy: (
-                <Link href={`/${locale}/privacy`} className="text-paper underline-offset-2 hover:underline">
+                <Link href={`/${locale}/privacy`} className="text-ink underline-offset-2 hover:underline">
                   {d.auth.consentPrivacyLabel}
                 </Link>
               ),
               identity: (
                 <Link
                   href={`/${locale}/identity-consent`}
-                  className="text-paper underline-offset-2 hover:underline"
+                  className="text-ink underline-offset-2 hover:underline"
                 >
                   {d.auth.consentIdentityLabel}
                 </Link>
@@ -352,7 +352,7 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
         {error && (
           <p
             role="alert"
-            className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400"
+            className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600"
           >
             {error}
           </p>
@@ -361,7 +361,7 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
         <button
           type="submit"
           disabled={status === 'submitting' || !consented}
-          className="w-full rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110 disabled:opacity-50"
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
         >
           {status === 'submitting' ? d.auth.signingUp : d.auth.signUp}
         </button>
@@ -369,7 +369,7 @@ export default function SignUpPage({ params }: { params: { locale: string } }) {
 
       <p className="mt-6 text-center text-sm text-muted">
         {d.auth.haveAccount}{' '}
-        <Link href={`/${locale}/signin`} className="text-paper underline-offset-2 hover:underline">
+        <Link href={`/${locale}/signin`} className="text-ink underline-offset-2 hover:underline">
           {d.auth.signInLink}
         </Link>
       </p>

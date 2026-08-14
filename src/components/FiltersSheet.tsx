@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { EMPTY_FILTERS, type BrowseFilters } from '@/lib/listings';
 
 const fieldClass =
-  'w-full rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold';
+  'w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt';
 const labelClass = 'mb-1.5 block text-sm text-muted';
 
 export function FiltersSheet({
@@ -57,11 +57,11 @@ export function FiltersSheet({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/70 sm:items-center" role="dialog" aria-modal="true">
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-white/10 bg-ink p-6 sm:rounded-2xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-white/90 sm:items-center" role="dialog" aria-modal="true">
+      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-black/10 bg-white p-6 sm:rounded-2xl">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="font-display text-xl text-paper">{labels.title}</h2>
-          <button onClick={onClose} aria-label={labels.close} className="text-muted hover:text-paper">
+          <h2 className="font-display text-xl text-ink">{labels.title}</h2>
+          <button onClick={onClose} aria-label={labels.close} className="text-muted hover:text-ink">
             ✕
           </button>
         </div>
@@ -132,7 +132,7 @@ export function FiltersSheet({
                 <label
                   key={key}
                   className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm transition ${
-                    draft[key] ? 'border-gold bg-gold text-ink' : 'border-white/15 text-muted hover:border-white/30 hover:text-paper'
+                    draft[key] ? 'border-cobalt bg-gradient-cobalt text-white' : 'border-black/15 text-muted hover:border-black/30 hover:text-white'
                   }`}
                 >
                   <input
@@ -152,14 +152,14 @@ export function FiltersSheet({
           <button
             type="button"
             onClick={() => setDraft(EMPTY_FILTERS)}
-            className="flex-1 rounded-lg border border-white/15 px-5 py-3 font-medium text-paper hover:border-white/30"
+            className="flex-1 rounded-lg border border-black/15 px-5 py-3 font-medium text-ink hover:border-black/30"
           >
             {labels.clear}
           </button>
           <button
             type="button"
             onClick={() => onApply(draft)}
-            className="flex-1 rounded-lg bg-gold px-5 py-3 font-medium text-ink transition hover:brightness-110"
+            className="flex-1 rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110"
           >
             {labels.apply}
           </button>

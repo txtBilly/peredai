@@ -2,18 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Georgia', 'Times New Roman', serif;
+/* --font-sans / --font-mono / --font-logo come from next/font on <html>.
+   Headings intentionally use system Helvetica; overriding the variable here
+   (rather than only in the Tailwind config) makes it apply on a CSS hot-reload
+   without a full rebuild. */
+html:root {
+  --font-display: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Scale the whole UI up — Tailwind's rem-based sizes/spacing follow this. */
+  font-size: 112.5%; /* 18px base */
 }
 
 body {
-  background: #1a1a18;
-  color: #f5f3ee;
+  background: #ffffff;
+  color: #14140f;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
@@ -30,6 +35,22 @@ body {
 
 /* Focus visibility — accessibility floor */
 :focus-visible {
-  outline: 2px solid #c9a227;
+  outline: 2px solid #1b4de4;
   outline-offset: 2px;
+}
+
+/* Neo-Classified: cobalt→violet gradient for the wordmark and brand moments. */
+.text-gradient-cobalt {
+  background: linear-gradient(120deg, #1b4de4, #5b2bff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Light page shell for converted Neo-Classified routes (Browse, listing detail)
+   while the rest of the app is still on the dark theme. */
+.neo-page {
+  background: #ffffff;
+  color: #14140f;
+  min-height: 100vh;
 }
