@@ -1,0 +1,42 @@
+import { NextResponse } from 'next/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { applyVerificationResult } from '@/lib/identity/apply';
+
+// DEV-ONLY escape hatch. Real verification finalizes via the provider webhook
+// (Stripe) or inline (mock); when neither is wired up locally, a member can get
+// stuck on "pending" forever. This marks the current user verified directly so
+// testing can continue. Hard-gated to development — returns 404 in production.
+export async function POST() {
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('full_name, display_first_name')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const vendorRef = `dev_${user.id.slice(0, 8)}_${Date.now()}`;
+  await admin
+    .from('identity_documents')
+    .insert({ user_id: user.id, kind: 'mock', vendor_ref: vendorRef, status: 'pending' });
+
+  await applyVerificationResult(admin, user.id, vendorRef, {
+    status: 'verified',
+    age: 30,
+    vendorRef,
+    // Keep an existing verified name; otherwise seed one so the listing flow
+    // (which locks contact name to the verified name) has something to show.
+    fullName: profile?.full_name || profile?.display_first_name || 'Test Verified User',
+  });
+
+  return NextResponse.json({ status: 'verified' });
+}

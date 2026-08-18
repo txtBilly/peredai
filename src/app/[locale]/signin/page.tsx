@@ -31,7 +31,10 @@ export default function SignInPage({ params }: { params: { locale: string } }) {
       return;
     }
 
-    router.push(`/${locale}/account`);
+    // Hand off to the home router, which sends the user to the right default:
+    // an open chat → the chat, a lister → their listings, otherwise Browse.
+    // (Account is never a default landing page.)
+    router.replace(`/${locale}`);
     router.refresh();
   }
 

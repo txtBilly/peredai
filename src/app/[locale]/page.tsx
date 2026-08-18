@@ -17,6 +17,19 @@ export default function Home({ params }: { params: { locale: string } }) {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
+        // An open conversation is the default landing spot for both parties.
+        // Two open chats (renter + lister) → the chat list; one → that chat.
+        const { data: chats } = await supabase
+          .from('chats')
+          .select('id')
+          .or(`seeker_id.eq.${user.id},lister_id.eq.${user.id}`)
+          .eq('status', 'active')
+          .limit(2);
+        if (chats && chats.length > 0) {
+          router.replace(chats.length === 1 ? `/${locale}/chats/${chats[0].id}` : `/${locale}/chats`);
+          return;
+        }
+
         const { data: active } = await supabase
           .from('listings')
           .select('id')

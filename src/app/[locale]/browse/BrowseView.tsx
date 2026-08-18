@@ -94,6 +94,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         if (typeFilter !== 'all') query = query.eq('type', typeFilter);
         if (filters.rentMin) query = query.gte('monthly_rent', Number(filters.rentMin));
         if (filters.rentMax) query = query.lte('monthly_rent', Number(filters.rentMax));
+        if (filters.bathrooms) query = query.gte('bathrooms', Number(filters.bathrooms));
         if (filters.zip.trim()) query = query.eq('zip', filters.zip.trim());
         if (filters.moveInBy) query = query.lte('available_from', filters.moveInBy);
         if (filters.laundry) query = query.eq('laundry', true);
@@ -240,6 +241,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     activeChips.push({ key: 'rmin', label: `≥ $${filters.rentMin}`, remove: () => setFilters((f) => ({ ...f, rentMin: '' })) });
   if (filters.rentMax)
     activeChips.push({ key: 'rmax', label: `≤ $${filters.rentMax}`, remove: () => setFilters((f) => ({ ...f, rentMax: '' })) });
+  if (filters.bathrooms)
+    activeChips.push({ key: 'bath', label: `${filters.bathrooms}+ ba`, remove: () => setFilters((f) => ({ ...f, bathrooms: '' })) });
   if (filters.zip.trim())
     activeChips.push({ key: 'zip', label: filters.zip.trim(), remove: () => setFilters((f) => ({ ...f, zip: '' })) });
   if (filters.moveInBy)
@@ -414,6 +417,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           title: b.filtersTitle,
           rentMin: b.rentMinLabel,
           rentMax: b.rentMaxLabel,
+          bathrooms: b.bathroomsFilterLabel,
           zip: b.zipLabel,
           moveInBy: b.moveInByLabel,
           laundry: l.amenityLaundry,

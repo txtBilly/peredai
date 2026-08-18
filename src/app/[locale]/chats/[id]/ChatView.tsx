@@ -283,14 +283,21 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
   const isActive = chat.status === 'active';
   const successReported = !!chat.seeker_success_at;
   const closeRequested = !!chat.lister_close_requested_at;
-  // Seeker's most recent activity — their last message, or chat open if none.
-  const seekerLastActive = messages.reduce(
-    (latest, m) => (m.sender_id === chat.seeker_id && m.created_at > latest ? m.created_at : latest),
-    chat.opened_at
-  );
-  const seekerIdleHrs = (Date.now() - new Date(seekerLastActive).getTime()) / 3_600_000;
+  // Whoever did NOT send the last message owes the next one. The lister may only
+  // request close when the SEEKER owes a reply — i.e. the lister (or nobody)
+  // spoke last and the seeker has stayed silent ≥24h. If the seeker spoke last,
+  // the lister owes the reply and can't claim the seeker went quiet.
+  const lastMsg = messages.length ? messages[messages.length - 1] : null;
+  const seekerSpokeLast = !!lastMsg && lastMsg.sender_id === chat.seeker_id;
+  const lastActivityAt = lastMsg ? lastMsg.created_at : chat.opened_at;
+  const seekerIdleHrs = (Date.now() - new Date(lastActivityAt).getTime()) / 3_600_000;
   const listerCanRequest =
-    role === 'lister' && isActive && !closeRequested && !successReported && seekerIdleHrs >= 24;
+    role === 'lister' &&
+    isActive &&
+    !closeRequested &&
+    !successReported &&
+    !seekerSpokeLast &&
+    seekerIdleHrs >= 24;
   const otherName = role === 'seeker' ? listing?.contact_name ?? '—' : chat.disclosed_seeker_name ?? '—';
   const gratuityLabel =
     listing?.gratitude_amount != null && listing.gratitude_amount > 0
@@ -326,10 +333,10 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
         <div className="min-w-0 flex-1 rounded-xl border border-black/10 bg-white p-3 text-sm">
           {role === 'seeker' ? (
             <div className="space-y-3">
-              <p className="flex items-center gap-x-2">
-                <span className="text-[1.23rem] font-bold text-ink">{otherName}</span>
-                <span className="font-semibold text-leaf">✓ Verified ID</span>
-                <span className="text-muted">· verified by Stripe</span>
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="whitespace-nowrap text-[1.23rem] font-bold text-ink">{otherName}</span>
+                <span className="whitespace-nowrap font-semibold text-leaf">✓ Verified ID</span>
+                <span className="whitespace-nowrap text-muted">· verified by Stripe</span>
               </p>
               {listing?.full_address && (
                 <p className="text-[1.26rem] text-ink">
@@ -353,9 +360,9 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
             <button
               type="button"
               onClick={() => setCloseOpen((v) => !v)}
-              className="rounded-lg border border-black/15 px-3 py-1.5 text-sm text-ink transition hover:border-black/30"
+              className="rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:border-red-400 hover:bg-red-100"
             >
-              Close chat
+              Terminate chat
             </button>
           )}
         </div>
@@ -450,30 +457,52 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
         </div>
       )}
 
-      {/* Close panel */}
+      {/* Close panel — modal overlay so the choice is unmissable */}
       {closeOpen && isActive && role === 'seeker' && (
-        <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
-          <p className="mb-1 font-medium text-ink">How did it go?</p>
-          <p className="mb-3 text-xs text-muted">
-            “Didn’t work out” uses this credit and lets you open your next one.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={closing}
-              onClick={handleReportSuccess}
-              className="rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-60"
-            >
-              Got the place
-            </button>
-            <button
-              type="button"
-              disabled={closing}
-              onClick={() => handleClose('closed_didnt_work')}
-              className="rounded-lg border border-black/15 px-4 py-2 text-sm text-ink transition hover:border-black/30 disabled:opacity-60"
-            >
-              Didn’t work out
-            </button>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="terminate-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !closing && setCloseOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="terminate-title" className="mb-1 font-display text-2xl text-ink">
+              How did it go?
+            </h2>
+            <p className="mb-5 text-sm text-muted">
+              Terminating ends this conversation. Choose an outcome — “Didn’t work out” uses this credit and lets you
+              open your next one.
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <button
+                type="button"
+                disabled={closing}
+                onClick={handleReportSuccess}
+                className="w-full rounded-lg bg-gradient-cobalt px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              >
+                Got the place
+              </button>
+              <button
+                type="button"
+                disabled={closing}
+                onClick={() => handleClose('closed_didnt_work')}
+                className="w-full rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 transition hover:border-red-400 hover:bg-red-100 disabled:opacity-60"
+              >
+                Didn’t work out
+              </button>
+              <button
+                type="button"
+                disabled={closing}
+                onClick={() => setCloseOpen(false)}
+                className="w-full rounded-lg px-4 py-2.5 text-sm text-muted transition hover:text-ink disabled:opacity-60"
+              >
+                Keep chatting
+              </button>
+            </div>
           </div>
         </div>
       )}

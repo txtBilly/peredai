@@ -22,6 +22,7 @@ export function FiltersSheet({
     title: string;
     rentMin: string;
     rentMax: string;
+    bathrooms: string;
     zip: string;
     moveInBy: string;
     laundry: string;
@@ -79,7 +80,7 @@ export function FiltersSheet({
                 step={1}
                 value={draft.rentMin}
                 onChange={(e) => setDraft((cur) => ({ ...cur, rentMin: e.target.value }))}
-                className={fieldClass}
+                className={`${fieldClass} no-spinner`}
               />
             </div>
             <div>
@@ -93,7 +94,7 @@ export function FiltersSheet({
                 step={1}
                 value={draft.rentMax}
                 onChange={(e) => setDraft((cur) => ({ ...cur, rentMax: e.target.value }))}
-                className={fieldClass}
+                className={`${fieldClass} no-spinner`}
               />
             </div>
           </div>
@@ -126,13 +127,39 @@ export function FiltersSheet({
             />
           </div>
 
+          <div>
+            <span className={labelClass}>{labels.bathrooms}</span>
+            <div className="flex flex-wrap gap-2">
+              {['1', '2', '3'].map((n) => {
+                const active = draft.bathrooms === n;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() =>
+                      setDraft((cur) => ({ ...cur, bathrooms: cur.bathrooms === n ? '' : n }))
+                    }
+                    className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm transition ${
+                      active
+                        ? 'border-cobalt bg-gradient-cobalt text-white'
+                        : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
+                    }`}
+                  >
+                    {n}+
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <fieldset>
             <div className="flex flex-wrap gap-2">
               {amenities.map(({ key, label }) => (
                 <label
                   key={key}
                   className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm transition ${
-                    draft[key] ? 'border-cobalt bg-gradient-cobalt text-white' : 'border-black/15 text-muted hover:border-black/30 hover:text-white'
+                    draft[key] ? 'border-cobalt bg-gradient-cobalt text-white' : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
                   }`}
                 >
                   <input

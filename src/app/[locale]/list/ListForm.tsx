@@ -551,12 +551,11 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
   if (phase === 'pending_review') {
     return (
-      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <main className="mx-auto flex min-h-[40vh] max-w-md flex-col items-center justify-center px-5 py-10 text-center">
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15">
           <span className="text-2xl text-amber-700">⏳</span>
         </div>
-        <h1 className="mb-2 font-display text-2xl text-ink">{l.reviewPendingTitle}</h1>
+        <h1 className="mb-2 font-display text-2xl font-bold text-ink">{l.reviewPendingTitle}</h1>
         <p className="mb-8 text-sm text-muted">{l.reviewPendingBody}</p>
         <Link
           href={`/${locale}/browse`}
@@ -578,10 +577,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
         <h1 className="mb-2 font-display text-3xl text-ink">{l.successTitle}</h1>
         <p className="mb-8 text-sm text-muted">{l.successBody}</p>
         <Link
-          href={`/${locale}/account`}
+          href={listingId ? `/${locale}/browse/${listingId}` : `/${locale}/list/mine`}
           className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110"
         >
-          {l.backToAccount}
+          {l.viewListingCta}
         </Link>
       </main>
     );

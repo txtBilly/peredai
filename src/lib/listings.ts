@@ -36,6 +36,7 @@ export function listingTypeLabel(type: string | null, l: TypeLabelDict): string 
 export type BrowseFilters = {
   rentMin: string;
   rentMax: string;
+  bathrooms: string; // minimum bathrooms ('', '1', '2', '3')
   zip: string;
   moveInBy: string;
   laundry: boolean;
@@ -50,6 +51,7 @@ export type BrowseFilters = {
 export const EMPTY_FILTERS: BrowseFilters = {
   rentMin: '',
   rentMax: '',
+  bathrooms: '',
   zip: '',
   moveInBy: '',
   laundry: false,

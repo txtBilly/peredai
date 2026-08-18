@@ -10,6 +10,17 @@ html:root {
   --font-display: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/* Hide the up/down spinner on number inputs that opt in via .no-spinner. */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   /* Scale the whole UI up — Tailwind's rem-based sizes/spacing follow this. */

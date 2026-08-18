@@ -32,7 +32,6 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
   const [drafts, setDrafts] = useState<ListingRow[]>([]);
   const [yearlyCount, setYearlyCount] = useState(0);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [chatStub, setChatStub] = useState(false);
 
   useEffect(() => {
     let settled = false;
@@ -179,21 +178,14 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
                 {activeListing.type ? ` · ${listingTypeLabel(activeListing.type, l)}` : ''}
               </p>
               <div className="mt-1 flex items-center gap-4">
-                {activeChatId ? (
+                {/* Only surface a chat link once a seeker has actually connected. */}
+                {activeChatId && (
                   <Link
                     href={`/${locale}/chats/${activeChatId}`}
                     className="self-start text-sm text-cobalt hover:underline"
                   >
                     {m.chatCta}
                   </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setChatStub(true)}
-                    className="self-start text-sm text-cobalt hover:underline"
-                  >
-                    {m.chatCta}
-                  </button>
                 )}
                 {activeListing.status === 'active' && (
                   <Link
@@ -204,7 +196,6 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
                   </Link>
                 )}
               </div>
-              {chatStub && <p className="text-xs text-muted">{m.chatStub}</p>}
             </div>
           </div>
         ) : (

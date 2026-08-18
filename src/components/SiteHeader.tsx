@@ -16,13 +16,18 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
   // index; silent for signed-out visitors.
   let savedHasUnseen = false;
   let listHasUnseen = false;
+  // Open-conversation rules: a seeker with a live chat can't browse (Browse is
+  // disabled and routes back to the chat); a lister with a live chat keeps a
+  // persistent red dot on List. Both get a Chat shortcut.
+  let seekerChatId: string | null = null;
+  let listerChatId: string | null = null;
   try {
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      const [{ count: savedCount }, { count: listCount }] = await Promise.all([
+      const [{ count: savedCount }, { count: listCount }, { data: sChat }, { data: lChat }] = await Promise.all([
         supabase
           .from('favourites')
           .select('seeker_id', { count: 'exact', head: true })
@@ -33,21 +38,54 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
           .select('id', { count: 'exact', head: true })
           .eq('lister_id', user.id)
           .eq('lister_unseen', true),
+        supabase
+          .from('chats')
+          .select('id')
+          .eq('seeker_id', user.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('chats')
+          .select('id')
+          .eq('lister_id', user.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle(),
       ]);
       savedHasUnseen = (savedCount ?? 0) > 0;
       listHasUnseen = (listCount ?? 0) > 0;
+      seekerChatId = sChat?.id ?? null;
+      listerChatId = lChat?.id ?? null;
     }
   } catch {
     // Never let a badge lookup break the header.
   }
 
+  // A user can hold one chat as a renter and one as a lister at the same time;
+  // both appear under the Chat menu.
+  const chatLinks: { id: string; label: string }[] = [];
+  if (seekerChatId) chatLinks.push({ id: seekerChatId, label: dict.nav.chatAsRenter });
+  if (listerChatId) chatLinks.push({ id: listerChatId, label: dict.nav.chatAsLister });
+  // The Chat nav now signals open conversations, so the List dot only reflects
+  // an unseen listing status change (not the open chat itself).
+  const listShowsDot = listHasUnseen;
+
   return (
     <header className="mx-auto flex max-w-6xl items-center justify-between border-b border-black/[0.06] px-5 py-4">
       <Link href={`/${locale}/browse`} aria-label={dict.brand.name} className="inline-flex">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ten2ten-logo.svg?v=3" alt={dict.brand.name} className="h-7 w-auto" />
+        <img src="/ten2ten-logo.svg?v=5" alt={dict.brand.name} className="h-7 w-auto" />
       </Link>
       <nav className="flex items-center gap-5 text-sm text-muted">
+        {chatLinks.length > 0 && (
+          <Link
+            href={chatLinks.length === 1 ? `/${locale}/chats/${chatLinks[0].id}` : `/${locale}/chats`}
+            className="font-medium text-cobalt hover:text-cobalt2"
+          >
+            {dict.nav.chat}
+          </Link>
+        )}
         <Link href={`/${locale}/browse`} className="hover:text-ink">
           {dict.nav.browse}
         </Link>
@@ -65,7 +103,7 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
         </Link>
         <Link href={`/${locale}/list`} className="relative hover:text-ink">
           {dict.nav.list}
-          {listHasUnseen && (
+          {listShowsDot && (
             <span
               aria-label="Listing activity"
               className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
