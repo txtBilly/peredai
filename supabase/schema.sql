@@ -101,6 +101,7 @@ create table listings (
   lister_unseen     boolean not null default false,  -- status changed; drives List-nav red dot
 
   -- Location: street number is NEVER shown until a chat opens.
+  city              text,                            -- "New York City" (Browse city filter)
   neighborhood      text,                            -- "Williamsburg, Brooklyn"
   cross_streets     text,                            -- "Graham Ave & N 1st St"
   full_address      text,                            -- revealed only in active chat

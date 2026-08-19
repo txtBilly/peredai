@@ -13,6 +13,16 @@ export type NotifyEvent = 'bid_accepted' | 'chat_message' | 'listing_freed' | 'e
 
 type EmailContent = { subject: string; html: string };
 
+// Mirrors the column defaults in notification_prefs (schema.sql). Used when a
+// user has no prefs row yet — no row is auto-created at signup, so without this
+// fallback those members would silently get nothing.
+const DEFAULT_PREFS: Record<NotifyEvent, string[]> = {
+  bid_accepted: ['sms', 'email'],
+  chat_message: ['push'],
+  listing_freed: ['push', 'email'],
+  expiry_warn: ['sms', 'push'],
+};
+
 async function dispatch(userId: string, event: NotifyEvent, sms: string, email?: EmailContent): Promise<void> {
   const admin = createAdminClient();
 
@@ -21,7 +31,11 @@ async function dispatch(userId: string, event: NotifyEvent, sms: string, email?:
     .select(event)
     .eq('user_id', userId)
     .maybeSingle();
-  const channels = ((prefs as Record<string, unknown> | null)?.[event] as string[] | undefined) ?? [];
+  // No prefs row → fall back to the defaults (so notifications still send);
+  // a row present with an explicit empty array means the user opted out.
+  const channels = prefs
+    ? (((prefs as Record<string, unknown>)[event] as string[] | undefined) ?? [])
+    : DEFAULT_PREFS[event];
   if (channels.length === 0) return;
 
   const { data: profile } = await admin

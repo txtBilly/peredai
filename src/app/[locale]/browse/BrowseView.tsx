@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import {
+  DEFAULT_CITY,
+  normalizeCity,
   EMPTY_FILTERS,
   LISTING_TYPES,
   listingPhotoUrl,
@@ -52,6 +54,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
+  const [city, setCity] = useState<string>(DEFAULT_CITY); // '' = all cities
+  const [cityOptions, setCityOptions] = useState<string[]>([DEFAULT_CITY]);
   const [typeFilter, setTypeFilter] = useState<'all' | ListingTypeValue>('all');
   const [filters, setFilters] = useState<BrowseFilters>(EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -65,6 +69,30 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     createClient()
       .auth.getUser()
       .then(({ data: { user } }) => setUserId(user?.id ?? null));
+  }, []);
+
+  // Build the city dropdown from the cities that actually have live listings,
+  // always including the launch city so the default selection is valid.
+  useEffect(() => {
+    let cancelled = false;
+    createClient()
+      .from('listings')
+      .select('city')
+      .in('status', ['active', 'negotiating'])
+      .not('city', 'is', null)
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const unique = Array.from(
+          new Set([
+            DEFAULT_CITY,
+            ...data.map((r) => normalizeCity(r.city as string | null)).filter((c): c is string => !!c),
+          ])
+        ).sort();
+        setCityOptions(unique);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Debounced search + immediate re-query on type/filters change. All
@@ -91,6 +119,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         if (q) {
           query = query.or(`neighborhood.ilike.%${q}%,cross_streets.ilike.%${q}%,zip.ilike.%${q}%`);
         }
+        if (city) query = query.eq('city', city); // '' = all cities
         if (typeFilter !== 'all') query = query.eq('type', typeFilter);
         if (filters.rentMin) query = query.gte('monthly_rent', Number(filters.rentMin));
         if (filters.rentMax) query = query.lte('monthly_rent', Number(filters.rentMax));
@@ -103,7 +132,6 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         if (filters.walkUp) query = query.eq('walk_up', true);
         if (filters.doorman) query = query.eq('doorman', true);
         if (filters.outdoor) query = query.eq('outdoor', true);
-        if (filters.noFee) query = query.eq('no_fee', true);
 
         const { data: rows, error: queryError } = await query;
         if (cancelled) return;
@@ -155,7 +183,6 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           if (row.walk_up) amenityLabels.push(l.amenityWalkUp);
           if (row.doorman) amenityLabels.push(l.amenityDoorman);
           if (row.outdoor) amenityLabels.push(l.amenityOutdoor);
-          if (row.no_fee) amenityLabels.push(l.amenityNoFee);
 
           return {
             id: row.id,
@@ -199,7 +226,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
       clearTimeout(timeoutId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchText, typeFilter, filters, userId, locale]);
+  }, [searchText, city, typeFilter, filters, userId, locale]);
 
   async function handleToggleFavourite(listingId: string, currentlyFavourited: boolean) {
     if (!userId) {
@@ -230,7 +257,6 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     ['walkUp', l.amenityWalkUp],
     ['doorman', l.amenityDoorman],
     ['outdoor', l.amenityOutdoor],
-    ['noFee', l.amenityNoFee],
   ];
   const activeChips: { key: string; label: string; remove: () => void }[] = [];
   if (searchText.trim())
@@ -292,8 +318,36 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      {/* Type tabs — selected state: filled cobalt + bold white, unselected: outlined */}
-      <div className="mt-4 flex flex-wrap gap-2">
+      {/* Scope row: city selector pill + type tabs */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {/* City filter — a pill-styled select leading the type tabs */}
+        <div className="relative shrink-0">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cobalt"
+            fill="currentColor"
+          >
+            <path d="M12 2c-3.9 0-7 3.1-7 7 0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" />
+          </svg>
+          <select
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            aria-label={b.cityFilterLabel}
+            className="appearance-none rounded-full border border-black/20 bg-white py-2 pl-9 pr-8 text-[15px] font-medium text-ink transition hover:border-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
+          >
+            <option value="">{b.cityAll}</option>
+            {cityOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted">▾</span>
+        </div>
+
+        <span className="mx-1 hidden h-6 w-px bg-black/10 sm:block" aria-hidden="true" />
+
         {typeChips.map(({ value, label }) => {
           const selected = typeFilter === value;
           return (
@@ -426,7 +480,6 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           walkUp: l.amenityWalkUp,
           doorman: l.amenityDoorman,
           outdoor: l.amenityOutdoor,
-          noFee: l.amenityNoFee,
           apply: b.applyFiltersCta,
           clear: b.clearFiltersCta,
           close: b.closeCta,

@@ -120,7 +120,6 @@ export default function SavedView({ locale }: { locale: Locale }) {
         if (row.walk_up) amenityLabels.push(l.amenityWalkUp);
         if (row.doorman) amenityLabels.push(l.amenityDoorman);
         if (row.outdoor) amenityLabels.push(l.amenityOutdoor);
-        if (row.no_fee) amenityLabels.push(l.amenityNoFee);
 
         return {
           id: row.id,

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
-import { listingPhotoUrl, listingTypeLabel } from '@/lib/listings';
+import { listingPhotoUrl, listingTypeLabel, cityFromZip } from '@/lib/listings';
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
@@ -65,6 +65,8 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   const [photos, setPhotos] = useState<string[]>([]);
   const [lister, setLister] = useState<Lister | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [emailConfirmed, setEmailConfirmed] = useState(true); // assume ok until known
+  const [resendState, setResendState] = useState<'idle' | 'sent'>('idle');
   const [favourited, setFavourited] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
   const [seekerCreditScore, setSeekerCreditScore] = useState<number | null>(null);
@@ -101,6 +103,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       } = await supabase.auth.getUser();
       if (settled) return;
       setUserId(user?.id ?? null);
+      setEmailConfirmed(!user || !!user.email_confirmed_at);
 
       const { data: row, error: listingError } = await supabase
         .from('listings')
@@ -238,10 +241,12 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           listing_unavailable: 'This listing is no longer available.',
           own_listing: "You can't connect to your own listing.",
           listing_not_found: 'Listing not found.',
+          email_unconfirmed: dd.emailConfirmBody,
           // Deliberately vague — a shadow-banned member must not learn they're
           // restricted. Reads like a transient glitch.
           account_restricted: 'We couldn’t complete that right now. Please try again later.',
         };
+        if (data?.error === 'email_unconfirmed') setEmailConfirmed(false);
         setConnectError(reasons[data?.error] ?? `${dd.connectErrorGeneric} (${data?.error ?? 'error'})`);
         setConnecting(false);
         return;
@@ -251,6 +256,17 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       setConnectError(dd.connectErrorGeneric);
       setConnecting(false);
     }
+  }
+
+  // Re-send the signup confirmation email for an unconfirmed account.
+  async function handleResendConfirmation() {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.email) return;
+    await supabase.auth.resend({ type: 'signup', email: user.email });
+    setResendState('sent');
   }
 
   // Waitlist for a listing that's currently "in conversation": we favourite it
@@ -321,7 +337,6 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   if (listing.walk_up) amenityLabels.push(l.amenityWalkUp);
   if (listing.doorman) amenityLabels.push(l.amenityDoorman);
   if (listing.outdoor) amenityLabels.push(l.amenityOutdoor);
-  if (listing.no_fee) amenityLabels.push(l.amenityNoFee);
 
   const dateLocale = locale === 'es' ? 'es-ES' : 'en-US';
   const availableLabel = listing.available_from
@@ -410,6 +425,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           <p className="text-[1.4rem] leading-snug text-ink/80">
             {listing.cross_streets}
             {listing.zip ? ` · ${listing.zip}` : ''}
+            {cityFromZip(listing.zip) ? ` · ${cityFromZip(listing.zip)}` : ''}
           </p>
         </div>
         <button
@@ -532,6 +548,22 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
               {dd.ownerCta}
             </Link>
           </div>
+        </div>
+      ) : userId && !emailConfirmed ? (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+          <p className="mb-1 font-semibold text-amber-800">{dd.emailConfirmTitle}</p>
+          <p className="mb-3 text-sm text-amber-700">{dd.emailConfirmBody}</p>
+          {resendState === 'sent' ? (
+            <p className="text-sm font-medium text-amber-800">{dd.emailConfirmSent}</p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              className="rounded-lg border border-amber-400 px-4 py-2 text-sm font-medium text-amber-800 transition hover:bg-amber-100"
+            >
+              {dd.emailConfirmResend}
+            </button>
+          )}
         </div>
       ) : hasActiveChat ? (
         <div className="rounded-xl border border-black/10 bg-white p-4">

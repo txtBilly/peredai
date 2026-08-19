@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  // Browsing is open, but connecting requires a confirmed email. (No-op when
+  // email confirmations are disabled — the user is confirmed at signup.)
+  if (!user.email_confirmed_at) return NextResponse.json({ error: 'email_unconfirmed' }, { status: 403 });
 
   let body: unknown;
   try {

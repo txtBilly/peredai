@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { PhotoUploader, toListingPhoto, type ListingPhoto } from '@/components/ListingForm/PhotoUploader';
-import { LISTING_TYPES, listingTypeLabels, type ListingTypeValue } from '@/lib/listings';
+import { LISTING_TYPES, listingTypeLabels, cityFromZip, type ListingTypeValue } from '@/lib/listings';
 
 const MAX_EXTRA_PHOTOS = 5;
 
@@ -52,7 +52,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
   const [walkUp, setWalkUp] = useState(false);
   const [doorman, setDoorman] = useState(false);
   const [outdoor, setOutdoor] = useState(false);
-  const [noFee, setNoFee] = useState(true);
   const [minCreditScore, setMinCreditScore] = useState('');
   const [gratitudeAmount, setGratitudeAmount] = useState('');
   // Contact name is locked to the lister's verified identity (they must be
@@ -68,6 +67,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState('');
+  const [emailConfirmed, setEmailConfirmed] = useState(true); // assume ok until known
+  const [resendState, setResendState] = useState<'idle' | 'sent'>('idle');
   const [activeCount, setActiveCount] = useState(0);
   const [activeListingId, setActiveListingId] = useState<string | null>(null);
   const [yearlyCount, setYearlyCount] = useState(0);
@@ -116,6 +117,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
         router.replace(`/${locale}/signin`);
         return;
       }
+      setEmailConfirmed(!!user.email_confirmed_at);
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -238,7 +240,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
       setWalkUp(!!draft.walk_up);
       setDoorman(!!draft.doorman);
       setOutdoor(!!draft.outdoor);
-      setNoFee(draft.no_fee ?? true);
       setMinCreditScore(draft.min_credit_score != null ? String(draft.min_credit_score) : '');
       setGratitudeAmount(draft.gratitude_amount != null ? String(draft.gratitude_amount) : '');
       // Contact name stays locked to the verified identity, not the draft value.
@@ -291,6 +292,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
         .from('listings')
         .update({
           type: type || null,
+          city: cityFromZip(zip),
           neighborhood: neighborhood.trim() || null,
           cross_streets: crossStreets.trim() || null,
           full_address: fullAddress.trim() || null,
@@ -307,7 +309,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
           walk_up: walkUp,
           doorman,
           outdoor,
-          no_fee: noFee,
           min_credit_score: minCreditScore ? parseInt(minCreditScore, 10) : null,
           gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
           contact_name: contactName.trim() || null,
@@ -337,17 +338,30 @@ export default function ListForm({ locale }: { locale: Locale }) {
     walkUp,
     doorman,
     outdoor,
-    noFee,
     minCreditScore,
     gratitudeAmount,
     contactName,
     contactPhone,
   ]);
 
+  async function handleResendConfirmation() {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.email) return;
+    await supabase.auth.resend({ type: 'signup', email: user.email });
+    setResendState('sent');
+  }
+
   async function handlePublish(e: FormEvent) {
     e.preventDefault();
     setError('');
 
+    if (!emailConfirmed) {
+      setError(l.emailConfirmBody);
+      return;
+    }
     if (activeCount > 0) {
       setError(l.blockActiveListing);
       return;
@@ -400,6 +414,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
       .from('listings')
       .update({
         type,
+        city: cityFromZip(zip),
         neighborhood: neighborhood.trim(),
         cross_streets: crossStreets.trim(),
         full_address: fullAddress.trim(),
@@ -416,7 +431,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
         walk_up: walkUp,
         doorman,
         outdoor,
-        no_fee: noFee,
         min_credit_score: minCreditScore ? parseInt(minCreditScore, 10) : null,
         gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
         contact_name: contactName.trim(),
@@ -487,6 +501,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
       .from('listings')
       .update({
         type,
+        city: cityFromZip(zip),
         neighborhood: neighborhood.trim(),
         cross_streets: crossStreets.trim(),
         full_address: fullAddress.trim(),
@@ -503,7 +518,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
         walk_up: walkUp,
         doorman,
         outdoor,
-        no_fee: noFee,
         min_credit_score: minCreditScore ? parseInt(minCreditScore, 10) : null,
         gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
         contact_name: contactName.trim(),
@@ -614,7 +628,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
     { checked: walkUp, onChange: setWalkUp, label: l.amenityWalkUp },
     { checked: doorman, onChange: setDoorman, label: l.amenityDoorman },
     { checked: outdoor, onChange: setOutdoor, label: l.amenityOutdoor },
-    { checked: noFee, onChange: setNoFee, label: l.amenityNoFee },
   ];
 
   return (
@@ -649,6 +662,23 @@ export default function ListForm({ locale }: { locale: Locale }) {
         <p role="alert" className="mb-6 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
           {l.blockYearlyLimit}
         </p>
+      )}
+      {!emailConfirmed && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+          <p className="mb-1 text-sm font-semibold text-amber-800">{l.emailConfirmTitle}</p>
+          <p className="mb-2 text-sm text-amber-700">{l.emailConfirmBody}</p>
+          {resendState === 'sent' ? (
+            <p className="text-sm font-medium text-amber-800">{l.emailConfirmSent}</p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              className="rounded-lg border border-amber-400 px-3 py-1.5 text-sm font-medium text-amber-800 transition hover:bg-amber-100"
+            >
+              {l.emailConfirmResend}
+            </button>
+          )}
+        </div>
       )}
 
       <form onSubmit={isEditingActive ? handleSaveActive : handlePublish} noValidate className="flex flex-col gap-10">
@@ -780,6 +810,11 @@ export default function ListForm({ locale }: { locale: Locale }) {
                 onChange={(e) => setZip(e.target.value)}
                 className={fieldClass}
               />
+              {cityFromZip(zip) && (
+                <p className="mt-1 text-xs text-muted">
+                  {l.cityLabel}: <span className="font-medium text-ink">{cityFromZip(zip)}</span>
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -1024,7 +1059,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
         <button
           type="submit"
-          disabled={publishing || (!isEditingActive && (activeCount > 0 || yearlyCount >= 3))}
+          disabled={publishing || (!isEditingActive && (activeCount > 0 || yearlyCount >= 3 || !emailConfirmed))}
           className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
         >
           {publishing

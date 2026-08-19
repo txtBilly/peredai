@@ -31,7 +31,6 @@ export function FiltersSheet({
     walkUp: string;
     doorman: string;
     outdoor: string;
-    noFee: string;
     apply: string;
     clear: string;
     close: string;
@@ -54,7 +53,6 @@ export function FiltersSheet({
     { key: 'walkUp', label: labels.walkUp },
     { key: 'doorman', label: labels.doorman },
     { key: 'outdoor', label: labels.outdoor },
-    { key: 'noFee', label: labels.noFee },
   ];
 
   return (
