@@ -78,10 +78,25 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
     setStatus('submitting');
     const supabase = createClient();
 
+    const normalizedPhoneMeta = phone.replace(/\s/g, '');
+    // Stash the full profile in user metadata so the handle_new_user DB trigger
+    // can create the profile row even when email confirmation is on (no session
+    // is returned yet, so we can't write the profile from the client here).
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { intent } },
+      options: {
+        data: {
+          full_name: fullName.trim(),
+          display_first_name: displayFirstName.trim(),
+          phone: normalizedPhoneMeta,
+          preferred_locale: locale,
+          spoken_languages: spokenLanguages,
+          intent,
+          consent_version: CONSENT_VERSION,
+          consented_at: new Date().toISOString(),
+        },
+      },
     });
 
     if (signUpError) {
