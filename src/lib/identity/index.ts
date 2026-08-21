@@ -25,8 +25,12 @@ export type StartVerification = {
 };
 
 export interface IdentityProvider {
-  /** Kick off verification for a user. Returns a vendor ref (+ redirect URL). */
-  startVerification(userId: string): Promise<StartVerification>;
+  /**
+   * Kick off verification for a user. Returns a vendor ref (+ redirect URL).
+   * `baseUrl` is the origin the request came in on (e.g. https://ten2ten.app),
+   * used to build the provider return URL so it always matches the live domain.
+   */
+  startVerification(userId: string, baseUrl?: string): Promise<StartVerification>;
 
   /** Process a completed verification (called from webhook or mock callback). */
   processResult(vendorRef: string): Promise<VerificationResult>;

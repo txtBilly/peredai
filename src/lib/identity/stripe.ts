@@ -40,14 +40,18 @@ function ageFromDob(dob: Dob): number | undefined {
 }
 
 export class StripeIdentityProvider implements IdentityProvider {
-  async startVerification(userId: string): Promise<StartVerification> {
+  async startVerification(userId: string, baseUrl?: string): Promise<StartVerification> {
+    // Prefer the request origin so the return URL always matches the domain the
+    // user is actually on (localhost in dev, ten2ten.app in prod), independent
+    // of the build-time NEXT_PUBLIC_APP_URL.
+    const base = (baseUrl || APP_URL).replace(/\/+$/, '');
     const session = await stripe.identity.verificationSessions.create({
       type: 'document',
       metadata: { user_id: userId },
       options: { document: { require_matching_selfie: true } },
       // Stripe returns the user here after the hosted flow; the webhook does the
       // actual write, so the page just re-reads status.
-      return_url: `${APP_URL}/en/verify?return=1`,
+      return_url: `${base}/en/verify?return=1`,
     });
     return { vendorRef: session.id, redirectUrl: session.url ?? undefined };
   }

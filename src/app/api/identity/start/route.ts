@@ -40,7 +40,13 @@ export async function POST(req: NextRequest) {
   if (mockOverride) {
     vendorRef = `mock_${mockOverride}_${user.id.slice(0, 8)}_${Date.now()}`;
   } else {
-    const started = await provider.startVerification(user.id);
+    // Build the return URL from the actual request origin (honors Vercel's
+    // forwarded host), so Stripe sends the user back to whatever domain they're
+    // on — not a stale build-time default.
+    const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+    const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+    const baseUrl = host ? `${proto}://${host}` : undefined;
+    const started = await provider.startVerification(user.id, baseUrl);
     vendorRef = started.vendorRef;
     redirectUrl = started.redirectUrl;
   }

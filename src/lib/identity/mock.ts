@@ -9,7 +9,7 @@
 import type { IdentityProvider, VerificationResult } from './index';
 
 export class MockIdentityProvider implements IdentityProvider {
-  async startVerification(userId: string): Promise<{ vendorRef: string }> {
+  async startVerification(userId: string, _baseUrl?: string): Promise<{ vendorRef: string }> {
     // In dev the result is determined at process time, not at start time.
     // We issue a vendorRef that will be resolved when processResult is called.
     const outcome = process.env.MOCK_KYC_RESULT ?? 'success';
