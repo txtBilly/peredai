@@ -71,48 +71,50 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
   // an unseen listing status change (not the open chat itself).
   const listShowsDot = listHasUnseen;
 
+  // Single source of truth for the nav entries, rendered both in the desktop
+  // inline bar and the mobile dropdown so the two never drift apart.
+  const navLinks: { href: string; label: string; dot?: boolean; cobalt?: boolean }[] = [];
+  if (chatLinks.length > 0) {
+    navLinks.push({
+      href: chatLinks.length === 1 ? `/${locale}/chats/${chatLinks[0].id}` : `/${locale}/chats`,
+      label: dict.nav.chat,
+      cobalt: true,
+    });
+  }
+  navLinks.push({ href: `/${locale}/browse`, label: dict.nav.browse });
+  navLinks.push({ href: `/${locale}/saved`, label: dict.nav.saved, dot: savedHasUnseen });
+  navLinks.push({ href: `/${locale}/welcome`, label: dict.nav.howItWorks });
+  navLinks.push({ href: `/${locale}/list`, label: dict.nav.list, dot: listShowsDot });
+  navLinks.push({ href: `/${locale}/account`, label: dict.nav.account });
+
   return (
-    <header className="mx-auto flex max-w-6xl items-center justify-between border-b border-black/[0.06] px-5 py-4">
-      <Link href={`/${locale}/browse`} aria-label={dict.brand.name} className="inline-flex">
+    <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-4">
+      <Link href={`/${locale}/browse`} aria-label={dict.brand.name} className="inline-flex shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ten2ten-logo.svg?v=5" alt={dict.brand.name} className="h-7 w-auto" />
       </Link>
-      <nav className="flex items-center gap-5 text-sm text-muted">
-        {chatLinks.length > 0 && (
+
+      {/* Desktop: inline nav. Hidden below sm where it would wrap into a mess. */}
+      <nav className="hidden items-center gap-5 text-sm text-muted sm:flex">
+        {navLinks.map((l) => (
           <Link
-            href={chatLinks.length === 1 ? `/${locale}/chats/${chatLinks[0].id}` : `/${locale}/chats`}
-            className="font-medium text-cobalt hover:text-cobalt2"
+            key={l.href}
+            href={l.href}
+            className={
+              l.cobalt
+                ? 'font-medium text-cobalt hover:text-cobalt2'
+                : 'relative hover:text-ink'
+            }
           >
-            {dict.nav.chat}
+            {l.label}
+            {l.dot && (
+              <span
+                aria-hidden
+                className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
+              />
+            )}
           </Link>
-        )}
-        <Link href={`/${locale}/browse`} className="hover:text-ink">
-          {dict.nav.browse}
-        </Link>
-        <Link href={`/${locale}/saved`} className="relative hover:text-ink">
-          {dict.nav.saved}
-          {savedHasUnseen && (
-            <span
-              aria-label="Saved listing available"
-              className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
-            />
-          )}
-        </Link>
-        <Link href={`/${locale}/welcome`} className="hover:text-ink">
-          {dict.nav.howItWorks}
-        </Link>
-        <Link href={`/${locale}/list`} className="relative hover:text-ink">
-          {dict.nav.list}
-          {listShowsDot && (
-            <span
-              aria-label="Listing activity"
-              className="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
-            />
-          )}
-        </Link>
-        <Link href={`/${locale}/account`} className="hover:text-ink">
-          {dict.nav.account}
-        </Link>
+        ))}
         <Link
           href={`/${otherLocale}`}
           className="rounded-full border border-black/15 px-3 py-1 uppercase hover:border-black/40"
@@ -120,6 +122,41 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
           {otherLocale}
         </Link>
       </nav>
+
+      {/* Mobile: CSS-only hamburger dropdown (keeps this a server component). */}
+      <details className="group relative sm:hidden">
+        <summary
+          className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-lg border border-black/10 text-ink [&::-webkit-details-marker]:hidden"
+          aria-label="Menu"
+        >
+          <svg className="h-5 w-5 group-open:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          <svg className="hidden h-5 w-5 group-open:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </summary>
+        <div className="absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-xl border border-black/10 bg-white py-1 shadow-lg">
+          {navLinks.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={`flex items-center justify-between px-4 py-3 text-base ${
+                l.cobalt ? 'font-medium text-cobalt' : 'text-ink'
+              } hover:bg-black/[0.04]`}
+            >
+              {l.label}
+              {l.dot && <span className="h-2 w-2 rounded-full bg-red-500" />}
+            </Link>
+          ))}
+          <Link
+            href={`/${otherLocale}`}
+            className="flex items-center px-4 py-3 text-base uppercase text-muted hover:bg-black/[0.04]"
+          >
+            {otherLocale}
+          </Link>
+        </div>
+      </details>
     </header>
   );
 }
