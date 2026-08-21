@@ -65,7 +65,7 @@ export default async function BrowsePage({ params }: { params: { locale: string 
     return (
       <div className="neo-page">
         <SiteHeader locale={locale} />
-        <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-start px-5 pt-[24vh]">
+        <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-start px-5 pt-[19vh]">
           <h1 className="mb-8 w-full max-w-[36rem] font-display text-[1.8rem] font-bold leading-tight text-ink">
             {titleNode}
           </h1>
