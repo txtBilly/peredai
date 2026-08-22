@@ -89,10 +89,10 @@ export function ListingCard({
             )}
           </div>
 
-          {/* Address */}
+          {/* Address — cross-streets always drop to their own line */}
           <div className="text-[15px] leading-snug text-ink">
             {listing.neighborhood}
-            {listing.crossStreets ? `, ${listing.crossStreets}` : ''}
+            {listing.crossStreets && <span className="block">{listing.crossStreets}</span>}
           </div>
 
           {/* Amenity chiclets */}
