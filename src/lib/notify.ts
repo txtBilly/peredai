@@ -13,14 +13,14 @@ export type NotifyEvent = 'bid_accepted' | 'chat_message' | 'listing_freed' | 'e
 
 type EmailContent = { subject: string; html: string };
 
-// Mirrors the column defaults in notification_prefs (schema.sql). Used when a
-// user has no prefs row yet — no row is auto-created at signup, so without this
-// fallback those members would silently get nothing.
+// SMS/push defaults per event, used when a user has no prefs row yet (none is
+// auto-created at signup). Email is NOT gated by this — it always sends (see
+// dispatch) — but it's listed here too so the intent is visible at a glance.
 const DEFAULT_PREFS: Record<NotifyEvent, string[]> = {
   bid_accepted: ['sms', 'email'],
-  chat_message: ['push'],
+  chat_message: ['email'],
   listing_freed: ['push', 'email'],
-  expiry_warn: ['sms', 'push'],
+  expiry_warn: ['sms', 'push', 'email'],
 };
 
 async function dispatch(userId: string, event: NotifyEvent, sms: string, email?: EmailContent): Promise<void> {
@@ -31,12 +31,11 @@ async function dispatch(userId: string, event: NotifyEvent, sms: string, email?:
     .select(event)
     .eq('user_id', userId)
     .maybeSingle();
-  // No prefs row → fall back to the defaults (so notifications still send);
-  // a row present with an explicit empty array means the user opted out.
+  // Prefs gate only SMS/push. Email is intentionally NOT read from prefs — it's
+  // an always-on channel on Ten2Ten that members can't opt out of.
   const channels = prefs
     ? (((prefs as Record<string, unknown>)[event] as string[] | undefined) ?? [])
     : DEFAULT_PREFS[event];
-  if (channels.length === 0) return;
 
   const { data: profile } = await admin
     .from('profiles')
@@ -45,11 +44,12 @@ async function dispatch(userId: string, event: NotifyEvent, sms: string, email?:
     .maybeSingle();
 
   const jobs: Promise<unknown>[] = [];
-  if (channels.includes('sms') && profile?.phone) jobs.push(sendSms(profile.phone, sms));
-  if (channels.includes('email') && profile?.email && email) {
+  // Email always sends (not opt-out-able) whenever the event carries email copy.
+  if (profile?.email && email) {
     jobs.push(sendEmail({ to: profile.email, subject: email.subject, html: email.html }));
   }
-  // 'push' → intentionally no-op until real push infrastructure (P1).
+  // SMS stays preference-gated. 'push' → no-op until real push infra (P1).
+  if (channels.includes('sms') && profile?.phone) jobs.push(sendSms(profile.phone, sms));
 
   await Promise.allSettled(jobs);
 }

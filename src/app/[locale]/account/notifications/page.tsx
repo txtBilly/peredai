@@ -17,10 +17,21 @@ type Prefs = Record<EventKey, Channel[]>;
 
 const DEFAULTS: Prefs = {
   bid_accepted: ['sms', 'email'],
-  chat_message: ['push'],
+  chat_message: ['email'],
   listing_freed: ['push', 'email'],
-  expiry_warn: ['sms', 'push'],
+  expiry_warn: ['sms', 'push', 'email'],
 };
+
+// Email is an always-on channel that can't be turned off. Guarantee it's present
+// in every event so the (disabled) email checkboxes render checked and any saved
+// row also carries it.
+function withEmailAlwaysOn(prefs: Prefs): Prefs {
+  const out = {} as Prefs;
+  (Object.keys(prefs) as EventKey[]).forEach((k) => {
+    out[k] = prefs[k].includes('email') ? prefs[k] : [...prefs[k], 'email'];
+  });
+  return out;
+}
 
 export default function NotificationsPage({ params }: { params: { locale: string } }) {
   const locale = params.locale as Locale;
@@ -44,13 +55,14 @@ export default function NotificationsPage({ params }: { params: { locale: string
         .eq('user_id', user.id)
         .single()
         .then(({ data }) => {
-          if (data) setPrefs(data as Prefs);
+          if (data) setPrefs(withEmailAlwaysOn(data as Prefs));
           setLoading(false);
         });
     });
   }, [locale, router]);
 
   function toggleChannel(event: EventKey, channel: Channel) {
+    if (channel === 'email') return; // email is always on — not toggleable
     setPrefs((cur) => {
       const current = cur[event];
       const next = current.includes(channel)
@@ -114,7 +126,8 @@ export default function NotificationsPage({ params }: { params: { locale: string
           >
             <span className="text-sm text-ink">{n[eventKey]}</span>
             {CHANNELS.map((channel) => {
-              const checked = prefs[eventKey].includes(channel);
+              const isEmail = channel === 'email';
+              const checked = isEmail || prefs[eventKey].includes(channel);
               const id = `${eventKey}-${channel}`;
               return (
                 <div key={channel} className="flex justify-center">
@@ -122,15 +135,20 @@ export default function NotificationsPage({ params }: { params: { locale: string
                     id={id}
                     type="checkbox"
                     checked={checked}
+                    disabled={isEmail}
                     onChange={() => toggleChannel(eventKey, channel)}
-                    aria-label={`${n[eventKey]} via ${n[channel]}`}
-                    className="h-4 w-4 cursor-pointer accent-cobalt"
+                    aria-label={`${n[eventKey]} via ${n[channel]}${isEmail ? ' (always on)' : ''}`}
+                    className={`h-4 w-4 accent-cobalt ${isEmail ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                   />
                 </div>
               );
             })}
           </div>
         ))}
+
+        <p className="mt-2 px-1 text-xs text-muted">
+          Email notifications are always on and can’t be turned off.
+        </p>
 
         {error && (
           <p role="alert" className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
