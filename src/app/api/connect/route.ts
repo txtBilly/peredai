@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       .eq('id', listingId)
       .maybeSingle();
     if (listing?.lister_id) {
-      await notify.bidAccepted(listing.lister_id, listing.neighborhood ?? 'your area');
+      await notify.bidAccepted(listing.lister_id, listing.neighborhood ?? 'your area', data as string);
     }
   } catch (e) {
     console.error('[connect] notify failed', e);

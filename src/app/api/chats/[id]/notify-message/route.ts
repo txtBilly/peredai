@@ -36,7 +36,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   }
 
   try {
-    await notify.chatMessage(recipientId, senderName);
+    await notify.chatMessage(recipientId, senderName, params.id);
     // Stamp the send time only after a successful dispatch, so a failed send
     // doesn't start the throttle window.
     await admin
