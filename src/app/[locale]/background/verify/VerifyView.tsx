@@ -115,10 +115,12 @@ export default function VerifyView({ locale }: { locale: Locale }) {
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 text-center">
         <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <h1 className="mb-2 font-display text-2xl text-ink">Verified</h1>
-        <p className="mb-6 text-sm text-muted">
-          Background check passed{creditScore != null ? ` — credit score ${creditScore}` : ''}. 3 contact credits
-          added to your account.
+        <p className="mb-2 text-sm text-muted">
+          Background check passed{creditScore != null && (
+            <> — credit score <span className="font-bold text-ink">{creditScore}</span></>
+          )}.
         </p>
+        <p className="mb-6 text-sm text-muted">3 contact credits added to your account.</p>
         {blockedMinScore != null ? (
           <>
             <p className="mb-6 max-w-sm text-sm text-amber-700">
