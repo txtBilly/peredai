@@ -349,8 +349,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
             <div className="space-y-3">
               <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="whitespace-nowrap text-[1.23rem] font-bold text-ink">{otherName}</span>
-                <span className="whitespace-nowrap font-semibold text-leaf">✓ Verified ID</span>
-                <span className="whitespace-nowrap text-muted">· verified by Stripe</span>
+                <span className="whitespace-nowrap font-semibold text-leaf">✓ Verified ID by Stripe</span>
               </p>
               {listing?.full_address && (
                 <p className="text-[1.26rem] text-ink">
