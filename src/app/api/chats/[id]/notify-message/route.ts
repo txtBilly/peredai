@@ -15,7 +15,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const admin = createAdminClient();
   const { data: chat } = await admin
     .from('chats')
-    .select('seeker_id, lister_id, disclosed_seeker_name')
+    .select('seeker_id, lister_id, disclosed_seeker_name, seeker_notified_at, lister_notified_at')
     .eq('id', params.id)
     .maybeSingle();
   if (!chat) return NextResponse.json({ error: 'chat_not_found' }, { status: 404 });
@@ -25,8 +25,24 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
 
   const recipientId = user.id === chat.seeker_id ? chat.lister_id : chat.seeker_id;
   const senderName = user.id === chat.seeker_id ? chat.disclosed_seeker_name ?? 'A seeker' : 'The lister';
+
+  // Throttle: at most one new-message notification per recipient per chat every
+  // 30 minutes, so an active back-and-forth doesn't spam their inbox.
+  const THROTTLE_MS = 30 * 60 * 1000;
+  const recipientIsSeeker = recipientId === chat.seeker_id;
+  const lastNotified = recipientIsSeeker ? chat.seeker_notified_at : chat.lister_notified_at;
+  if (lastNotified && Date.now() - new Date(lastNotified).getTime() < THROTTLE_MS) {
+    return NextResponse.json({ ok: true, throttled: true });
+  }
+
   try {
     await notify.chatMessage(recipientId, senderName);
+    // Stamp the send time only after a successful dispatch, so a failed send
+    // doesn't start the throttle window.
+    await admin
+      .from('chats')
+      .update({ [recipientIsSeeker ? 'seeker_notified_at' : 'lister_notified_at']: new Date().toISOString() })
+      .eq('id', params.id);
   } catch (e) {
     console.error('[notify-message] failed', e);
   }
