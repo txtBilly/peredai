@@ -372,7 +372,10 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       <div className="mb-4">
         {listing?.neighborhood && (
           <h1 className="font-display text-[1.05rem]">
-            <Link href={`/${locale}/browse/${chat.listing_id}`} className="text-cobalt underline decoration-cobalt/40 underline-offset-4 hover:decoration-cobalt">
+            <Link
+              href={`/${locale}/browse/${chat.listing_id}`}
+              className="line-clamp-2 break-words text-cobalt underline decoration-cobalt/40 underline-offset-4 hover:decoration-cobalt"
+            >
               {listing.neighborhood}
             </Link>
           </h1>
@@ -385,7 +388,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
           </p>
         )}
         {availableLabel && (
-          <p className="mt-1.5 text-[1.26rem] text-ink">Available: {availableLabel}</p>
+          <p className="mt-1.5 text-[0.88rem] text-ink">Available: {availableLabel}</p>
         )}
       </div>
 
