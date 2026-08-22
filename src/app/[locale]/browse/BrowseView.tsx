@@ -18,6 +18,7 @@ import {
 } from '@/lib/listings';
 import { ListingCard, type ListingCardData } from '@/components/ListingCard';
 import { FiltersSheet } from '@/components/FiltersSheet';
+import { useHideOnScroll } from '@/lib/useHideOnScroll';
 
 type ListingRow = {
   id: string;
@@ -60,6 +61,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   const [filters, setFilters] = useState<BrowseFilters>(EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  // Auto-hide the filter bar in lockstep with the top nav (see useHideOnScroll).
+  const controlsHidden = useHideOnScroll();
 
   const [cards, setCards] = useState<ListingCardData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -284,7 +287,13 @@ export default function BrowseView({ locale }: { locale: Locale }) {
 
   return (
     <main className="mx-auto max-w-6xl px-5 pb-16 pt-6">
-      {/* Search + filters + view toggle */}
+      {/* Search + filters + view toggle — sticky just below the auto-hiding nav
+          (top-[61px] = nav height) so filters stay reachable on scroll-up. */}
+      <div
+        className={`sticky top-[61px] z-30 -mx-5 bg-white/95 px-5 py-2 backdrop-blur transition-transform duration-300 will-change-transform ${
+          controlsHidden ? '-translate-y-[calc(100%+70px)]' : 'translate-y-0'
+        }`}
+      >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           type="search"
@@ -319,6 +328,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
             ))}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Scope row: city selector pill + type tabs */}

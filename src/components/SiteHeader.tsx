@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { createClient } from '@/lib/supabase/server';
+import AutoHideHeader from '@/components/AutoHideHeader';
 
 // Shared top navigation. Kept out of the root layout so auth-only screens
 // (signin/signup/verify) stay chromeless; rendered explicitly on the pages
@@ -88,7 +89,8 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
   navLinks.push({ href: `/${locale}/account`, label: dict.nav.account });
 
   return (
-    <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-4">
+    <AutoHideHeader>
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4">
       <Link href={`/${locale}/browse`} aria-label={dict.brand.name} className="inline-flex shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ten2ten-logo.svg?v=5" alt={dict.brand.name} className="h-7 w-auto" />
@@ -157,6 +159,7 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
           </Link>
         </div>
       </details>
-    </header>
+      </div>
+    </AutoHideHeader>
   );
 }
