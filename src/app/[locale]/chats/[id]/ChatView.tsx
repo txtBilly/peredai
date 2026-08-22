@@ -384,7 +384,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
           <p className="mt-1.5 text-ink">
             {unitRentLine && <span className="text-[0.88rem]">{unitRentLine}</span>}
             {unitRentLine && gratuityLine && <span className="text-[0.88rem]"> · </span>}
-            {gratuityLine && <span className="text-[1.07rem]">{gratuityLine}</span>}
+            {gratuityLine && <span className="text-[0.88rem]">{gratuityLine}</span>}
           </p>
         )}
         {availableLabel && (
