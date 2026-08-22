@@ -30,15 +30,27 @@ export async function sendEmail(params: {
   html: string;
 }): Promise<void> {
   if (!resend) {
-    console.warn('[email] Resend not configured — would send:', params);
+    console.warn('[email] RESEND_API_KEY not set — email NOT sent:', {
+      to: params.to,
+      subject: params.subject,
+    });
     return;
   }
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? 'hello@ten2ten.app',
+  const from = process.env.RESEND_FROM_EMAIL ?? 'hello@ten2ten.app';
+  // The Resend SDK returns { data, error } and does NOT throw on API errors
+  // (unverified sender, restricted recipient, etc.), so we must inspect the
+  // result explicitly — otherwise failed sends vanish silently.
+  const { data, error } = await resend.emails.send({
+    from,
     to: params.to,
     subject: params.subject,
     html: params.html,
   });
+  if (error) {
+    console.error('[email] Resend send failed', { from, to: params.to, error });
+    throw new Error(`resend_send_failed: ${error.message ?? 'unknown'}`);
+  }
+  console.log('[email] sent', { id: data?.id, to: params.to, subject: params.subject });
 }
 
 // ---- Notification dispatch helpers -----------------------------------------
