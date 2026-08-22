@@ -89,16 +89,16 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
             </li>
           ))}
         </ul>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-8 flex gap-3">
           <Link
             href={`/${locale}/browse`}
-            className="rounded-lg bg-gradient-cobalt px-6 py-3 font-semibold text-white transition hover:brightness-110"
+            className="whitespace-nowrap rounded-lg bg-gradient-cobalt px-4 py-3 font-semibold text-white transition hover:brightness-110 sm:px-6"
           >
             Find a place
           </Link>
           <Link
             href={`/${locale}/list`}
-            className="rounded-lg border border-black/20 px-6 py-3 font-medium text-ink transition hover:border-black/40"
+            className="whitespace-nowrap rounded-lg bg-ink px-4 py-3 font-semibold text-white transition hover:brightness-110 sm:px-6"
           >
             List your apartment
           </Link>
@@ -123,9 +123,9 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
 
       {/* Trust */}
       <section className="mx-auto max-w-6xl px-5 py-6">
-        <div className="flex flex-wrap items-center gap-x-10 gap-y-2 font-display text-xl font-semibold text-ink">
-          <span className="flex items-center gap-2.5 whitespace-nowrap"><span className="text-2xl text-leaf">✓</span> {dict.home.trustVerified}</span>
-          <span className="flex items-center gap-2.5 whitespace-nowrap"><span className="text-2xl text-leaf">✓</span> {dict.home.trustGratitude}</span>
+        <div className="flex flex-col gap-3 font-display text-lg font-semibold text-ink sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-10 sm:gap-y-2 sm:text-xl">
+          <span className="flex items-start gap-2.5"><span className="text-2xl leading-none text-leaf">✓</span> {dict.home.trustVerified}</span>
+          <span className="flex items-start gap-2.5"><span className="text-2xl leading-none text-leaf">✓</span> {dict.home.trustGratitude}</span>
         </div>
       </section>
 
