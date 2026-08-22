@@ -69,7 +69,7 @@ export default async function BrowsePage({ params }: { params: { locale: string 
           <h1 className="mb-8 w-full max-w-[36rem] font-display text-[1.8rem] font-bold leading-tight text-ink">
             {titleNode}
           </h1>
-          <p className="w-full max-w-[36rem] text-justify text-[1.26rem] leading-relaxed text-muted [hyphens:auto]">
+          <p className="w-full max-w-[36rem] text-base leading-relaxed text-muted">
             {beforeLink}
             <Link
               href={`/${locale}/chats/${seekerChatId}`}
