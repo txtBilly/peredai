@@ -303,15 +303,16 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
     listing?.gratitude_amount != null && listing.gratitude_amount > 0
       ? `$${listing.gratitude_amount.toLocaleString('en-US')}`
       : null;
-  const listingLine = listing
+  // Split unit/rent from the gratuity so they can be sized independently.
+  const unitRentLine = listing
     ? [
         listing.type ? listingTypeLabel(listing.type, l) : null,
         listing.monthly_rent != null ? `$${listing.monthly_rent.toLocaleString('en-US')}/mo` : null,
-        gratuityLabel ? `${gratuityLabel} one-time gratuity` : null,
       ]
         .filter(Boolean)
         .join(' · ')
     : '';
+  const gratuityLine = gratuityLabel ? `${gratuityLabel} one-time gratuity` : null;
   const availableLabel = listing?.available_from
     ? new Date(listing.available_from).toLocaleDateString(locale === 'es' ? 'es-US' : 'en-US', {
         month: 'short',
@@ -370,13 +371,19 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       {/* Listing summary */}
       <div className="mb-4">
         {listing?.neighborhood && (
-          <h1 className="font-display text-2xl">
+          <h1 className="font-display text-[1.05rem]">
             <Link href={`/${locale}/browse/${chat.listing_id}`} className="text-cobalt underline decoration-cobalt/40 underline-offset-4 hover:decoration-cobalt">
               {listing.neighborhood}
             </Link>
           </h1>
         )}
-        {listingLine && <p className="mt-1.5 text-[1.26rem] text-ink">{listingLine}</p>}
+        {(unitRentLine || gratuityLine) && (
+          <p className="mt-1.5 text-ink">
+            {unitRentLine && <span className="text-[0.88rem]">{unitRentLine}</span>}
+            {unitRentLine && gratuityLine && <span className="text-[0.88rem]"> · </span>}
+            {gratuityLine && <span className="text-[1.07rem]">{gratuityLine}</span>}
+          </p>
+        )}
         {availableLabel && (
           <p className="mt-1.5 text-[1.26rem] text-ink">Available: {availableLabel}</p>
         )}
