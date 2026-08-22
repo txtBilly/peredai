@@ -4,12 +4,20 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { Locale } from '@/i18n/config';
 
-// Report a member/listing. Copy is functional (the intro line is the locked
-// decision); final wording + i18n land in the copy sweep.
-const REASONS: { value: string; label: string }[] = [
+// Report a member/listing. The reason list depends on who's reporting: a renter
+// reporting a listing/lister vs. a lister reporting a seeker.
+const RENTER_REASONS: { value: string; label: string }[] = [
   { value: 'unresponsive', label: 'Unresponsive' },
   { value: 'unavailable', label: 'Apartment unavailable' },
   { value: 'inaccurate', label: 'Inaccurate listing' },
+  { value: 'fraudulent', label: 'Fraudulent / scam' },
+  { value: 'something_else', label: 'Something else' },
+];
+
+const LISTER_REASONS: { value: string; label: string }[] = [
+  { value: 'unresponsive', label: 'Unresponsive' },
+  { value: 'not_serious', label: 'Not a serious renter' },
+  { value: 'inappropriate', label: 'Inappropriate or abusive messages' },
   { value: 'fraudulent', label: 'Fraudulent / scam' },
   { value: 'something_else', label: 'Something else' },
 ];
@@ -18,11 +26,14 @@ export default function ReportView({
   locale,
   chatId,
   listingId,
+  role = 'seeker',
 }: {
   locale: Locale;
   chatId?: string;
   listingId?: string;
+  role?: 'lister' | 'seeker';
 }) {
+  const REASONS = role === 'lister' ? LISTER_REASONS : RENTER_REASONS;
   const [reason, setReason] = useState('');
   const [detail, setDetail] = useState('');
   const [phase, setPhase] = useState<'form' | 'submitting' | 'done' | 'error'>('form');
