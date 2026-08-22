@@ -294,27 +294,30 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           aria-label={b.searchPlaceholder}
           className="w-full rounded-lg border border-black/15 bg-white px-4 py-3 text-base text-ink placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-cobalt sm:flex-1"
         />
-        <button
-          type="button"
-          onClick={() => setFiltersOpen(true)}
-          className="shrink-0 rounded-lg border border-black/15 bg-white px-4 py-3 text-base font-medium text-ink hover:border-black/30"
-        >
-          {b.filtersCta}
-        </button>
-        <div className="flex shrink-0 gap-1">
-          {(['list', 'grid'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              aria-pressed={view === v}
-              className={`rounded-lg border px-3 py-3 text-sm capitalize transition ${
-                view === v ? 'border-cobalt bg-cobalt/10 font-semibold text-cobalt' : 'border-black/15 text-muted hover:border-black/30'
-              }`}
-            >
-              {v}
-            </button>
-          ))}
+        {/* Filters + view toggle share one row (esp. on mobile). */}
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="shrink-0 rounded-lg border border-black/15 bg-white px-4 py-2.5 text-sm font-medium text-ink hover:border-black/30"
+          >
+            {b.filtersCta}
+          </button>
+          <div className="flex shrink-0 gap-1">
+            {(['list', 'grid'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                aria-pressed={view === v}
+                className={`rounded-lg border px-3 py-2.5 text-sm capitalize transition ${
+                  view === v ? 'border-cobalt bg-cobalt/10 font-semibold text-cobalt' : 'border-black/15 text-muted hover:border-black/30'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
