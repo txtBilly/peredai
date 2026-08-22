@@ -431,14 +431,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
               <div key={card.id} className="flex items-center gap-2 px-4 py-3 transition hover:bg-black/[0.02]">
                 <Link href={card.href} className="flex min-w-0 flex-1 items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-base font-bold text-cobalt">{card.neighborhood || '—'}</span>
-                      {card.negotiating && (
-                        <span className="rounded-full bg-cobalt px-2 py-0.5 text-[11px] font-semibold text-white">
-                          {card.negotiatingLabel}
-                        </span>
-                      )}
-                    </div>
+                    <span className="block truncate text-base font-bold text-cobalt">{card.neighborhood || '—'}</span>
                     <p className="truncate font-mono text-[13px] text-muted">
                       {[card.crossStreets, card.typeLabel, card.availableLabel, card.minCreditScoreLabel]
                         .filter(Boolean)
@@ -446,7 +439,14 @@ export default function BrowseView({ locale }: { locale: Locale }) {
                       {card.verified && <span className="font-semibold text-leaf"> · ✓ verified</span>}
                     </p>
                   </div>
-                  <span className="shrink-0 font-display text-lg font-bold text-ink">{card.rentLabel}</span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="font-display text-lg font-bold text-ink">{card.rentLabel}</span>
+                    {card.negotiating && (
+                      <span className="whitespace-nowrap rounded-full bg-cobalt px-2 py-0.5 text-[11px] font-semibold text-white">
+                        {card.negotiatingLabel}
+                      </span>
+                    )}
+                  </div>
                 </Link>
                 <button
                   type="button"
