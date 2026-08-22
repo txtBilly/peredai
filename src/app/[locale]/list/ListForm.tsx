@@ -233,7 +233,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
       setFloor(draft.floor ?? '');
       setBathrooms(draft.bathrooms != null ? String(draft.bathrooms) : '');
       setDescription(draft.description ?? '');
-      setAvailableFrom(draft.available_from ?? '');
+      // Availability date must be chosen fresh each time a listing is created —
+      // never prefilled from a draft. (When editing a published listing we do
+      // restore the real date so it isn't wiped.)
+      setAvailableFrom(draft.status && draft.status !== 'draft' ? (draft.available_from ?? '') : '');
       setPetsOk(!!draft.pets_ok);
       setLaundry(!!draft.laundry);
       setElevator(!!draft.elevator);
