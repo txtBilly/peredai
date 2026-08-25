@@ -50,8 +50,15 @@ export default function VerifyView({
       .eq('id', user.id)
       .single();
     const status = data?.verification_status;
-    if (status === 'verified') setPhase('verified');
-    else if (status === 'failed') setPhase('failed');
+    if (status === 'verified') {
+      // Refresh the JWT so app_metadata.verified is present for the middleware gate.
+      try {
+        await supabase.auth.refreshSession();
+      } catch {
+        /* non-fatal */
+      }
+      setPhase('verified');
+    } else if (status === 'failed') setPhase('failed');
     else if (status === 'pending' || returned) setPhase('pending');
     else setPhase('unverified');
   }, [locale, router, returned]);
@@ -102,8 +109,17 @@ export default function VerifyView({
       }
       // Mock: processed inline.
       setStarting(false);
-      if (data.status === 'verified') setPhase('verified');
-      else if (data.status === 'pending') setPhase('pending');
+      if (data.status === 'verified') {
+        // Refresh the session so the new access token carries app_metadata.verified.
+        // Without this the mandatory-verify middleware keeps bouncing the
+        // just-verified user (stale JWT) and every CTA looks unresponsive.
+        try {
+          await createClient().auth.refreshSession();
+        } catch {
+          /* non-fatal */
+        }
+        setPhase('verified');
+      } else if (data.status === 'pending') setPhase('pending');
       else setPhase('failed');
     } catch {
       setError(v.errorGeneric);
@@ -166,7 +182,7 @@ export default function VerifyView({
         <VerifiedBadge className="mb-4" />
         <p className="mb-8 text-sm text-muted">{v.successBody}</p>
         <button
-          onClick={() => router.push(nextPath)}
+          onClick={() => window.location.assign(nextPath)}
           className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110"
         >
           {v.continueCta}
@@ -255,7 +271,6 @@ export default function VerifyView({
         </p>
       )}
 
-      <p className="mb-3 text-sm text-muted">{v.chooseProvider}</p>
       {providerButtons}
       </div>
     </main>

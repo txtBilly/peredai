@@ -95,7 +95,7 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4">
       <Link href={`/${locale}/browse`} aria-label={dict.brand.name} className="inline-flex shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ten2ten-logo.svg?v=1" alt={dict.brand.name} className="h-7 w-auto" />
+        <img src="/ten2ten-logo.svg?v=1" alt={dict.brand.name} className="h-[22px] w-auto" />
       </Link>
 
       {/* Desktop: inline nav. Hidden below sm where it would wrap into a mess. */}
