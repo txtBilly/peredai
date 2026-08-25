@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { EMPTY_FILTERS, LANGUAGE_OPTIONS, type BrowseFilters } from '@/lib/listings';
+import { BASELINE_LANGUAGE, EMPTY_FILTERS, LANGUAGE_OPTIONS, type BrowseFilters } from '@/lib/listings';
 
 const fieldClass =
   'w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt';
@@ -167,10 +167,14 @@ export function FiltersSheet({
             <div className="flex flex-wrap gap-2">
               {LANGUAGE_OPTIONS.map(({ value, label }) => {
                 const active = draft.languages.includes(value);
+                // Russian is the baseline language — always selected, not removable.
+                const locked = value === BASELINE_LANGUAGE;
                 return (
                   <label
                     key={value}
-                    className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm transition ${
+                    className={`rounded-full border px-4 py-1.5 text-sm transition ${
+                      locked ? 'cursor-default' : 'cursor-pointer'
+                    } ${
                       active
                         ? 'border-cobalt bg-gradient-cobalt text-white'
                         : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
@@ -179,14 +183,16 @@ export function FiltersSheet({
                     <input
                       type="checkbox"
                       checked={active}
-                      onChange={() =>
+                      disabled={locked}
+                      onChange={() => {
+                        if (locked) return;
                         setDraft((cur) => ({
                           ...cur,
                           languages: cur.languages.includes(value)
                             ? cur.languages.filter((x) => x !== value)
                             : [...cur.languages, value],
-                        }))
-                      }
+                        }));
+                      }}
                       className="sr-only"
                     />
                     {label}

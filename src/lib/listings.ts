@@ -177,6 +177,11 @@ export type BrowseFilters = {
   languages: string[]; // filter to listers who speak at least one of these
 };
 
+// Russian is the platform's baseline language: it's locked on in the signup
+// language picker and pre-selected (non-removable) in the Browse filter, so the
+// empty-filter state already includes it.
+export const BASELINE_LANGUAGE = 'ru';
+
 export const EMPTY_FILTERS: BrowseFilters = {
   rentMin: '',
   rentMax: '',
@@ -190,13 +195,16 @@ export const EMPTY_FILTERS: BrowseFilters = {
   outdoor: false,
   allowNonRf: false,
   allowChildren: false,
-  languages: [],
+  languages: [BASELINE_LANGUAGE],
 };
 
 export function hasActiveFilters(filters: BrowseFilters): boolean {
-  return Object.entries(filters).some(([, value]) =>
-    Array.isArray(value) ? value.length > 0 : typeof value === 'boolean' ? value : value.trim() !== ''
-  );
+  return Object.entries(filters).some(([key, value]) => {
+    // The baseline language ('ru') is always selected, so it doesn't count as an
+    // active filter — only additional languages do.
+    if (key === 'languages') return Array.isArray(value) && value.some((v) => v !== BASELINE_LANGUAGE);
+    return Array.isArray(value) ? value.length > 0 : typeof value === 'boolean' ? value : value.trim() !== '';
+  });
 }
 
 // Languages offered in the "spoken languages" pickers (signup + browse filter).

@@ -56,6 +56,8 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
   const [error, setError] = useState('');
 
   function toggleLanguage(lang: string) {
+    // Russian is the baseline language — always selected, not removable.
+    if (lang === 'ru') return;
     setSpokenLanguages((cur) =>
       cur.includes(lang) ? (cur.length > 1 ? cur.filter((l) => l !== lang) : cur) : [...cur, lang]
     );
@@ -131,25 +133,32 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
         <fieldset>
           <legend className="mb-2 text-sm text-muted">{d.onboarding.languagesLabel}</legend>
           <div className="flex flex-wrap gap-2">
-            {LANGUAGE_OPTIONS.map(({ value, label }) => (
-              <label
-                key={value}
-                className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm transition ${
-                  spokenLanguages.includes(value)
-                    ? 'border-cobalt bg-gradient-cobalt text-white'
-                    : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  value={value}
-                  checked={spokenLanguages.includes(value)}
-                  onChange={() => toggleLanguage(value)}
-                  className="sr-only"
-                />
-                {label}
-              </label>
-            ))}
+            {LANGUAGE_OPTIONS.map(({ value, label }) => {
+              // Russian is the baseline language — always selected, not removable.
+              const locked = value === 'ru';
+              return (
+                <label
+                  key={value}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                    locked ? 'cursor-default' : 'cursor-pointer'
+                  } ${
+                    spokenLanguages.includes(value)
+                      ? 'border-cobalt bg-gradient-cobalt text-white'
+                      : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    value={value}
+                    checked={spokenLanguages.includes(value)}
+                    disabled={locked}
+                    onChange={() => toggleLanguage(value)}
+                    className="sr-only"
+                  />
+                  {label}
+                </label>
+              );
+            })}
           </div>
         </fieldset>
 

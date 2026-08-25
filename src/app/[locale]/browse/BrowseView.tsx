@@ -140,14 +140,16 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         if (filters.allowNonRf) query = query.eq('allow_non_rf', true);
         if (filters.allowChildren) query = query.eq('allow_children', true);
 
-        // Language filter: restrict to listers whose spoken_languages overlap the
-        // selected set. Resolve matching lister ids first (public_profile_summary
+        // Language filter: Russian is the baseline (always selected), so only the
+        // additional languages narrow results. Restrict to listers whose
+        // spoken_languages contain ALL the selected extras (public_profile_summary
         // exposes spoken_languages), then constrain the listings query.
-        if (filters.languages.length > 0) {
+        const extraLanguages = filters.languages.filter((x) => x !== 'ru');
+        if (extraLanguages.length > 0) {
           const { data: langListers } = await supabase
             .from('public_profile_summary')
             .select('id')
-            .overlaps('spoken_languages', filters.languages);
+            .contains('spoken_languages', extraLanguages);
           if (cancelled) return;
           const langListerIds = (langListers ?? []).map((p) => p.id as string);
           if (langListerIds.length === 0) {
@@ -302,14 +304,17 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   amenityChips.forEach(([key, label]) => {
     if (filters[key]) activeChips.push({ key, label, remove: () => setFilters((f) => ({ ...f, [key]: false })) });
   });
-  filters.languages.forEach((lang) => {
-    const opt = LANGUAGE_OPTIONS.find((o) => o.value === lang);
-    activeChips.push({
-      key: `lang:${lang}`,
-      label: opt?.label ?? lang,
-      remove: () => setFilters((f) => ({ ...f, languages: f.languages.filter((x) => x !== lang) })),
+  // Russian is the locked baseline — only additional languages get removable chips.
+  filters.languages
+    .filter((lang) => lang !== 'ru')
+    .forEach((lang) => {
+      const opt = LANGUAGE_OPTIONS.find((o) => o.value === lang);
+      activeChips.push({
+        key: `lang:${lang}`,
+        label: opt?.label ?? lang,
+        remove: () => setFilters((f) => ({ ...f, languages: f.languages.filter((x) => x !== lang) })),
+      });
     });
-  });
   const resetAll = () => {
     setSearchText('');
     setTypeFilter('all');
@@ -525,7 +530,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           outdoor: l.amenityOutdoor,
           allowNonRf: l.amenityNonRf,
           allowChildren: l.amenityChildren,
-          languages: locale === 'en' ? 'Host speaks' : 'Язык хозяина',
+          languages: locale === 'en' ? 'Speaks:' : 'Говорит на:',
           apply: b.applyFiltersCta,
           clear: b.clearFiltersCta,
           close: b.closeCta,
