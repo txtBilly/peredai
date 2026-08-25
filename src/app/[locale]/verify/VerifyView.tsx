@@ -249,7 +249,7 @@ export default function VerifyView({
       </div>
 
       <div className="flex flex-1 flex-col justify-center py-10">
-      <h1 className="mb-6 font-display text-3xl font-bold text-ink">
+      <h1 className="mb-6 font-display text-2xl font-bold text-ink">
         Подтвердите личность, чтобы полноценно пользоваться платформой.
       </h1>
       <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">
