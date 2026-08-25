@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { applyVerificationResult } from '@/lib/identity/apply';
 import { completeOAuthCallback, identityKeyFor } from '@/lib/identity';
+import { mintSessionForEmail } from '@/lib/auth-session';
 import { defaultLocale, isLocale } from '@/i18n/config';
 
 export const runtime = 'nodejs';
 
-// OAuth redirect target shared by all bank providers (Sber ID, T-ID; Yandex too
-// if ever enabled). The user's browser lands here after authorizing. We look up
-// which provider + user this `state` was issued for, exchange the code, read the
-// verified profile, bind the identity, and write the result — then send the user
-// back to the verify screen.
+// Shared OAuth redirect target for all bank providers (Sber ID, T-ID). Handles
+// two purposes, told apart by a `t2t_login_<state>` cookie set at /api/auth/login:
+//   • LOGIN  — no prior session; resolve the account by the bank `sub` and mint
+//              its session.
+//   • VERIFY — an already-logged-in user is verifying; bind the identity + name.
 export async function GET(req: NextRequest) {
   const url = req.nextUrl;
   const code = url.searchParams.get('code');
@@ -24,6 +25,43 @@ export async function GET(req: NextRequest) {
 
   const admin = createAdminClient();
 
+  // ---- LOGIN branch --------------------------------------------------------
+  const loginCookie = state ? req.cookies.get(`t2t_login_${state}`)?.value : undefined;
+  if (loginCookie) {
+    const [loginProvider, cookieLocale] = loginCookie.split('|');
+    const locale = cookieLocale && isLocale(cookieLocale) ? cookieLocale : defaultLocale;
+    const done = (path: string) => {
+      const res = NextResponse.redirect(`${appUrl}${path}`, 303);
+      res.cookies.set(`t2t_login_${state}`, '', { maxAge: 0, path: '/' });
+      return res;
+    };
+    if (oauthError || !code || !state) {
+      return done(`/${locale}/signin?error=${encodeURIComponent(oauthError ?? 'no_code')}`);
+    }
+    try {
+      const result = await completeOAuthCallback(loginProvider, code, baseUrl);
+      if (result.status !== 'verified' || !result.providerSub) {
+        return done(`/${locale}/signin?error=login_failed`);
+      }
+      const identityKey = identityKeyFor(loginProvider, result.providerSub);
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('email, verification_status')
+        .eq('verified_identity_key', identityKey)
+        .maybeSingle();
+      if (!profile?.email || profile.verification_status !== 'verified') {
+        return done(`/${locale}/signin?error=no_account`);
+      }
+      const minted = await mintSessionForEmail(profile.email);
+      if (!minted.ok) return done(`/${locale}/signin?error=session_failed`);
+      return done(`/${locale}/browse`);
+    } catch (e) {
+      console.error('[auth/login] callback failed', e);
+      return done(`/${locale}/signin?error=provider_error`);
+    }
+  }
+
+  // ---- VERIFY branch -------------------------------------------------------
   // Resolve the user + provider this state was issued for (set at /identity/start).
   let userId: string | undefined;
   let provider: string | undefined;

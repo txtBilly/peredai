@@ -2,15 +2,8 @@
 
 import { useState, FormEvent, Fragment, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
-
-type Intent = 'looking' | 'offering' | 'both';
-
-// Bump when Terms/Privacy/Identity Consent copy changes materially.
-const CONSENT_VERSION = '2026-07-v1';
 
 const LANGUAGE_OPTIONS = [
   { value: 'ru', label: 'Русский' },
@@ -25,8 +18,23 @@ const LANGUAGE_OPTIONS = [
   { value: 'ko', label: '한국어' },
 ];
 
-// Splits a "{token}" template string and swaps tokens for React nodes —
-// lets the consent sentence carry inline links without hardcoding grammar.
+// New-flow copy that isn't in the shared dictionaries yet. Kept inline (bilingual)
+// to avoid a dictionary migration for a handful of strings.
+const T = {
+  ru: {
+    subtitle:
+      'Укажите email — на следующем шаге вы подтвердите личность через Сбер ID или Т-Банк, и ваше имя подставится автоматически. Пароль не нужен: вход всегда через банк.',
+    continue: 'Продолжить',
+    invalidEmail: 'Введите корректный email.',
+  },
+  en: {
+    subtitle:
+      'Enter your email — next you’ll confirm your identity with Sber ID or T-Bank, and your name fills in automatically. No password: you always sign in with your bank.',
+    continue: 'Continue',
+    invalidEmail: 'Enter a valid email.',
+  },
+} as const;
+
 function renderTemplate(template: string, tokens: Record<string, ReactNode>) {
   return template.split(/(\{\w+\})/g).map((part, i) => {
     const match = part.match(/^\{(\w+)\}$/);
@@ -37,152 +45,60 @@ function renderTemplate(template: string, tokens: Record<string, ReactNode>) {
 export default function SignUpView({ params }: { params: { locale: string } }) {
   const locale = params.locale as Locale;
   const d = getDictionary(locale);
-  const router = useRouter();
+  const t = T[locale] ?? T.ru;
 
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [intent, setIntent] = useState<Intent>('looking');
-  const [fullName, setFullName] = useState('');
-  const [displayFirstName, setDisplayFirstName] = useState('');
-  const [phone, setPhone] = useState('');
   const [spokenLanguages, setSpokenLanguages] = useState<string[]>(['ru']);
   const [consented, setConsented] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'confirm'>('idle');
+  const [status, setStatus] = useState<'idle' | 'submitting'>('idle');
   const [error, setError] = useState('');
 
   function toggleLanguage(lang: string) {
     setSpokenLanguages((cur) =>
-      cur.includes(lang)
-        ? cur.length > 1
-          ? cur.filter((l) => l !== lang)
-          : cur // keep at least one
-        : [...cur, lang]
+      cur.includes(lang) ? (cur.length > 1 ? cur.filter((l) => l !== lang) : cur) : [...cur, lang]
     );
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError(t.invalidEmail);
+      return;
+    }
     if (!consented) {
       setError(d.auth.consentRequired);
       return;
     }
-    if (!fullName.trim() || !displayFirstName.trim() || !phone.trim()) {
-      setError(d.onboarding.errorRequired);
-      return;
-    }
-    if (!/^\+[1-9]\d{7,14}$/.test(phone.replace(/\s/g, ''))) {
-      setError(d.onboarding.errorPhone);
-      return;
-    }
 
     setStatus('submitting');
-    const supabase = createClient();
-
-    const normalizedPhoneMeta = phone.replace(/\s/g, '');
-    // Stash the full profile in user metadata so the handle_new_user DB trigger
-    // can create the profile row even when email confirmation is on (no session
-    // is returned yet, so we can't write the profile from the client here).
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName.trim(),
-          display_first_name: displayFirstName.trim(),
-          phone: normalizedPhoneMeta,
-          preferred_locale: locale,
-          spoken_languages: spokenLanguages,
-          intent,
-          consent_version: CONSENT_VERSION,
-          consented_at: new Date().toISOString(),
-        },
-      },
-    });
-
-    if (signUpError) {
-      setStatus('idle');
-      const m = signUpError.message.toLowerCase();
-      if (m.includes('already registered')) {
-        setError(d.auth.errorEmailExists);
-      } else if (m.includes('rate limit')) {
-        setError(d.auth.errorRateLimit);
-      } else {
-        setError(d.auth.errorGeneric);
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          spokenLanguages,
+          consent: consented,
+          locale,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; next?: string; error?: string };
+      if (!res.ok || !data.ok) {
+        setStatus('idle');
+        if (data.error === 'account_exists') setError(d.auth.errorEmailExists);
+        else if (data.error === 'invalid_email') setError(t.invalidEmail);
+        else if (data.error === 'consent_required') setError(d.auth.consentRequired);
+        else setError(d.auth.errorGeneric);
+        return;
       }
-      console.error('signup error:', signUpError);
-      return;
-    }
-
-    // Email confirmation is OFF (per spec), so a session comes back
-    // immediately and the profile can be created in this same step. If
-    // confirmation were ever turned on, there'd be no session yet — fall
-    // back to the "check your email" screen instead.
-    const user = data.user;
-    if (!data.session || !user) {
-      setStatus('confirm');
-      return;
-    }
-
-    const normalizedPhone = phone.replace(/\s/g, '');
-
-    const { error: profileError } = await supabase.from('profiles').upsert(
-      {
-        id: user.id,
-        full_name: fullName.trim(),
-        display_first_name: displayFirstName.trim(),
-        phone: normalizedPhone,
-        email: user.email!,
-        preferred_locale: locale,
-        spoken_languages: spokenLanguages,
-        intent,
-        consent_version: CONSENT_VERSION,
-        consented_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' }
-    );
-
-    if (profileError) {
+      // Full navigation so the freshly-minted session cookie is picked up everywhere
+      // (middleware + the verify page) before the mandatory identity step.
+      window.location.assign(data.next ?? `/${locale}/verify`);
+    } catch {
       setStatus('idle');
       setError(d.auth.errorGeneric);
-      console.error('profile upsert error:', profileError);
-      return;
     }
-
-    await supabase
-      .from('notification_prefs')
-      .upsert({ user_id: user.id }, { onConflict: 'user_id', ignoreDuplicates: true });
-
-    // Seekers are not verified at signup — everyone lands on Browse.
-    // A lister hits the ID-verification gate later, when they go to /list.
-    router.push(`/${locale}/browse`);
-  }
-
-  const intents: { value: Intent; label: string }[] = [
-    { value: 'looking', label: d.auth.intentLooking },
-    { value: 'offering', label: d.auth.intentOffering },
-    { value: 'both', label: d.auth.intentBoth },
-  ];
-
-  if (status === 'confirm') {
-    return (
-      <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-5 py-16">
-        <div className="rounded-2xl border border-leaf/40 bg-leaf/10 p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-leaf/20">
-            <span className="text-2xl text-leaf">✓</span>
-          </div>
-          <h1 className="mb-2 font-display text-2xl text-ink">{d.auth.confirmTitle}</h1>
-          <p className="text-sm text-muted">{d.auth.confirmBody.replace('{email}', email)}</p>
-        </div>
-        <p className="mt-6 text-center text-sm text-muted">
-          {d.auth.haveAccount}{' '}
-          <Link href={`/${locale}/signin`} className="text-ink underline-offset-2 hover:underline">
-            {d.auth.signInLink}
-          </Link>
-        </p>
-      </main>
-    );
   }
 
   const fieldClass =
@@ -191,7 +107,8 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-5 py-16">
-      <h1 className="mb-8 font-display text-3xl text-ink">{d.auth.signUp}</h1>
+      <h1 className="mb-2 font-display text-3xl text-ink">{d.auth.signUp}</h1>
+      <p className="mb-8 text-sm text-muted">{t.subtitle}</p>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div>
@@ -208,81 +125,6 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
             placeholder={d.auth.emailPlaceholder}
             className={fieldClass}
           />
-        </div>
-
-        <div>
-          <label htmlFor="password" className={labelClass}>
-            {d.auth.passwordLabel}
-          </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={d.auth.passwordPlaceholder}
-            className={fieldClass}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="full-name" className={labelClass}>
-            {d.onboarding.fullNameLabel}
-          </label>
-          <input
-            id="full-name"
-            type="text"
-            autoComplete="name"
-            required
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder={d.onboarding.fullNamePlaceholder}
-            className={fieldClass}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="display-name" className={labelClass}>
-            {d.onboarding.displayNameLabel}
-          </label>
-          <input
-            id="display-name"
-            type="text"
-            autoComplete="given-name"
-            required
-            value={displayFirstName}
-            onChange={(e) => setDisplayFirstName(e.target.value)}
-            placeholder={d.onboarding.displayNamePlaceholder}
-            className={fieldClass}
-          />
-          <p className="mt-1 text-xs text-muted">{d.onboarding.displayNameHint}</p>
-        </div>
-
-        <div>
-          <label htmlFor="phone" className={labelClass}>
-            {d.onboarding.phoneLabel}
-          </label>
-          <input
-            id="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            required
-            maxLength={16}
-            value={phone}
-            onChange={(e) => {
-              // Keep only digits and a single leading '+', and cap at the E.164
-              // maximum (+ and up to 15 digits = 16 chars).
-              let v = e.target.value.replace(/[^\d+]/g, '');
-              v = v.replace(/(?!^)\+/g, '');
-              setPhone(v.slice(0, 16));
-            }}
-            placeholder={d.onboarding.phonePlaceholder}
-            className={fieldClass}
-          />
-          <p className="mt-1 text-xs text-muted">{d.onboarding.phoneHint}</p>
         </div>
 
         <fieldset>
@@ -302,32 +144,6 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
                   value={value}
                   checked={spokenLanguages.includes(value)}
                   onChange={() => toggleLanguage(value)}
-                  className="sr-only"
-                />
-                {label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend className="mb-2 text-sm text-muted">{d.auth.intentLabel}</legend>
-          <div className="flex flex-wrap gap-2">
-            {intents.map(({ value, label }) => (
-              <label
-                key={value}
-                className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm transition ${
-                  intent === value
-                    ? 'border-cobalt bg-gradient-cobalt text-white'
-                    : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="intent"
-                  value={value}
-                  checked={intent === value}
-                  onChange={() => setIntent(value)}
                   className="sr-only"
                 />
                 {label}
@@ -357,10 +173,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
                 </Link>
               ),
               identity: (
-                <Link
-                  href={`/${locale}/identity-consent`}
-                  className="text-ink underline-offset-2 hover:underline"
-                >
+                <Link href={`/${locale}/identity-consent`} className="text-ink underline-offset-2 hover:underline">
                   {d.auth.consentIdentityLabel}
                 </Link>
               ),
@@ -369,10 +182,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
         </label>
 
         {error && (
-          <p
-            role="alert"
-            className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600"
-          >
+          <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
           </p>
         )}
@@ -382,7 +192,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
           disabled={status === 'submitting' || !consented}
           className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
         >
-          {status === 'submitting' ? d.auth.signingUp : d.auth.signUp}
+          {status === 'submitting' ? d.auth.signingUp : t.continue}
         </button>
       </form>
 

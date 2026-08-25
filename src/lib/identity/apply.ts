@@ -77,6 +77,18 @@ export async function applyVerificationResult(
   const { error: profileErr } = await admin.from('profiles').update(updates).eq('id', userId);
   if (profileErr) throw profileErr;
 
+  // Mirror verified status into the auth user's app_metadata so middleware can
+  // enforce the "must verify before using the app" gate by reading the session
+  // JWT, with no per-request DB lookup. Best-effort — the DB profile is the
+  // source of truth.
+  if (updates.verification_status === 'verified') {
+    try {
+      await admin.auth.admin.updateUserById(userId, { app_metadata: { verified: true } });
+    } catch (e) {
+      console.error('[identity] app_metadata verified update failed', e);
+    }
+  }
+
   // Close out the audit row for this attempt (best-effort).
   await admin
     .from('identity_documents')

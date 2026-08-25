@@ -74,10 +74,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'pending', redirectUrl });
   }
 
-  // Mock: process inline. Bind a per-user identity key so both test accounts can
-  // verify (each mock account is its own identity).
+  // Mock: process inline. Bind the mock identity to the account's EMAIL (not the
+  // user id) so that "log in with mock" — which only knows the email — resolves
+  // back to this same account. Real providers bind the bank `sub` instead.
   const result = await provider.processResult(vendorRef);
-  const identityKey = identityKeyFor('mock', user.id);
+  const identityKey = identityKeyFor('mock', (user.email ?? user.id).toLowerCase());
   await applyVerificationResult(admin, user.id, vendorRef, result, identityKey);
   return NextResponse.json({ status: result.status, failureReason: result.failureReason });
 }

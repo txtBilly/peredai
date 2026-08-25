@@ -25,7 +25,14 @@ export class MockIdentityProvider implements IdentityProvider {
     if (vendorRef.startsWith('mock_underage_')) {
       return { status: 'failed', failureReason: 'age_under_18', vendorRef };
     }
-    // Default: success with age 30
-    return { status: 'verified', age: 30, vendorRef };
+    // Default: success. In the RU flow the bank-verified NAME is what gets
+    // populated on the profile, so the mock must return one too (override with
+    // MOCK_KYC_NAME). Real Sber/T-ID return the actual legal name.
+    return {
+      status: 'verified',
+      age: 30,
+      fullName: process.env.MOCK_KYC_NAME ?? 'Иван Иванов',
+      vendorRef,
+    };
   }
 }
