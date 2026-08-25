@@ -124,9 +124,20 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // getUser() fetches fresh from the auth server, so app_metadata.verified reflects
-  // a verification that just completed (no stale-JWT lag).
-  const verified = !!(user?.app_metadata as { verified?: boolean } | undefined)?.verified;
+  // Verified check. Fast path: the app_metadata.verified claim on the session.
+  // If it's absent/stale (the JWT was minted before verification and hasn't
+  // refreshed yet), confirm against the DB profile before trapping the user —
+  // otherwise a member who JUST verified is held on /verify with every link
+  // bouncing back. Read errors fail open (don't trap on a transient hiccup).
+  let verified = !!(user?.app_metadata as { verified?: boolean } | undefined)?.verified;
+  if (user && !verified) {
+    const { data: prof, error: profErr } = await supabase
+      .from('profiles')
+      .select('verification_status')
+      .eq('id', user.id)
+      .maybeSingle();
+    verified = profErr ? true : prof?.verification_status === 'verified';
+  }
 
   if (isProtected && !user) {
     const url = req.nextUrl.clone();

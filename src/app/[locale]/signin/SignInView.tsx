@@ -126,7 +126,7 @@ export default function SignInView({ params }: { params: { locale: string } }) {
             disabled={status === 'submitting'}
             className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
-            {status === 'submitting' ? t.starting : `${t.loginWith} ${providerLabel(p)}`}
+            {status === 'submitting' ? t.starting : providerLabel(p)}
           </button>
         ))}
       </div>

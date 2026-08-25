@@ -233,12 +233,21 @@ export default function VerifyView({
       </div>
 
       <div className="flex flex-1 flex-col justify-center py-10">
-      <h1 className="mb-6 font-display text-3xl font-bold text-ink">{v.title}</h1>
-      <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">{v.subtitle}</p>
-      <p className="mb-8 text-justify text-sm text-muted [hyphens:auto]">
-        Подтверждение личности выполняется через ваш банк — Сбер ID или Т-Банк. Ваше полное имя видно другим
-        проверенным участникам только когда они проявляют реальный интерес к вашему объявлению.
+      <h1 className="mb-6 font-display text-3xl font-bold text-ink">
+        Подтвердите личность, чтобы полноценно пользоваться платформой.
+      </h1>
+      <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">
+        Мы заботимся о безопасности и надёжности нашего сообщества арендаторов, поэтому хотим
+        знать, кому мы открываем свои двери.
       </p>
+      <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">
+        Единоразовое подтверждение личности через Ваш банк займёт менее минуты.
+      </p>
+      <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">
+        Ваше полное имя будет видно только проверенному участнику, заинтересованному именно
+        в Вашем объявлении.
+      </p>
+      <p className="mb-8 text-sm text-muted">Регистрация полностью бесплатная.</p>
 
       {error && (
         <p role="alert" className="mb-4 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
