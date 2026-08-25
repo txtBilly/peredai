@@ -30,13 +30,11 @@ export default async function AccountPage({ params }: { params: { locale: string
   const creditBalance = (ledger ?? []).reduce((sum, r) => sum + (r.amount ?? 0), 0);
 
   const verificationStatus = profile?.verification_status ?? 'unverified';
-  // Role-based verification: listers verify by government ID (verification_status),
-  // seekers by the background check. A member is "verified" if they've passed
-  // either — so a bg-checked seeker no longer shows as unverified.
-  const bgVerified =
-    !!profile?.bg_check_completed_at &&
-    (!profile.bg_check_expires_at || new Date(profile.bg_check_expires_at) > new Date());
-  const isVerified = verificationStatus === 'verified' || bgVerified;
+  // Verification comes ONLY from the identity flow (Sber ID / T-ID). The legacy
+  // background-check path is not part of the RU model and is never reached, so it
+  // must never confer "Verified" — paying (or any other action) cannot shortcut
+  // identity verification.
+  const isVerified = verificationStatus === 'verified';
   const memberSince = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'ru-RU', {
         month: 'long', year: 'numeric',

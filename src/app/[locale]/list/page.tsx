@@ -1,17 +1,16 @@
 import dynamic from 'next/dynamic';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { isLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
+import { requireUser } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
 import SiteHeader from '@/components/SiteHeader';
 
-// The listing form is entirely client-driven (auth check + Supabase reads,
-// nothing server-fetchable) and was hitting hydration mismatches on its
-// loading text — the prerendered server HTML and the first client paint
-// disagreed depending on build/cache timing. Loading it with `ssr: false`
-// means the server never renders it at all, so there is nothing for the
-// client to reconcile against: the mismatch class is gone by construction,
-// not just made less likely. See ListForm.tsx for the verification-gate
-// logic itself (timeout + error state).
+// The listing form is entirely client-driven (Supabase reads, nothing
+// server-fetchable) and was hitting hydration mismatches on its loading text,
+// so it's loaded with `ssr: false` — the server never renders it, so there's
+// nothing for the client to reconcile against. See ListForm.tsx for the form
+// logic itself.
 const ListForm = dynamic(() => import('./ListForm'), {
   ssr: false,
   loading: () => (
@@ -22,9 +21,28 @@ const ListForm = dynamic(() => import('./ListForm'), {
   ),
 });
 
-export default function ListPage({ params }: { params: { locale: string } }) {
+export default async function ListPage({ params }: { params: { locale: string } }) {
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
+
+  // Server-side identity gate: only verified members reach the listing form.
+  // Unverified users are sent straight to the verification flow and return to
+  // /list afterwards. Doing this on the server (cookie auth) is reliable and
+  // instant — the client ListForm's getUser() can race on the ssr:false first
+  // paint and misroute (e.g. bounce to /signin), which is why "Разместить
+  // квартиру" appeared to do nothing for unverified users. ListForm keeps its
+  // own client-side check as defense in depth.
+  const user = await requireUser(locale);
+  const supabase = createClient();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('verification_status')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (profile?.verification_status !== 'verified') {
+    redirect(`/${locale}/verify?next=list`);
+  }
+
   return (
     <>
       <SiteHeader locale={locale} />
