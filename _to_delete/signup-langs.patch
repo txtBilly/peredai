@@ -1,0 +1,119 @@
+diff --git a/src/app/[locale]/account/profile/page.tsx b/src/app/[locale]/account/profile/page.tsx
+index d1d931a..3fbdbad 100644
+--- a/src/app/[locale]/account/profile/page.tsx
++++ b/src/app/[locale]/account/profile/page.tsx
+@@ -8,13 +8,15 @@ import { getDictionary } from '@/i18n/config';
+ import type { Locale } from '@/i18n/config';
+ 
+ const LANGUAGE_OPTIONS = [
++  { value: 'ru', label: 'Русский' },
++  { value: 'uz', label: 'Oʻzbekcha' },
++  { value: 'tg', label: 'Тоҷикӣ' },
+   { value: 'en', label: 'English' },
+-  { value: 'es', label: 'Español' },
+   { value: 'zh', label: '中文' },
+-  { value: 'ru', label: 'Русский' },
++  { value: 'ar', label: 'العربية' },
++  { value: 'es', label: 'Español' },
+   { value: 'fr', label: 'Français' },
+   { value: 'pt', label: 'Português' },
+-  { value: 'ar', label: 'العربية' },
+   { value: 'ko', label: '한국어' },
+ ];
+ 
+@@ -27,7 +29,7 @@ export default function EditProfilePage({ params }: { params: { locale: string }
+   const [fullName, setFullName] = useState('');
+   const [displayFirstName, setDisplayFirstName] = useState('');
+   const [phone, setPhone] = useState('');
+-  const [spokenLanguages, setSpokenLanguages] = useState<string[]>(['en']);
++  const [spokenLanguages, setSpokenLanguages] = useState<string[]>(['ru']);
+   const [preferredLocale, setPreferredLocale] = useState<'en' | 'ru'>(locale);
+   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+   const [error, setError] = useState('');
+diff --git a/src/app/[locale]/browse/[id]/ListingDetailView.tsx b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+index 15c70b7..0ef3152 100644
+--- a/src/app/[locale]/browse/[id]/ListingDetailView.tsx
++++ b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+@@ -10,10 +10,12 @@ import { listingPhotoUrl, listingTypeLabel } from '@/lib/listings';
+ import { formatRubles } from '@/lib/format';
+ 
+ const LANGUAGE_NAMES: Record<string, string> = {
++  ru: 'Русский',
++  uz: 'Oʻzbekcha',
++  tg: 'Тоҷикӣ',
+   en: 'English',
+   es: 'Español',
+   zh: '中文',
+-  ru: 'Русский',
+   fr: 'Français',
+   pt: 'Português',
+   ar: 'العربية',
+diff --git a/src/app/[locale]/signup/SignUpView.tsx b/src/app/[locale]/signup/SignUpView.tsx
+index f30de79..51d3ca5 100644
+--- a/src/app/[locale]/signup/SignUpView.tsx
++++ b/src/app/[locale]/signup/SignUpView.tsx
+@@ -13,13 +13,15 @@ type Intent = 'looking' | 'offering' | 'both';
+ const CONSENT_VERSION = '2026-07-v1';
+ 
+ const LANGUAGE_OPTIONS = [
++  { value: 'ru', label: 'Русский' },
++  { value: 'uz', label: 'Oʻzbekcha' },
++  { value: 'tg', label: 'Тоҷикӣ' },
+   { value: 'en', label: 'English' },
+-  { value: 'es', label: 'Español' },
+   { value: 'zh', label: '中文' },
+-  { value: 'ru', label: 'Русский' },
++  { value: 'ar', label: 'العربية' },
++  { value: 'es', label: 'Español' },
+   { value: 'fr', label: 'Français' },
+   { value: 'pt', label: 'Português' },
+-  { value: 'ar', label: 'العربية' },
+   { value: 'ko', label: '한국어' },
+ ];
+ 
+@@ -43,7 +45,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
+   const [fullName, setFullName] = useState('');
+   const [displayFirstName, setDisplayFirstName] = useState('');
+   const [phone, setPhone] = useState('');
+-  const [spokenLanguages, setSpokenLanguages] = useState<string[]>([locale]);
++  const [spokenLanguages, setSpokenLanguages] = useState<string[]>(['ru']);
+   const [consented, setConsented] = useState(false);
+   const [status, setStatus] = useState<'idle' | 'submitting' | 'confirm'>('idle');
+   const [error, setError] = useState('');
+diff --git a/supabase/migrations/0038_ru_locale_and_languages.sql b/supabase/migrations/0038_ru_locale_and_languages.sql
+new file mode 100644
+index 0000000..1f92949
+--- /dev/null
++++ b/supabase/migrations/0038_ru_locale_and_languages.sql
+@@ -0,0 +1,31 @@
++-- 0038_ru_locale_and_languages.sql
++-- Russia market (Peredai): the profiles.preferred_locale CHECK constraint from
++-- schema.sql only allowed ('en','es'), so any signup with 'ru' failed the
++-- handle_new_user trigger / client upsert → the generic "something went wrong"
++-- error on account creation.
++--
++-- Widen it to the RU-market locales and default to 'ru'. Apply by hand in the
++-- Supabase SQL editor. "No rows returned" is success.
++
++-- Drop whatever the existing preferred_locale check is named (inline column
++-- checks get an auto-generated name; this finds it regardless).
++do $$
++declare c text;
++begin
++  for c in
++    select conname
++    from pg_constraint
++    where conrelid = 'public.profiles'::regclass
++      and contype = 'c'
++      and pg_get_constraintdef(oid) ilike '%preferred_locale%'
++  loop
++    execute format('alter table public.profiles drop constraint %I', c);
++  end loop;
++end $$;
++
++alter table public.profiles
++  alter column preferred_locale set default 'ru';
++
++alter table public.profiles
++  add constraint profiles_preferred_locale_check
++  check (preferred_locale in ('ru','en'));

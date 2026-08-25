@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { getDictionary } from '@/i18n/config';
+import { getDictionary, intlLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
+import { formatRubles } from '@/lib/format';
 import {
   DEFAULT_CITY,
   normalizeCity,
@@ -25,9 +26,9 @@ type ListingRow = {
   lister_id: string;
   neighborhood: string | null;
   cross_streets: string | null;
-  zip: string | null;
   type: string | null;
   monthly_rent: number | null;
+  sqft: number | null;
   available_from: string | null;
   pets_ok: boolean | null;
   laundry: boolean | null;
@@ -36,7 +37,8 @@ type ListingRow = {
   outdoor: boolean | null;
   no_fee: boolean | null;
   walk_up: boolean | null;
-  min_credit_score: number | null;
+  allow_non_rf: boolean | null;
+  allow_children: boolean | null;
   gratitude_amount: number | null;
   status: string;
 };
@@ -112,7 +114,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         let query = supabase
           .from('listings')
           .select(
-            'id, lister_id, neighborhood, cross_streets, zip, type, monthly_rent, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, min_credit_score, gratitude_amount, status'
+            'id, lister_id, neighborhood, cross_streets, type, monthly_rent, sqft, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, allow_non_rf, allow_children, gratitude_amount, status'
           )
           .in('status', ['active', 'negotiating'])
           .order('created_at', { ascending: false })
@@ -120,14 +122,13 @@ export default function BrowseView({ locale }: { locale: Locale }) {
 
         const q = searchText.trim().replace(/[%,()]/g, '');
         if (q) {
-          query = query.or(`neighborhood.ilike.%${q}%,cross_streets.ilike.%${q}%,zip.ilike.%${q}%`);
+          query = query.or(`neighborhood.ilike.%${q}%,cross_streets.ilike.%${q}%`);
         }
         if (city) query = query.eq('city', city); // '' = all cities
         if (typeFilter !== 'all') query = query.eq('type', typeFilter);
         if (filters.rentMin) query = query.gte('monthly_rent', Number(filters.rentMin));
         if (filters.rentMax) query = query.lte('monthly_rent', Number(filters.rentMax));
         if (filters.bathrooms) query = query.gte('bathrooms', Number(filters.bathrooms));
-        if (filters.zip.trim()) query = query.eq('zip', filters.zip.trim());
         if (filters.moveInBy) query = query.lte('available_from', filters.moveInBy);
         if (filters.laundry) query = query.eq('laundry', true);
         if (filters.petsOk) query = query.eq('pets_ok', true);
@@ -135,6 +136,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         if (filters.walkUp) query = query.eq('walk_up', true);
         if (filters.doorman) query = query.eq('doorman', true);
         if (filters.outdoor) query = query.eq('outdoor', true);
+        if (filters.allowNonRf) query = query.eq('allow_non_rf', true);
+        if (filters.allowChildren) query = query.eq('allow_children', true);
 
         const { data: rows, error: queryError } = await query;
         if (cancelled) return;
@@ -175,7 +178,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         const verifiedListers = new Set((listersResult.data ?? []).filter((p) => p.is_verified).map((p) => p.id));
         const favouritedIds = new Set((favouritesResult.data ?? []).map((f) => f.listing_id));
 
-        const dateLocale = locale === 'es' ? 'es-ES' : 'en-US';
+        const dateLocale = intlLocale(locale);
 
         const nextCards: ListingCardData[] = rows.map((row: ListingRow) => {
           const photoPath = photoByListing.get(row.id);
@@ -186,6 +189,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           if (row.walk_up) amenityLabels.push(l.amenityWalkUp);
           if (row.doorman) amenityLabels.push(l.amenityDoorman);
           if (row.outdoor) amenityLabels.push(l.amenityOutdoor);
+          if (row.allow_non_rf) amenityLabels.push(l.amenityNonRf);
+          if (row.allow_children) amenityLabels.push(l.amenityChildren);
 
           return {
             id: row.id,
@@ -193,8 +198,9 @@ export default function BrowseView({ locale }: { locale: Locale }) {
             photoUrl: photoPath ? listingPhotoUrl(photoPath) : null,
             neighborhood: row.neighborhood ?? '',
             crossStreets: row.cross_streets ?? '',
-            rentLabel: row.monthly_rent != null ? `$${row.monthly_rent.toLocaleString('en-US')}/mo` : '',
+            rentLabel: row.monthly_rent != null ? formatRubles(row.monthly_rent, { perMonth: true }) : '',
             typeLabel: row.type ? typeLabels[row.type as ListingTypeValue] ?? row.type : '',
+            sqftLabel: row.sqft != null ? `${row.sqft} м²` : null,
             negotiating: row.status === 'negotiating',
             negotiatingLabel: b.statusNegotiating,
             amenityLabels,
@@ -207,10 +213,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
                   })
                 )
               : null,
-            minCreditScoreLabel:
-              row.min_credit_score != null ? b.minCreditScore.replace('{score}', String(row.min_credit_score)) : null,
             gratuityLabel:
-              row.gratitude_amount != null ? `$${row.gratitude_amount.toLocaleString('en-US')}` : null,
+              row.gratitude_amount != null ? formatRubles(row.gratitude_amount) : null,
             verified: verifiedListers.has(row.lister_id),
             favourited: favouritedIds.has(row.id),
             favouriteAddLabel: b.favouriteAdd,
@@ -260,6 +264,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     ['walkUp', l.amenityWalkUp],
     ['doorman', l.amenityDoorman],
     ['outdoor', l.amenityOutdoor],
+    ['allowNonRf', l.amenityNonRf],
+    ['allowChildren', l.amenityChildren],
   ];
   const activeChips: { key: string; label: string; remove: () => void }[] = [];
   if (searchText.trim())
@@ -267,13 +273,11 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   if (typeFilter !== 'all')
     activeChips.push({ key: 'type', label: typeLabels[typeFilter], remove: () => setTypeFilter('all') });
   if (filters.rentMin)
-    activeChips.push({ key: 'rmin', label: `≥ $${filters.rentMin}`, remove: () => setFilters((f) => ({ ...f, rentMin: '' })) });
+    activeChips.push({ key: 'rmin', label: `≥ ${filters.rentMin} ₽`, remove: () => setFilters((f) => ({ ...f, rentMin: '' })) });
   if (filters.rentMax)
-    activeChips.push({ key: 'rmax', label: `≤ $${filters.rentMax}`, remove: () => setFilters((f) => ({ ...f, rentMax: '' })) });
+    activeChips.push({ key: 'rmax', label: `≤ ${filters.rentMax} ₽`, remove: () => setFilters((f) => ({ ...f, rentMax: '' })) });
   if (filters.bathrooms)
-    activeChips.push({ key: 'bath', label: `${filters.bathrooms}+ ba`, remove: () => setFilters((f) => ({ ...f, bathrooms: '' })) });
-  if (filters.zip.trim())
-    activeChips.push({ key: 'zip', label: filters.zip.trim(), remove: () => setFilters((f) => ({ ...f, zip: '' })) });
+    activeChips.push({ key: 'bath', label: `${filters.bathrooms}+ санузл.`, remove: () => setFilters((f) => ({ ...f, bathrooms: '' })) });
   if (filters.moveInBy)
     activeChips.push({ key: 'move', label: `by ${filters.moveInBy}`, remove: () => setFilters((f) => ({ ...f, moveInBy: '' })) });
   amenityChips.forEach(([key, label]) => {
@@ -433,10 +437,10 @@ export default function BrowseView({ locale }: { locale: Locale }) {
                   <div className="min-w-0">
                     <span className="block truncate text-base font-bold text-cobalt">{card.neighborhood || '—'}</span>
                     <p className="truncate font-mono text-[13px] text-muted">
-                      {[card.crossStreets, card.typeLabel, card.availableLabel, card.minCreditScoreLabel]
+                      {[card.typeLabel, card.neighborhood, card.sqftLabel, card.crossStreets, card.availableLabel]
                         .filter(Boolean)
                         .join(' · ')}
-                      {card.verified && <span className="font-semibold text-leaf"> · ✓ verified</span>}
+                      {card.verified && <span className="font-semibold text-leaf"> · ✓ проверен</span>}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
@@ -485,7 +489,6 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           rentMin: b.rentMinLabel,
           rentMax: b.rentMaxLabel,
           bathrooms: b.bathroomsFilterLabel,
-          zip: b.zipLabel,
           moveInBy: b.moveInByLabel,
           laundry: l.amenityLaundry,
           petsOk: l.amenityPetsOk,
@@ -493,6 +496,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           walkUp: l.amenityWalkUp,
           doorman: l.amenityDoorman,
           outdoor: l.amenityOutdoor,
+          allowNonRf: l.amenityNonRf,
+          allowChildren: l.amenityChildren,
           apply: b.applyFiltersCta,
           clear: b.clearFiltersCta,
           close: b.closeCta,

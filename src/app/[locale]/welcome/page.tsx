@@ -12,50 +12,10 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
   const locale = params.locale as Locale;
   const dict = getDictionary(locale);
 
-  const steps = [
-    { n: '1', title: 'Find a place leaving soon', body: 'Browse verified apartments being passed on directly by the current renter.' },
-    { n: '2', title: 'Pay $100 to connect', body: 'That’s 3 contact credits. Every seeker is background-checked before connecting.' },
-    { n: '3', title: 'Meet & take it over', body: 'Chat, arrange a viewing, and take the lease. No broker, no broker fee.' },
-  ];
-
-  const benefits = [
-    'Skip the middleman — little to no cost',
-    'Arrange your move-in/out dates with more flexibility',
-    'Agree on the furniture',
-  ];
-
-  const reviews = [
-    {
-      quote: 'Found my Astoria one-bedroom in a week — no broker, no fee, just messaged the guy moving out. Wild that this actually works.',
-      name: 'Maya R.',
-      detail: 'Astoria',
-    },
-    {
-      quote: 'I was moving cross-country and handed my Bushwick place to someone verified in two days. So much easier than posting a sublet.',
-      name: 'Devin K.',
-      detail: 'Bushwick',
-    },
-    {
-      quote: 'Everyone’s background-checked, so it actually felt safe meeting up. Took over a lease in the LES and skipped the broker fee entirely.',
-      name: 'Priya S.',
-      detail: 'Lower East Side',
-    },
-    {
-      quote: 'Listed my Williamsburg one-bed the day before I moved out and had three verified people messaging within hours. Zero broker drama.',
-      name: 'Andre M.',
-      detail: 'Williamsburg',
-    },
-    {
-      quote: 'As a first-time renter this felt way less sketchy than Craigslist. The verified badges and real names made all the difference.',
-      name: 'Sofia L.',
-      detail: 'Harlem',
-    },
-    {
-      quote: 'Took over a rent-stabilized place in Sunnyside directly from the last tenant. Saved a full month’s rent in fees. Still can’t believe it.',
-      name: 'Marcus T.',
-      detail: 'Sunnyside',
-    },
-  ];
+  const w = dict.welcome;
+  const steps = w.steps.map((s, i) => ({ n: String(i + 1), title: s.title, body: s.body }));
+  const benefits = w.benefits;
+  const reviews = w.reviews;
 
   return (
     <main className="min-h-screen">
@@ -94,20 +54,20 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
             href={`/${locale}/browse`}
             className="whitespace-nowrap rounded-lg bg-gradient-cobalt px-4 py-3 font-semibold text-white transition hover:brightness-110 sm:px-6"
           >
-            Find a place
+            {w.findCta}
           </Link>
           <Link
             href={`/${locale}/list`}
             className="whitespace-nowrap rounded-lg bg-ink px-4 py-3 font-semibold text-white transition hover:brightness-110 sm:px-6"
           >
-            List your apartment
+            {w.listCta}
           </Link>
         </div>
       </section>
 
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-5 py-10">
-        <h2 className="mb-6 font-display text-3xl font-bold text-ink">How it works</h2>
+        <h2 className="mb-6 font-display text-3xl font-bold text-ink">{w.howTitle}</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {steps.map((s) => (
             <div key={s.n} className="rounded-2xl border border-black/10 bg-black/[0.02] p-6">
@@ -131,7 +91,7 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
 
       {/* Reviews */}
       <section className="mx-auto max-w-6xl px-5 py-12">
-        <h2 className="mb-6 font-display text-2xl font-bold text-ink">Loved by New Yorkers</h2>
+        <h2 className="mb-6 font-display text-2xl font-bold text-ink">{w.reviewsTitle}</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {reviews.map((r, i) => {
             const hues = [

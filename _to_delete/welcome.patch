@@ -1,0 +1,226 @@
+diff --git a/src/app/[locale]/welcome/page.tsx b/src/app/[locale]/welcome/page.tsx
+index 2bf9a46..1eda148 100644
+--- a/src/app/[locale]/welcome/page.tsx
++++ b/src/app/[locale]/welcome/page.tsx
+@@ -12,50 +12,10 @@ export default function WelcomePage({ params }: { params: { locale: string } })
+   const locale = params.locale as Locale;
+   const dict = getDictionary(locale);
+ 
+-  const steps = [
+-    { n: '1', title: 'Find a place leaving soon', body: 'Browse verified apartments being passed on directly by the current renter.' },
+-    { n: '2', title: 'Pay $100 to connect', body: 'That’s 3 contact credits. Every seeker is background-checked before connecting.' },
+-    { n: '3', title: 'Meet & take it over', body: 'Chat, arrange a viewing, and take the lease. No broker, no broker fee.' },
+-  ];
+-
+-  const benefits = [
+-    'Skip the middleman — little to no cost',
+-    'Arrange your move-in/out dates with more flexibility',
+-    'Agree on the furniture',
+-  ];
+-
+-  const reviews = [
+-    {
+-      quote: 'Found my Astoria one-bedroom in a week — no broker, no fee, just messaged the guy moving out. Wild that this actually works.',
+-      name: 'Maya R.',
+-      detail: 'Astoria',
+-    },
+-    {
+-      quote: 'I was moving cross-country and handed my Bushwick place to someone verified in two days. So much easier than posting a sublet.',
+-      name: 'Devin K.',
+-      detail: 'Bushwick',
+-    },
+-    {
+-      quote: 'Everyone’s background-checked, so it actually felt safe meeting up. Took over a lease in the LES and skipped the broker fee entirely.',
+-      name: 'Priya S.',
+-      detail: 'Lower East Side',
+-    },
+-    {
+-      quote: 'Listed my Williamsburg one-bed the day before I moved out and had three verified people messaging within hours. Zero broker drama.',
+-      name: 'Andre M.',
+-      detail: 'Williamsburg',
+-    },
+-    {
+-      quote: 'As a first-time renter this felt way less sketchy than Craigslist. The verified badges and real names made all the difference.',
+-      name: 'Sofia L.',
+-      detail: 'Harlem',
+-    },
+-    {
+-      quote: 'Took over a rent-stabilized place in Sunnyside directly from the last tenant. Saved a full month’s rent in fees. Still can’t believe it.',
+-      name: 'Marcus T.',
+-      detail: 'Sunnyside',
+-    },
+-  ];
++  const w = dict.welcome;
++  const steps = w.steps.map((s, i) => ({ n: String(i + 1), title: s.title, body: s.body }));
++  const benefits = w.benefits;
++  const reviews = w.reviews;
+ 
+   return (
+     <main className="min-h-screen">
+@@ -94,20 +54,20 @@ export default function WelcomePage({ params }: { params: { locale: string } })
+             href={`/${locale}/browse`}
+             className="whitespace-nowrap rounded-lg bg-gradient-cobalt px-4 py-3 font-semibold text-white transition hover:brightness-110 sm:px-6"
+           >
+-            Find a place
++            {w.findCta}
+           </Link>
+           <Link
+             href={`/${locale}/list`}
+             className="whitespace-nowrap rounded-lg bg-ink px-4 py-3 font-semibold text-white transition hover:brightness-110 sm:px-6"
+           >
+-            List your apartment
++            {w.listCta}
+           </Link>
+         </div>
+       </section>
+ 
+       {/* How it works */}
+       <section className="mx-auto max-w-6xl px-5 py-10">
+-        <h2 className="mb-6 font-display text-3xl font-bold text-ink">How it works</h2>
++        <h2 className="mb-6 font-display text-3xl font-bold text-ink">{w.howTitle}</h2>
+         <div className="grid gap-4 sm:grid-cols-3">
+           {steps.map((s) => (
+             <div key={s.n} className="rounded-2xl border border-black/10 bg-black/[0.02] p-6">
+@@ -131,7 +91,7 @@ export default function WelcomePage({ params }: { params: { locale: string } })
+ 
+       {/* Reviews */}
+       <section className="mx-auto max-w-6xl px-5 py-12">
+-        <h2 className="mb-6 font-display text-2xl font-bold text-ink">Loved by New Yorkers</h2>
++        <h2 className="mb-6 font-display text-2xl font-bold text-ink">{w.reviewsTitle}</h2>
+         <div className="grid gap-4 sm:grid-cols-3">
+           {reviews.map((r, i) => {
+             const hues = [
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index 416dce3..693f36f 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -381,5 +381,62 @@
+     "noDrafts": "No drafts yet.",
+     "createCta": "Create a listing",
+     "yearlyCounter": "{count} of 3 published this year"
++  },
++  "welcome": {
++    "findCta": "Find a place",
++    "listCta": "List your apartment",
++    "howTitle": "How it works",
++    "reviewsTitle": "Trusted across Moscow and St. Petersburg",
++    "steps": [
++      {
++        "title": "Find a place leaving soon",
++        "body": "Browse verified apartments being passed on directly by the current renter."
++      },
++      {
++        "title": "Buy credits to connect",
++        "body": "One pack is 3 contact credits. Every member is identity-verified."
++      },
++      {
++        "title": "Meet & take it over",
++        "body": "Chat, arrange a viewing, and take over the lease. No agent, no fee."
++      }
++    ],
++    "benefits": [
++      "Skip the middleman — little to no cost",
++      "Arrange your move-in/out dates flexibly",
++      "Agree on the furniture"
++    ],
++    "reviews": [
++      {
++        "quote": "Found my one-bedroom in Khamovniki in a week — no agent, no fee, just messaged the person moving out. Wild that this actually works.",
++        "name": "Maria R.",
++        "detail": "Khamovniki, Moscow"
++      },
++      {
++        "quote": "I was moving to another city and handed my place on Vasilyevsky to someone verified in two days. So much easier than posting a sublet.",
++        "name": "Dmitry K.",
++        "detail": "Vasileostrovsky, St. Petersburg"
++      },
++      {
++        "quote": "Everyone's identity-verified, so meeting up felt safe. Took over a lease in Presnya and skipped the agent fee entirely.",
++        "name": "Artyom S.",
++        "detail": "Presnensky, Moscow"
++      },
++      {
++        "quote": "Listed my place on Petrogradka the day before I moved out and had three verified people messaging within hours. Zero agent drama.",
++        "name": "Andrei M.",
++        "detail": "Petrogradsky, St. Petersburg"
++      },
++      {
++        "quote": "As a first-time renter this felt far safer than classified boards. The verified badges and real names made all the difference.",
++        "name": "Sofia L.",
++        "detail": "Zamoskvorechye, Moscow"
++      },
++      {
++        "quote": "Took over a place directly from the last tenant in Admiralteysky. Saved a full month's rent in fees. Still can't believe it.",
++        "name": "Timur T.",
++        "detail": "Admiralteysky, St. Petersburg"
++      }
++    ]
+   }
+ }
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index 0ae3f54..c298219 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -381,5 +381,62 @@
+     "noDrafts": "Пока нет черновиков.",
+     "createCta": "Создать объявление",
+     "yearlyCounter": "{count} из 3 опубликовано за год"
++  },
++  "welcome": {
++    "findCta": "Найти квартиру",
++    "listCta": "Разместить квартиру",
++    "howTitle": "Как это работает",
++    "reviewsTitle": "Нас выбирают в Москве и Санкт-Петербурге",
++    "steps": [
++      {
++        "title": "Найдите квартиру, которую скоро освобождают",
++        "body": "Смотрите проверенные квартиры, которые арендаторы передают напрямую."
++      },
++      {
++        "title": "Купите кредиты, чтобы связаться",
++        "body": "Один пакет — 3 кредита на контакты. Все участники проходят проверку личности."
++      },
++      {
++        "title": "Познакомьтесь и примите квартиру",
++        "body": "Общайтесь, договоритесь о просмотре и примите аренду. Без агента и без комиссии."
++      }
++    ],
++    "benefits": [
++      "Без посредника — почти без затрат",
++      "Гибко согласуйте даты заезда и выезда",
++      "Договоритесь о мебели"
++    ],
++    "reviews": [
++      {
++        "quote": "Нашла однушку в Хамовниках за неделю — без агента и без комиссии, просто написала человеку, который съезжал. Не верится, что это правда работает.",
++        "name": "Мария Р.",
++        "detail": "Хамовники, Москва"
++      },
++      {
++        "quote": "Переезжал в другой город и за два дня передал квартиру на Васильевском проверенному человеку. Намного проще, чем искать через объявления.",
++        "name": "Дмитрий К.",
++        "detail": "Василеостровский, СПб"
++      },
++      {
++        "quote": "Все проходят проверку личности, поэтому встречаться было спокойно. Принял аренду на Пресне и полностью обошёлся без комиссии агенту.",
++        "name": "Артём С.",
++        "detail": "Пресненский, Москва"
++      },
++      {
++        "quote": "Разместил квартиру на Петроградке за день до выезда — через пару часов уже писали трое проверенных участников. Никаких проблем с агентами.",
++        "name": "Андрей М.",
++        "detail": "Петроградский, СПб"
++      },
++      {
++        "quote": "Снимаю впервые, и это оказалось куда надёжнее объявлений на досках. Значки проверки и настоящие имена решают.",
++        "name": "София Л.",
++        "detail": "Замоскворечье, Москва"
++      },
++      {
++        "quote": "Принял квартиру напрямую от прошлого жильца в Адмиралтейском. Сэкономил целую арендную плату на комиссии. До сих пор не верю.",
++        "name": "Тимур Т.",
++        "detail": "Адмиралтейский, СПб"
++      }
++    ]
+   }
+ }

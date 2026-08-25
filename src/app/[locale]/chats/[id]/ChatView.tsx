@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { listingTypeLabel } from '@/lib/listings';
-import { getDictionary } from '@/i18n/config';
+import { getDictionary, intlLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
+import { formatRubles } from '@/lib/format';
 
 // Copy here is functional, not final (part of the batched copy sweep).
 
@@ -19,7 +20,6 @@ type Chat = {
   lister_close_requested_at: string | null;
   seeker_success_at: string | null;
   disclosed_seeker_name: string | null;
-  disclosed_credit_score: number | null;
   disclosed_bg_status: string | null;
 };
 
@@ -36,17 +36,10 @@ type Listing = {
 
 type Message = { id: string; sender_id: string; body: string; created_at: string };
 
-function creditBand(score: number | null): string {
-  if (score == null) return 'Not available';
-  if (score >= 800) return 'Excellent (800+)';
-  if (score >= 740) return 'Very good (740–799)';
-  if (score >= 670) return 'Good (670–739)';
-  if (score >= 580) return 'Fair (580–669)';
-  return 'Poor (below 580)';
-}
-
 export default function ChatView({ locale, id }: { locale: Locale; id: string }) {
-  const l = getDictionary(locale).listing;
+  const dict = getDictionary(locale);
+  const l = dict.listing;
+  const c = dict.chat;
   const supabase = useMemo(() => createClient(), []);
 
   const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -81,7 +74,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       const { data: c } = await supabase
         .from('chats')
         .select(
-          'id, seeker_id, lister_id, listing_id, status, opened_at, lister_close_requested_at, seeker_success_at, disclosed_seeker_name, disclosed_credit_score, disclosed_bg_status'
+          'id, seeker_id, lister_id, listing_id, status, opened_at, lister_close_requested_at, seeker_success_at, disclosed_seeker_name, disclosed_bg_status'
         )
         .eq('id', id)
         .maybeSingle();
@@ -269,7 +262,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
   if (phase === 'error' || !chat) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
         <p role="alert" className="mb-6 text-sm text-red-600">
           This conversation isn’t available.
         </p>
@@ -301,20 +294,20 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
   const otherName = role === 'seeker' ? listing?.contact_name ?? '—' : chat.disclosed_seeker_name ?? '—';
   const gratuityLabel =
     listing?.gratitude_amount != null && listing.gratitude_amount > 0
-      ? `$${listing.gratitude_amount.toLocaleString('en-US')}`
+      ? formatRubles(listing.gratitude_amount)
       : null;
   // Split unit/rent from the gratuity so they can be sized independently.
   const unitRentLine = listing
     ? [
         listing.type ? listingTypeLabel(listing.type, l) : null,
-        listing.monthly_rent != null ? `$${listing.monthly_rent.toLocaleString('en-US')}/mo` : null,
+        listing.monthly_rent != null ? formatRubles(listing.monthly_rent, { perMonth: true }) : null,
       ]
         .filter(Boolean)
         .join(' · ')
     : '';
-  const gratuityLine = gratuityLabel ? `${gratuityLabel} one-time gratuity` : null;
+  const gratuityLine = gratuityLabel ? `${gratuityLabel} ${c.gratuitySuffix}` : null;
   const availableLabel = listing?.available_from
-    ? new Date(listing.available_from).toLocaleDateString(locale === 'es' ? 'es-US' : 'en-US', {
+    ? new Date(listing.available_from).toLocaleDateString(intlLocale(locale), {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -322,10 +315,10 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
     : null;
   const closedLabel =
     chat.status === 'closed_success'
-      ? 'This conversation was closed — marked as a success.'
+      ? c.closedSuccess
       : chat.status === 'closed_didnt_work'
-        ? 'This conversation was closed — didn’t work out.'
-        : 'This conversation is closed.';
+        ? c.closedDidntWork
+        : c.closed;
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col px-5 py-8">
@@ -338,11 +331,14 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
               onClick={() => setCloseOpen((v) => !v)}
               className="rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:border-red-400 hover:bg-red-100"
             >
-              Terminate chat
+              {c.terminate}
             </button>
           )}
-          <Link href={`/${locale}/chats/${id}/report`} className="text-sm text-muted hover:text-ink">
-            Report
+          <Link
+            href={`/${locale}/chats/${id}/report`}
+            className="rounded-lg border border-black/15 px-3 py-1.5 text-sm text-muted transition hover:border-black/30 hover:text-ink"
+          >
+            {c.report}
           </Link>
         </div>
         <div className="rounded-xl border border-black/10 bg-white p-3 text-sm">
@@ -350,19 +346,18 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
             <div className="space-y-3">
               <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="whitespace-nowrap text-[1.23rem] font-bold text-ink">{otherName}</span>
-                <span className="whitespace-nowrap font-semibold text-leaf">✓ Verified ID by Stripe</span>
+                <span className="whitespace-nowrap font-semibold text-leaf">✓ {c.verifiedId}</span>
               </p>
               {listing?.full_address && (
                 <p className="text-[1.26rem] text-ink">
-                  <span className="text-ink">Address:</span> {listing.full_address}
+                  <span className="text-ink">{c.addressLabel}</span> {listing.full_address}
                 </p>
               )}
             </div>
           ) : (
             <p className="text-muted">
-              <span className="text-ink">Seeker:</span> {chat.disclosed_seeker_name ?? '—'} · Credit band:{' '}
-              {creditBand(chat.disclosed_credit_score)} ·{' '}
-              {chat.disclosed_bg_status === 'verified' ? 'Verified' : '—'}
+              <span className="text-ink">{c.seekerLabel}</span> {chat.disclosed_seeker_name ?? '—'} ·{' '}
+              {chat.disclosed_bg_status === 'verified' ? c.verifiedId : '—'}
             </p>
           )}
         </div>
@@ -388,26 +383,21 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
           </p>
         )}
         {availableLabel && (
-          <p className="mt-1.5 text-[0.88rem] text-ink">Available: {availableLabel}</p>
+          <p className="mt-1.5 text-[0.88rem] text-ink">{c.available} {availableLabel}</p>
         )}
       </div>
 
       {/* Pending success — seeker reported "got the place", awaiting the lister */}
       {isActive && successReported && role === 'seeker' && (
         <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
-          <p className="mb-1 font-medium text-ink">You reported getting the place.</p>
-          <p className="text-xs text-muted">
-            Waiting for the lister to confirm. If they don’t respond, it closes automatically after 24 hours.
-          </p>
+          <p className="mb-1 font-medium text-ink">{c.seekerReportedTitle}</p>
+          <p className="text-xs text-muted">{c.seekerReportedBody}</p>
         </div>
       )}
       {isActive && successReported && role === 'lister' && (
         <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
-          <p className="mb-1 font-medium text-ink">{otherName} reported getting the place.</p>
-          <p className="mb-3 text-xs text-muted">
-            Confirm to take your listing off-market, or decline if that’s not right. If you do nothing, it closes
-            automatically after 24 hours.
-          </p>
+          <p className="mb-1 font-medium text-ink">{c.listerReportedTitle.replace('{name}', otherName)}</p>
+          <p className="mb-3 text-xs text-muted">{c.listerReportedBody}</p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -415,7 +405,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
               onClick={handleConfirmSuccess}
               className="rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-60"
             >
-              Confirm — take off-market
+              {c.confirmOffMarket}
             </button>
             <button
               type="button"
@@ -423,7 +413,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
               onClick={handleDeclineSuccess}
               className="rounded-lg border border-black/15 px-4 py-2 text-sm text-ink transition hover:border-black/30 disabled:opacity-60"
             >
-              Decline
+              {c.decline}
             </button>
           </div>
         </div>
@@ -432,36 +422,33 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       {/* Lister close-request / seeker confirm */}
       {isActive && closeRequested && role === 'seeker' && (
         <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
-          <p className="mb-1 font-medium text-ink">The lister asked to close this chat.</p>
-          <p className="mb-3 text-xs text-muted">
-            Confirm to release it, or just send a message to keep it active. If you do nothing, it closes
-            automatically after 24 hours.
-          </p>
+          <p className="mb-1 font-medium text-ink">{c.listerAskedClose}</p>
+          <p className="mb-3 text-xs text-muted">{c.seekerConfirmCloseBody}</p>
           <button
             type="button"
             disabled={closing}
             onClick={handleConfirmClose}
             className="rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-60"
           >
-            Confirm close
+            {c.confirmClose}
           </button>
         </div>
       )}
       {isActive && closeRequested && role === 'lister' && (
         <div className="mb-4 rounded-xl border border-black/10 bg-white p-3 text-sm text-muted">
-          Close requested — the seeker has 24h to respond or the chat auto-frees.
+          {c.closeRequestedLister}
         </div>
       )}
       {listerCanRequest && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-white p-3">
-          <p className="text-sm text-muted">The seeker hasn’t replied in over 24 hours.</p>
+          <p className="text-sm text-muted">{c.seekerIdle}</p>
           <button
             type="button"
             disabled={closing}
             onClick={handleRequestClose}
             className="shrink-0 rounded-lg border border-black/15 px-3 py-1.5 text-sm text-ink transition hover:border-black/30 disabled:opacity-60"
           >
-            Request close
+            {c.requestClose}
           </button>
         </div>
       )}
@@ -480,12 +467,9 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="terminate-title" className="mb-1 font-display text-2xl text-ink">
-              How did it go?
+              {c.howDidItGo}
             </h2>
-            <p className="mb-5 text-sm text-muted">
-              Terminating ends this conversation. Choose an outcome — “Didn’t work out” uses this credit and lets you
-              open your next one.
-            </p>
+            <p className="mb-5 text-sm text-muted">{c.terminateBody}</p>
             <div className="flex flex-col gap-2.5">
               <button
                 type="button"
@@ -493,7 +477,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
                 onClick={handleReportSuccess}
                 className="w-full rounded-lg bg-gradient-cobalt px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
               >
-                Got the place
+                {c.gotPlace}
               </button>
               <button
                 type="button"
@@ -501,7 +485,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
                 onClick={() => handleClose('closed_didnt_work')}
                 className="w-full rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 transition hover:border-red-400 hover:bg-red-100 disabled:opacity-60"
               >
-                Didn’t work out
+                {c.didntWork}
               </button>
               <button
                 type="button"
@@ -509,7 +493,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
                 onClick={() => setCloseOpen(false)}
                 className="w-full rounded-lg px-4 py-2.5 text-sm text-muted transition hover:text-ink disabled:opacity-60"
               >
-                Keep chatting
+                {c.keepChatting}
               </button>
             </div>
           </div>
@@ -518,28 +502,23 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
 
       {/* Safety message — pinned first in the thread */}
       <ul className="mb-3 list-disc space-y-1 rounded-lg border border-black/10 bg-black/[0.02] py-3 pl-8 pr-4 text-xs leading-relaxed text-muted">
-        <li>Keep the conversation on Ten2Ten.</li>
-        <li>Never share sensitive financial details, and meet in a safe, public space.</li>
-        <li>Verify by asking for physical ID when you meet in person.</li>
+        <li>Ведите общение внутри Peredai.</li>
+        <li>Не передавайте конфиденциальные финансовые данные и встречайтесь в безопасном общественном месте.</li>
+        <li>При личной встрече попросите показать документ, удостоверяющий личность.</li>
         {role === 'seeker' ? (
           <>
-            <li>Ask if the gratuity is negotiable.</li>
-            <li>Don’t pay in advance.</li>
-            <li>Ask for a receipt for any money paid.</li>
-            <li>Your credit score has been shared with the lister already.</li>
+            <li>Уточните, обсуждается ли размер благодарности.</li>
+            <li>Не платите заранее.</li>
+            <li>Просите расписку за любые переданные деньги.</li>
           </>
         ) : (
           <>
-            <li>Communicate with the landlord to make sure the prospective tenant can meet the requirements.</li>
+            <li>Согласуйте с собственником, что кандидат соответствует требованиям.</li>
             <li>
-              We’ve shared a verified credit-score range for this prospective renter — ask them for the precise
-              figure if you need it.
+              Не берите предоплату, пока не убедитесь, что арендатор подходит, и до обсуждения важных деталей, таких
+              как дата заезда.
             </li>
-            <li>
-              Don’t take any advances until you’re certain the tenant is a good fit, and before discussing important
-              details such as the move-in date.
-            </li>
-            <li>Be honest when disclosing any critical details about the place, to the best of your knowledge.</li>
+            <li>Честно и по возможности полно раскрывайте важные детали о квартире.</li>
           </>
         )}
       </ul>
@@ -547,7 +526,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
       {/* Thread */}
       <div className="flex-1 space-y-3 overflow-y-auto py-2">
         {messages.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted">No messages yet. Say hello.</p>
+          <p className="py-8 text-center text-sm text-muted">{c.empty}</p>
         ) : (
           messages.map((m) => {
             const mine = m.sender_id === myUserId;
@@ -562,7 +541,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
                 >
                   {m.body}
                 </div>
-                <span className="mt-0.5 text-[10px] text-muted">{mine ? 'You' : otherName}</span>
+                <span className="mt-0.5 text-[10px] text-muted">{mine ? c.you : otherName}</span>
               </div>
             );
           })
@@ -582,7 +561,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
           <input
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Write a message…"
+            placeholder={c.inputPlaceholder}
             className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           />
           <button
@@ -590,14 +569,14 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
             disabled={sending || !body.trim()}
             className="rounded-lg bg-gradient-cobalt px-5 py-2.5 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
-            Send
+            {c.send}
           </button>
         </form>
       ) : (
         <div className="mt-2 rounded-lg border border-black/10 bg-black/[0.02] px-4 py-3 text-center text-sm text-muted">
           <p className="mb-2">{closedLabel}</p>
           <Link href={`/${locale}/chats/${id}/rate`} className="text-cobalt hover:underline">
-            Rate this conversation
+            {c.rate}
           </Link>
         </div>
       )}

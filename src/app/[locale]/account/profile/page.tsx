@@ -8,13 +8,15 @@ import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 
 const LANGUAGE_OPTIONS = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Español' },
-  { value: 'zh', label: '中文' },
   { value: 'ru', label: 'Русский' },
+  { value: 'uz', label: 'Oʻzbekcha' },
+  { value: 'tg', label: 'Тоҷикӣ' },
+  { value: 'en', label: 'English' },
+  { value: 'zh', label: '中文' },
+  { value: 'ar', label: 'العربية' },
+  { value: 'es', label: 'Español' },
   { value: 'fr', label: 'Français' },
   { value: 'pt', label: 'Português' },
-  { value: 'ar', label: 'العربية' },
   { value: 'ko', label: '한국어' },
 ];
 
@@ -27,8 +29,8 @@ export default function EditProfilePage({ params }: { params: { locale: string }
   const [fullName, setFullName] = useState('');
   const [displayFirstName, setDisplayFirstName] = useState('');
   const [phone, setPhone] = useState('');
-  const [spokenLanguages, setSpokenLanguages] = useState<string[]>(['en']);
-  const [preferredLocale, setPreferredLocale] = useState<'en' | 'es'>(locale);
+  const [spokenLanguages, setSpokenLanguages] = useState<string[]>(['ru']);
+  const [preferredLocale, setPreferredLocale] = useState<'en' | 'ru'>(locale);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export default function EditProfilePage({ params }: { params: { locale: string }
             setDisplayFirstName(data.display_first_name ?? '');
             setPhone(data.phone ?? '');
             setSpokenLanguages(data.spoken_languages ?? ['en']);
-            setPreferredLocale((data.preferred_locale as 'en' | 'es') ?? locale);
+            setPreferredLocale((data.preferred_locale as 'en' | 'ru') ?? locale);
             // Legal name locks once identity has *ever* been verified — by the
             // background check (seekers) OR the Stripe Identity ID check
             // (listers) — and stays locked even after the 60-day check expires.
@@ -114,7 +116,7 @@ export default function EditProfilePage({ params }: { params: { locale: string }
 
   return (
     <main className="mx-auto max-w-lg px-5 py-16">
-      <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
       <div className="mb-8 flex items-center gap-3">
         <Link href={`/${locale}/account`} className="text-muted hover:text-ink" aria-label={d.common.back}>‹</Link>
         <h1 className="font-display text-3xl text-ink">{p.title}</h1>
@@ -189,11 +191,11 @@ export default function EditProfilePage({ params }: { params: { locale: string }
           <select
             id="locale"
             value={preferredLocale}
-            onChange={(e) => setPreferredLocale(e.target.value as 'en' | 'es')}
+            onChange={(e) => setPreferredLocale(e.target.value as 'en' | 'ru')}
             className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           >
+            <option value="ru" className="bg-white">{p.localeRu}</option>
             <option value="en" className="bg-white">{p.localeEn}</option>
-            <option value="es" className="bg-white">{p.localeEs}</option>
           </select>
         </div>
 

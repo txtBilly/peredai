@@ -1,18 +1,25 @@
-export const locales = ['en', 'es'] as const;
+export const locales = ['ru', 'en'] as const;
 export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = 'en';
+export const defaultLocale: Locale = 'ru';
 
 export function isLocale(value: string): value is Locale {
   return (locales as readonly string[]).includes(value);
 }
 
+import ru from './ru.json';
 import en from './en.json';
-import es from './es.json';
 
-const dictionaries = { en, es } as const;
+const dictionaries = { ru, en } as const;
 
-export type Dictionary = typeof en;
+// The Russian dictionary is canonical for the market; English is a fallback that
+// mirrors its shape exactly.
+export type Dictionary = typeof ru;
 
 export function getDictionary(locale: Locale): Dictionary {
-  return dictionaries[locale];
+  return dictionaries[locale] as Dictionary;
+}
+
+/** Intl locale tag for date/number formatting. */
+export function intlLocale(locale: Locale): string {
+  return locale === 'en' ? 'en-US' : 'ru-RU';
 }

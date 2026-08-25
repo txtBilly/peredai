@@ -38,7 +38,7 @@ export default async function AccountPage({ params }: { params: { locale: string
     (!profile.bg_check_expires_at || new Date(profile.bg_check_expires_at) > new Date());
   const isVerified = verificationStatus === 'verified' || bgVerified;
   const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString(locale === 'es' ? 'es-US' : 'en-US', {
+    ? new Date(profile.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'ru-RU', {
         month: 'long', year: 'numeric',
       })
     : null;
@@ -47,7 +47,7 @@ export default async function AccountPage({ params }: { params: { locale: string
     <>
       <SiteHeader locale={locale as Locale} />
       <main className="mx-auto max-w-lg px-5 py-16">
-      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
 
       {/* Profile summary */}
       <div className="mb-8 flex items-start gap-4">

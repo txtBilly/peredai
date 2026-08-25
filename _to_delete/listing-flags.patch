@@ -1,0 +1,283 @@
+diff --git a/src/app/[locale]/browse/BrowseView.tsx b/src/app/[locale]/browse/BrowseView.tsx
+index 91e0feb..abcb6bf 100644
+--- a/src/app/[locale]/browse/BrowseView.tsx
++++ b/src/app/[locale]/browse/BrowseView.tsx
+@@ -36,6 +36,8 @@ type ListingRow = {
+   outdoor: boolean | null;
+   no_fee: boolean | null;
+   walk_up: boolean | null;
++  allow_non_rf: boolean | null;
++  allow_children: boolean | null;
+   gratitude_amount: number | null;
+   status: string;
+ };
+@@ -111,7 +113,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
+         let query = supabase
+           .from('listings')
+           .select(
+-            'id, lister_id, neighborhood, cross_streets, type, monthly_rent, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, gratitude_amount, status'
++            'id, lister_id, neighborhood, cross_streets, type, monthly_rent, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, allow_non_rf, allow_children, gratitude_amount, status'
+           )
+           .in('status', ['active', 'negotiating'])
+           .order('created_at', { ascending: false })
+@@ -133,6 +135,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
+         if (filters.walkUp) query = query.eq('walk_up', true);
+         if (filters.doorman) query = query.eq('doorman', true);
+         if (filters.outdoor) query = query.eq('outdoor', true);
++        if (filters.allowNonRf) query = query.eq('allow_non_rf', true);
++        if (filters.allowChildren) query = query.eq('allow_children', true);
+ 
+         const { data: rows, error: queryError } = await query;
+         if (cancelled) return;
+@@ -184,6 +188,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
+           if (row.walk_up) amenityLabels.push(l.amenityWalkUp);
+           if (row.doorman) amenityLabels.push(l.amenityDoorman);
+           if (row.outdoor) amenityLabels.push(l.amenityOutdoor);
++          if (row.allow_non_rf) amenityLabels.push(l.amenityNonRf);
++          if (row.allow_children) amenityLabels.push(l.amenityChildren);
+ 
+           return {
+             id: row.id,
+@@ -256,6 +262,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
+     ['walkUp', l.amenityWalkUp],
+     ['doorman', l.amenityDoorman],
+     ['outdoor', l.amenityOutdoor],
++    ['allowNonRf', l.amenityNonRf],
++    ['allowChildren', l.amenityChildren],
+   ];
+   const activeChips: { key: string; label: string; remove: () => void }[] = [];
+   if (searchText.trim())
+@@ -486,6 +494,8 @@ export default function BrowseView({ locale }: { locale: Locale }) {
+           walkUp: l.amenityWalkUp,
+           doorman: l.amenityDoorman,
+           outdoor: l.amenityOutdoor,
++          allowNonRf: l.amenityNonRf,
++          allowChildren: l.amenityChildren,
+           apply: b.applyFiltersCta,
+           clear: b.clearFiltersCta,
+           close: b.closeCta,
+diff --git a/src/app/[locale]/browse/[id]/ListingDetailView.tsx b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+index 762ca7b..1efdebc 100644
+--- a/src/app/[locale]/browse/[id]/ListingDetailView.tsx
++++ b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+@@ -43,6 +43,8 @@ type ListingDetail = {
+   outdoor: boolean | null;
+   no_fee: boolean | null;
+   walk_up: boolean | null;
++  allow_non_rf: boolean | null;
++  allow_children: boolean | null;
+   gratitude_amount: number | null;
+   status: string;
+ };
+@@ -110,7 +112,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id:
+       const { data: row, error: listingError } = await supabase
+         .from('listings')
+         .select(
+-          'id, lister_id, neighborhood, cross_streets, city, full_address, type, monthly_rent, floor, sqft, bathrooms, description, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, gratitude_amount, status'
++          'id, lister_id, neighborhood, cross_streets, city, full_address, type, monthly_rent, floor, sqft, bathrooms, description, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, allow_non_rf, allow_children, gratitude_amount, status'
+         )
+         .eq('id', id)
+         .single();
+@@ -330,6 +332,8 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id:
+   if (listing.walk_up) amenityLabels.push(l.amenityWalkUp);
+   if (listing.doorman) amenityLabels.push(l.amenityDoorman);
+   if (listing.outdoor) amenityLabels.push(l.amenityOutdoor);
++  if (listing.allow_non_rf) amenityLabels.push(l.amenityNonRf);
++  if (listing.allow_children) amenityLabels.push(l.amenityChildren);
+ 
+   const dateLocale = intlLocale(locale);
+   const availableLabel = listing.available_from
+diff --git a/src/app/[locale]/list/ListForm.tsx b/src/app/[locale]/list/ListForm.tsx
+index 39e51ee..683bc4f 100644
+--- a/src/app/[locale]/list/ListForm.tsx
++++ b/src/app/[locale]/list/ListForm.tsx
+@@ -52,6 +52,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
+   const [walkUp, setWalkUp] = useState(false);
+   const [doorman, setDoorman] = useState(false);
+   const [outdoor, setOutdoor] = useState(false);
++  const [allowNonRf, setAllowNonRf] = useState(false);
++  const [allowChildren, setAllowChildren] = useState(false);
+   const [gratitudeAmount, setGratitudeAmount] = useState('');
+   // Contact name is locked to the lister's verified identity (they must be
+   // verified to list), so it's not user-editable.
+@@ -242,6 +244,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
+       setWalkUp(!!draft.walk_up);
+       setDoorman(!!draft.doorman);
+       setOutdoor(!!draft.outdoor);
++      setAllowNonRf(!!draft.allow_non_rf);
++      setAllowChildren(!!draft.allow_children);
+       setGratitudeAmount(draft.gratitude_amount != null ? String(draft.gratitude_amount) : '');
+       // Contact name stays locked to the verified identity, not the draft value.
+       setContactName(profile?.full_name ?? '');
+@@ -308,7 +312,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
+           elevator,
+           walk_up: walkUp,
+           doorman,
+-          outdoor,          gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
++          outdoor,
++          allow_non_rf: allowNonRf,
++          allow_children: allowChildren,
++          gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
+           contact_name: contactName.trim() || null,
+           contact_phone: contactPhone.trim() || null,
+         })
+@@ -336,6 +343,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
+     walkUp,
+     doorman,
+     outdoor,
++    allowNonRf,
++    allowChildren,
+     gratitudeAmount,
+     contactName,
+     contactPhone,
+@@ -415,7 +424,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
+         elevator,
+         walk_up: walkUp,
+         doorman,
+-        outdoor,        gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
++        outdoor,
++        allow_non_rf: allowNonRf,
++        allow_children: allowChildren,
++        gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
+         contact_name: contactName.trim(),
+         contact_phone: contactPhone.trim(),
+         contact_confirmed: true,
+@@ -488,7 +500,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
+         elevator,
+         walk_up: walkUp,
+         doorman,
+-        outdoor,        gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
++        outdoor,
++        allow_non_rf: allowNonRf,
++        allow_children: allowChildren,
++        gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
+         contact_name: contactName.trim(),
+         contact_phone: contactPhone.trim(),
+       })
+@@ -597,6 +612,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
+     { checked: walkUp, onChange: setWalkUp, label: l.amenityWalkUp },
+     { checked: doorman, onChange: setDoorman, label: l.amenityDoorman },
+     { checked: outdoor, onChange: setOutdoor, label: l.amenityOutdoor },
++    { checked: allowNonRf, onChange: setAllowNonRf, label: l.amenityNonRf },
++    { checked: allowChildren, onChange: setAllowChildren, label: l.amenityChildren },
+   ];
+ 
+   return (
+diff --git a/src/app/[locale]/saved/SavedView.tsx b/src/app/[locale]/saved/SavedView.tsx
+index fc44a45..f0a59d3 100644
+--- a/src/app/[locale]/saved/SavedView.tsx
++++ b/src/app/[locale]/saved/SavedView.tsx
+@@ -25,6 +25,8 @@ type ListingRow = {
+   doorman: boolean | null;
+   outdoor: boolean | null;
+   no_fee: boolean | null;
++  allow_non_rf: boolean | null;
++  allow_children: boolean | null;
+   gratitude_amount: number | null;
+   status: string;
+ };
+@@ -74,7 +76,7 @@ export default function SavedView({ locale }: { locale: Locale }) {
+       const { data: rows, error: qErr } = await supabase
+         .from('listings')
+         .select(
+-          'id, lister_id, neighborhood, cross_streets, type, monthly_rent, available_from, laundry, pets_ok, elevator, walk_up, doorman, outdoor, no_fee, gratitude_amount, status'
++          'id, lister_id, neighborhood, cross_streets, type, monthly_rent, available_from, laundry, pets_ok, elevator, walk_up, doorman, outdoor, no_fee, allow_non_rf, allow_children, gratitude_amount, status'
+         )
+         .in('id', ids);
+       if (cancelled) return;
+@@ -120,6 +122,8 @@ export default function SavedView({ locale }: { locale: Locale }) {
+         if (row.walk_up) amenityLabels.push(l.amenityWalkUp);
+         if (row.doorman) amenityLabels.push(l.amenityDoorman);
+         if (row.outdoor) amenityLabels.push(l.amenityOutdoor);
++        if (row.allow_non_rf) amenityLabels.push(l.amenityNonRf);
++        if (row.allow_children) amenityLabels.push(l.amenityChildren);
+ 
+         return {
+           id: row.id,
+diff --git a/src/components/FiltersSheet.tsx b/src/components/FiltersSheet.tsx
+index 9100557..2e84325 100644
+--- a/src/components/FiltersSheet.tsx
++++ b/src/components/FiltersSheet.tsx
+@@ -30,6 +30,8 @@ export function FiltersSheet({
+     walkUp: string;
+     doorman: string;
+     outdoor: string;
++    allowNonRf: string;
++    allowChildren: string;
+     apply: string;
+     clear: string;
+     close: string;
+@@ -52,6 +54,8 @@ export function FiltersSheet({
+     { key: 'walkUp', label: labels.walkUp },
+     { key: 'doorman', label: labels.doorman },
+     { key: 'outdoor', label: labels.outdoor },
++    { key: 'allowNonRf', label: labels.allowNonRf },
++    { key: 'allowChildren', label: labels.allowChildren },
+   ];
+ 
+   return (
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index 79c1313..d61fe5e 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -277,6 +277,8 @@
+     "amenityDoorman": "Concierge",
+     "amenityOutdoor": "Balcony / terrace",
+     "amenityNoFee": "No fee",
++    "amenityNonRf": "Non-RF citizens OK",
++    "amenityChildren": "Children OK",
+     "gratitudeLabel": "Gratuity",
+     "gratitudeHint": "State the thank-you amount you'd like to receive from the new tenant if the owner agrees to rent your place to them. We don't process or track this payment — arrange the method and terms of settlement directly with the new tenant.",
+     "gratitudePublicNote": "This amount is requested by the current tenant for the viewing and a successful agreement between you and the owner. Do not send rent or a deposit up front. Arrange the method and terms of settlement directly with the tenant and the owner, off-platform.",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index 8e7317d..3be602b 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -277,6 +277,8 @@
+     "amenityDoorman": "Консьерж",
+     "amenityOutdoor": "Балкон / терраса",
+     "amenityNoFee": "Без комиссии",
++    "amenityNonRf": "Можно не РФ",
++    "amenityChildren": "Можно с детьми",
+     "gratitudeLabel": "Благодарность",
+     "gratitudeHint": "Укажите размер благодарности, которую Вы хотите получить от нового Арендатора, если хозяин квартиры согласится сдать ему ваше жилье. Мы не проводим и не отслеживаем этот платеж. Вам необходимо договариваться о способе и порядке расчёта напрямую с новым жильцом.",
+     "gratitudePublicNote": "Эту сумму с Вас просит текущий жилец квартиры за показ и успешную договоренность между Вами и собственником. Не отправляйте деньги за аренду или депозит вперед. Вам следует договариваться о способе и порядке расчета напрямую с Жильцом и Собственником вне платформы.",
+diff --git a/src/lib/listings.ts b/src/lib/listings.ts
+index c7fabfd..7cfd986 100644
+--- a/src/lib/listings.ts
++++ b/src/lib/listings.ts
+@@ -172,6 +172,8 @@ export type BrowseFilters = {
+   walkUp: boolean;
+   doorman: boolean;
+   outdoor: boolean;
++  allowNonRf: boolean;
++  allowChildren: boolean;
+ };
+ 
+ export const EMPTY_FILTERS: BrowseFilters = {
+@@ -185,6 +187,8 @@ export const EMPTY_FILTERS: BrowseFilters = {
+   walkUp: false,
+   doorman: false,
+   outdoor: false,
++  allowNonRf: false,
++  allowChildren: false,
+ };
+ 
+ export function hasActiveFilters(filters: BrowseFilters): boolean {
+diff --git a/supabase/migrations/0039_listing_flags.sql b/supabase/migrations/0039_listing_flags.sql
+new file mode 100644
+index 0000000..ae679fa
+--- /dev/null
++++ b/supabase/migrations/0039_listing_flags.sql
+@@ -0,0 +1,11 @@
++-- 0039_listing_flags.sql
++-- Two new listing flags for the RU market:
++--   allow_non_rf   — "Можно не РФ" (non-Russian citizens welcome)
++--   allow_children — "Можно с детьми" (children welcome)
++-- Booleans, default false, surfaced on the create form, the listing tile, the
++-- listing detail page, and the Browse filters. Apply by hand in the Supabase
++-- SQL editor.
++
++alter table public.listings
++  add column if not exists allow_non_rf boolean not null default false,
++  add column if not exists allow_children boolean not null default false;

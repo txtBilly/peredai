@@ -80,18 +80,22 @@ export default function VerifyView({
     setChecking(false);
   }
 
-  async function startVerify() {
+  async function startVerify(provider: string) {
     setError('');
     setStarting(true);
     try {
-      const res = await fetch('/api/identity/start', { method: 'POST' });
+      const res = await fetch('/api/identity/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(v.errorGeneric);
         setStarting(false);
         return;
       }
-      // Real provider: redirect to the hosted flow.
+      // Bank provider: redirect to the hosted flow.
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
         return;
@@ -106,6 +110,28 @@ export default function VerifyView({
       setStarting(false);
     }
   }
+
+  // Which providers to offer (NEXT_PUBLIC_IDENTITY_PROVIDERS, e.g. "sber,tid" or "mock").
+  const providers = (process.env.NEXT_PUBLIC_IDENTITY_PROVIDERS ?? 'mock')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const providerLabel = (p: string) =>
+    p === 'sber' ? v.providerSber : p === 'tid' ? v.providerTid : p === 'mock' ? v.providerMock : p;
+  const providerButtons = (
+    <div className="flex w-full flex-col gap-2.5">
+      {providers.map((p) => (
+        <button
+          key={p}
+          onClick={() => startVerify(p)}
+          disabled={starting || checking}
+          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
+        >
+          {starting ? v.starting : providerLabel(p)}
+        </button>
+      ))}
+    </div>
+  );
 
   // Shared with every resolved phase so the screens stay consistent with the
   // rest of the app (header comes from the server wrapper; this adds the Back
@@ -165,13 +191,7 @@ export default function VerifyView({
           >
             {checking ? v.checkingCta : v.refreshCta}
           </button>
-          <button
-            onClick={startVerify}
-            disabled={starting || checking}
-            className="w-full rounded-lg px-5 py-3 text-sm font-medium text-cobalt transition hover:bg-cobalt/5 disabled:opacity-50"
-          >
-            {starting ? v.starting : v.startOverCta}
-          </button>
+          {providerButtons}
         </div>
         {error && (
           <p role="alert" className="mt-3 text-sm text-red-600">
@@ -193,13 +213,7 @@ export default function VerifyView({
           </div>
           <h1 className="mb-2 font-display text-2xl font-bold text-ink">{v.failedTitle}</h1>
           <p className="mb-8 text-sm text-muted">{v.failedBody}</p>
-          <button
-            onClick={startVerify}
-            disabled={starting}
-            className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
-          >
-            {starting ? v.starting : v.retryCta}
-          </button>
+          {providerButtons}
         </div>
       </main>
     );
@@ -222,8 +236,8 @@ export default function VerifyView({
       <h1 className="mb-6 font-display text-3xl font-bold text-ink">{v.title}</h1>
       <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">{v.subtitle}</p>
       <p className="mb-8 text-justify text-sm text-muted [hyphens:auto]">
-        Your ID verification is handled by our verification partner, and your full name is only shown to other
-        verified members when they show real interest in your listing.
+        Подтверждение личности выполняется через ваш банк — Сбер ID или Т-Банк. Ваше полное имя видно другим
+        проверенным участникам только когда они проявляют реальный интерес к вашему объявлению.
       </p>
 
       {error && (
@@ -232,13 +246,8 @@ export default function VerifyView({
         </p>
       )}
 
-      <button
-        onClick={startVerify}
-        disabled={starting}
-        className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
-      >
-        {starting ? v.starting : v.startCta}
-      </button>
+      <p className="mb-3 text-sm text-muted">{v.chooseProvider}</p>
+      {providerButtons}
       </div>
     </main>
   );

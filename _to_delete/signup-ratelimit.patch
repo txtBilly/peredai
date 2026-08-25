@@ -1,0 +1,58 @@
+diff --git a/src/app/[locale]/signup/SignUpView.tsx b/src/app/[locale]/signup/SignUpView.tsx
+index edbfb01..46407ca 100644
+--- a/src/app/[locale]/signup/SignUpView.tsx
++++ b/src/app/[locale]/signup/SignUpView.tsx
+@@ -103,13 +103,15 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
+ 
+     if (signUpError) {
+       setStatus('idle');
+-      if (signUpError.message.toLowerCase().includes('already registered')) {
++      const m = signUpError.message.toLowerCase();
++      if (m.includes('already registered')) {
+         setError(d.auth.errorEmailExists);
++      } else if (m.includes('rate limit')) {
++        setError(d.auth.errorRateLimit);
+       } else {
+-        // [TEMP DEBUG] surface the real message
+-        setError(`DBG signup: ${signUpError.message}`);
+-        console.error('signup error:', signUpError);
++        setError(d.auth.errorGeneric);
+       }
++      console.error('signup error:', signUpError);
+       return;
+     }
+ 
+@@ -143,8 +145,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
+ 
+     if (profileError) {
+       setStatus('idle');
+-      // [TEMP DEBUG] surface the real message
+-      setError(`DBG profile [${profileError.code ?? '?'}]: ${profileError.message}${profileError.details ? ' | ' + profileError.details : ''}`);
++      setError(d.auth.errorGeneric);
+       console.error('profile upsert error:', profileError);
+       return;
+     }
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index eec600b..11393e0 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -205,6 +205,7 @@
+     "consentRequired": "You must agree to continue.",
+     "errorEmailExists": "An account with that email already exists — sign in instead.",
+     "errorInvalid": "Incorrect email or password.",
++    "errorRateLimit": "Too many attempts. Please wait a moment and try again.",
+     "errorGeneric": "Something went wrong. Please try again.",
+     "resetTitle": "Reset your password",
+     "resetSubtitle": "Enter your email and we'll send you a reset link.",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index 6dda345..fe63a6d 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -205,6 +205,7 @@
+     "consentRequired": "Необходимо согласие, чтобы продолжить.",
+     "errorEmailExists": "Аккаунт с такой почтой уже существует — войдите вместо регистрации.",
+     "errorInvalid": "Неверная почта или пароль.",
++    "errorRateLimit": "Слишком много попыток. Подождите немного и попробуйте ещё раз.",
+     "errorGeneric": "Что-то пошло не так. Попробуйте ещё раз.",
+     "resetTitle": "Сброс пароля",
+     "resetSubtitle": "Введите почту, и мы отправим ссылку для сброса.",

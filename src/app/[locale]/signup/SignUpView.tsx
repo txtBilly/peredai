@@ -13,13 +13,15 @@ type Intent = 'looking' | 'offering' | 'both';
 const CONSENT_VERSION = '2026-07-v1';
 
 const LANGUAGE_OPTIONS = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Español' },
-  { value: 'zh', label: '中文' },
   { value: 'ru', label: 'Русский' },
+  { value: 'uz', label: 'Oʻzbekcha' },
+  { value: 'tg', label: 'Тоҷикӣ' },
+  { value: 'en', label: 'English' },
+  { value: 'zh', label: '中文' },
+  { value: 'ar', label: 'العربية' },
+  { value: 'es', label: 'Español' },
   { value: 'fr', label: 'Français' },
   { value: 'pt', label: 'Português' },
-  { value: 'ar', label: 'العربية' },
   { value: 'ko', label: '한국어' },
 ];
 
@@ -43,7 +45,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
   const [fullName, setFullName] = useState('');
   const [displayFirstName, setDisplayFirstName] = useState('');
   const [phone, setPhone] = useState('');
-  const [spokenLanguages, setSpokenLanguages] = useState<string[]>([locale]);
+  const [spokenLanguages, setSpokenLanguages] = useState<string[]>(['ru']);
   const [consented, setConsented] = useState(false);
   const [status, setStatus] = useState<'idle' | 'submitting' | 'confirm'>('idle');
   const [error, setError] = useState('');
@@ -101,11 +103,15 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
 
     if (signUpError) {
       setStatus('idle');
-      if (signUpError.message.toLowerCase().includes('already registered')) {
+      const m = signUpError.message.toLowerCase();
+      if (m.includes('already registered')) {
         setError(d.auth.errorEmailExists);
+      } else if (m.includes('rate limit')) {
+        setError(d.auth.errorRateLimit);
       } else {
         setError(d.auth.errorGeneric);
       }
+      console.error('signup error:', signUpError);
       return;
     }
 

@@ -52,7 +52,7 @@ export default function DeletePage({ params }: { params: { locale: string } }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'ten2ten-data-export.json';
+      a.download = 'peredai-data-export.json';
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -86,7 +86,7 @@ export default function DeletePage({ params }: { params: { locale: string } }) {
 
   return (
     <main className="mx-auto max-w-lg px-5 py-16">
-      <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
       <div className="mb-8 flex items-center gap-3">
         <Link href={`/${locale}/account`} className="text-muted hover:text-ink" aria-label={d.common.back}>‹</Link>
         <h1 className="font-display text-3xl text-ink">{del.title}</h1>

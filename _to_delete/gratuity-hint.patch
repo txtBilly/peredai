@@ -1,0 +1,16 @@
+diff --git a/src/app/[locale]/browse/[id]/ListingDetailView.tsx b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+index 9550f3c..fbbe17b 100644
+--- a/src/app/[locale]/browse/[id]/ListingDetailView.tsx
++++ b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+@@ -488,10 +488,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id:
+           <p>{l.availableFromLabel}: {availableLabel}</p>
+         )}
+         {listing.gratitude_amount != null && (
+-          <div>
+-            <p>{l.gratitudeLabel}: {formatRubles(listing.gratitude_amount)}</p>
+-            <p className="mt-1 text-base text-muted">{l.gratitudeHint}</p>
+-          </div>
++          <p>{l.gratitudeLabel}: {formatRubles(listing.gratitude_amount)}</p>
+         )}
+       </div>
+ 

@@ -22,19 +22,19 @@ const logoFont = Audiowide({
 });
 
 export const metadata: Metadata = {
-  title: 'Ten2Ten — Find your next place',
+  title: 'Peredai — Передай квартиру следующему',
   description:
-    'A verified community where NYC renters pass apartments directly to each other. No brokers. $100 to connect.',
+    'Проверенное сообщество, где арендаторы передают квартиры друг другу напрямую. Без посредников. Москва и Санкт-Петербург.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   openGraph: {
-    title: 'Ten2Ten — Find your next place',
+    title: 'Peredai — Передай квартиру следующему',
     description:
-      'A verified community where NYC renters pass apartments to each other. No brokers. $100 to connect.',
+      'Проверенное сообщество, где арендаторы передают квартиры друг другу напрямую. Без посредников.',
     type: 'website',
   },
   appleWebApp: {
     capable: true,
-    title: 'Ten2Ten',
+    title: 'Peredai',
     statusBarStyle: 'black-translucent',
   },
 };
@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // Root layout owns <html>/<body> (required by Next). Per-route sections
   // ([locale], /admin) are nested layouts and must not render them.
   return (
-    <html lang="en" className={`${inter.variable} ${grotesk.variable} ${plexMono.variable} ${logoFont.variable}`}>
+    <html lang="ru" className={`${inter.variable} ${grotesk.variable} ${plexMono.variable} ${logoFont.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -16,7 +16,7 @@ const BrowseView = dynamic(() => import('./BrowseView'), {
   loading: () => (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-5 text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/ten2ten-logo.svg?v=5" alt="Ten2Ten" className="mb-3 h-6 w-auto" />
+      <img src="/peredai-logo.svg?v=1" alt="Peredai" className="mb-3 h-6 w-auto" />
       <p className="text-sm text-muted">Loading…</p>
     </main>
   ),

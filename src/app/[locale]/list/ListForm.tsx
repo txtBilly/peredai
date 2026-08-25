@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { PhotoUploader, toListingPhoto, type ListingPhoto } from '@/components/ListingForm/PhotoUploader';
-import { LISTING_TYPES, listingTypeLabels, cityFromZip, type ListingTypeValue } from '@/lib/listings';
+import { LISTING_TYPES, listingTypeLabels, SUPPORTED_CITIES, DEFAULT_CITY, type ListingTypeValue } from '@/lib/listings';
 
 const MAX_EXTRA_PHOTOS = 5;
 
@@ -36,10 +36,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
   // The apartment / location / terms / contact fields
   const [type, setType] = useState<ListingTypeValue | ''>('');
+  const [city, setCity] = useState<string>(DEFAULT_CITY);
   const [neighborhood, setNeighborhood] = useState('');
   const [crossStreets, setCrossStreets] = useState('');
   const [fullAddress, setFullAddress] = useState('');
-  const [zip, setZip] = useState('');
   const [monthlyRent, setMonthlyRent] = useState('');
   const [sqft, setSqft] = useState('');
   const [floor, setFloor] = useState('');
@@ -52,7 +52,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
   const [walkUp, setWalkUp] = useState(false);
   const [doorman, setDoorman] = useState(false);
   const [outdoor, setOutdoor] = useState(false);
-  const [minCreditScore, setMinCreditScore] = useState('');
+  const [allowNonRf, setAllowNonRf] = useState(false);
+  const [allowChildren, setAllowChildren] = useState(false);
   const [gratitudeAmount, setGratitudeAmount] = useState('');
   // Contact name is locked to the lister's verified identity (they must be
   // verified to list), so it's not user-editable.
@@ -224,10 +225,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
       setListingId(draft.id);
       setListingStatus((draft.status as 'draft' | 'active' | 'negotiating') ?? 'draft');
       setType((draft.type as ListingTypeValue) ?? '');
+      setCity(draft.city ?? DEFAULT_CITY);
       setNeighborhood(draft.neighborhood ?? '');
       setCrossStreets(draft.cross_streets ?? '');
       setFullAddress(draft.full_address ?? '');
-      setZip(draft.zip ?? '');
       setMonthlyRent(draft.monthly_rent != null ? String(draft.monthly_rent) : '');
       setSqft(draft.sqft != null ? String(draft.sqft) : '');
       setFloor(draft.floor ?? '');
@@ -243,7 +244,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
       setWalkUp(!!draft.walk_up);
       setDoorman(!!draft.doorman);
       setOutdoor(!!draft.outdoor);
-      setMinCreditScore(draft.min_credit_score != null ? String(draft.min_credit_score) : '');
+      setAllowNonRf(!!draft.allow_non_rf);
+      setAllowChildren(!!draft.allow_children);
       setGratitudeAmount(draft.gratitude_amount != null ? String(draft.gratitude_amount) : '');
       // Contact name stays locked to the verified identity, not the draft value.
       setContactName(profile?.full_name ?? '');
@@ -295,11 +297,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
         .from('listings')
         .update({
           type: type || null,
-          city: cityFromZip(zip),
+          city,
           neighborhood: neighborhood.trim() || null,
           cross_streets: crossStreets.trim() || null,
           full_address: fullAddress.trim() || null,
-          zip: zip.trim() || null,
           monthly_rent: monthlyRent ? parseInt(monthlyRent, 10) : null,
           sqft: sqft ? parseInt(sqft, 10) : null,
           floor: floor.trim() || null,
@@ -312,7 +313,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
           walk_up: walkUp,
           doorman,
           outdoor,
-          min_credit_score: minCreditScore ? parseInt(minCreditScore, 10) : null,
+          allow_non_rf: allowNonRf,
+          allow_children: allowChildren,
           gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
           contact_name: contactName.trim() || null,
           contact_phone: contactPhone.trim() || null,
@@ -325,10 +327,10 @@ export default function ListForm({ locale }: { locale: Locale }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     type,
+    city,
     neighborhood,
     crossStreets,
     fullAddress,
-    zip,
     monthlyRent,
     sqft,
     floor,
@@ -341,7 +343,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
     walkUp,
     doorman,
     outdoor,
-    minCreditScore,
+    allowNonRf,
+    allowChildren,
     gratitudeAmount,
     contactName,
     contactPhone,
@@ -381,7 +384,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
       !neighborhood.trim() ||
       !crossStreets.trim() ||
       !fullAddress.trim() ||
-      !zip.trim() ||
       !availableFrom ||
       !contactName.trim() ||
       !contactPhone.trim() ||
@@ -401,27 +403,16 @@ export default function ListForm({ locale }: { locale: Locale }) {
       return;
     }
 
-    // Credit score is a FICO/VantageScore value — reject anything outside the
-    // real 300–850 range so a lister can't set an unreachable minimum.
-    if (minCreditScore) {
-      const score = parseInt(minCreditScore, 10);
-      if (Number.isNaN(score) || score < 300 || score > 850) {
-        setError(l.errorMinScoreRange);
-        return;
-      }
-    }
-
     setPublishing(true);
     const supabase = createClient();
     const { error: publishError } = await supabase
       .from('listings')
       .update({
         type,
-        city: cityFromZip(zip),
+        city,
         neighborhood: neighborhood.trim(),
         cross_streets: crossStreets.trim(),
         full_address: fullAddress.trim(),
-        zip: zip.trim(),
         monthly_rent: parseInt(monthlyRent, 10),
         sqft: sqft ? parseInt(sqft, 10) : null,
         floor: floor.trim() || null,
@@ -434,7 +425,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
         walk_up: walkUp,
         doorman,
         outdoor,
-        min_credit_score: minCreditScore ? parseInt(minCreditScore, 10) : null,
+        allow_non_rf: allowNonRf,
+        allow_children: allowChildren,
         gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
         contact_name: contactName.trim(),
         contact_phone: contactPhone.trim(),
@@ -471,7 +463,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
       !neighborhood.trim() ||
       !crossStreets.trim() ||
       !fullAddress.trim() ||
-      !zip.trim() ||
       !availableFrom ||
       !contactName.trim() ||
       !contactPhone.trim() ||
@@ -488,27 +479,16 @@ export default function ListForm({ locale }: { locale: Locale }) {
       return;
     }
 
-    // Credit score is a FICO/VantageScore value — reject anything outside the
-    // real 300–850 range so a lister can't set an unreachable minimum.
-    if (minCreditScore) {
-      const score = parseInt(minCreditScore, 10);
-      if (Number.isNaN(score) || score < 300 || score > 850) {
-        setError(l.errorMinScoreRange);
-        return;
-      }
-    }
-
     setPublishing(true);
     const supabase = createClient();
     const { error: saveError } = await supabase
       .from('listings')
       .update({
         type,
-        city: cityFromZip(zip),
+        city,
         neighborhood: neighborhood.trim(),
         cross_streets: crossStreets.trim(),
         full_address: fullAddress.trim(),
-        zip: zip.trim(),
         monthly_rent: parseInt(monthlyRent, 10),
         sqft: sqft ? parseInt(sqft, 10) : null,
         floor: floor.trim() || null,
@@ -521,7 +501,8 @@ export default function ListForm({ locale }: { locale: Locale }) {
         walk_up: walkUp,
         doorman,
         outdoor,
-        min_credit_score: minCreditScore ? parseInt(minCreditScore, 10) : null,
+        allow_non_rf: allowNonRf,
+        allow_children: allowChildren,
         gratitude_amount: gratitudeAmount ? parseInt(gratitudeAmount, 10) : null,
         contact_name: contactName.trim(),
         contact_phone: contactPhone.trim(),
@@ -539,7 +520,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (phase === 'checking' || phase === 'loading') {
     return (
       <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">{d.brand.name}</p>
         <p className="text-sm text-muted">{phase === 'checking' ? l.checkingVerification : l.loadingDraft}</p>
       </main>
     );
@@ -548,7 +529,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (phase === 'error') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">{d.brand.name}</p>
         <p role="alert" className="mb-6 text-sm text-red-600">
           {error || l.errorLoadTimeout}
         </p>
@@ -587,7 +568,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (phase === 'published') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">{d.brand.name}</p>
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-leaf/20">
           <span className="text-2xl text-leaf">✓</span>
         </div>
@@ -606,7 +587,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
   if (isLocked) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">{d.brand.name}</p>
         <h1 className="mb-2 font-display text-2xl text-ink">{l.editTitle}</h1>
         <p className="mb-8 text-sm text-amber-700">{l.editLockedNegotiating}</p>
         <Link
@@ -631,13 +612,15 @@ export default function ListForm({ locale }: { locale: Locale }) {
     { checked: walkUp, onChange: setWalkUp, label: l.amenityWalkUp },
     { checked: doorman, onChange: setDoorman, label: l.amenityDoorman },
     { checked: outdoor, onChange: setOutdoor, label: l.amenityOutdoor },
+    { checked: allowNonRf, onChange: setAllowNonRf, label: l.amenityNonRf },
+    { checked: allowChildren, onChange: setAllowChildren, label: l.amenityChildren },
   ];
 
   return (
     <main className="mx-auto max-w-2xl px-5 py-16">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+          <p className="mb-1 text-sm uppercase tracking-wide text-cobalt">{d.brand.name}</p>
           <h1 className="font-display text-3xl text-ink">{isEditingActive ? l.editTitle : l.title}</h1>
         </div>
         <p className="text-xs text-muted" role="status">
@@ -801,23 +784,22 @@ export default function ListForm({ locale }: { locale: Locale }) {
               <p className="mt-1 text-xs text-muted">{l.fullAddressHint}</p>
             </div>
             <div>
-              <label htmlFor="zip" className={labelClass}>
-                {l.zipLabel}
+              <label htmlFor="city" className={labelClass}>
+                {l.cityLabel}
               </label>
-              <input
-                id="zip"
-                type="text"
-                inputMode="numeric"
+              <select
+                id="city"
                 required
-                value={zip}
-                onChange={(e) => setZip(e.target.value)}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
                 className={fieldClass}
-              />
-              {cityFromZip(zip) && (
-                <p className="mt-1 text-xs text-muted">
-                  {l.cityLabel}: <span className="font-medium text-ink">{cityFromZip(zip)}</span>
-                </p>
-              )}
+              >
+                {SUPPORTED_CITIES.map((c) => (
+                  <option key={c} value={c} className="bg-white">
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </section>
@@ -859,7 +841,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
                 required
                 value={monthlyRent}
                 onChange={(e) => setMonthlyRent(e.target.value)}
-                className={fieldClass}
+                className={`${fieldClass} no-spinner`}
               />
               <p className="mt-1 text-xs text-muted">{l.rentHint}</p>
             </div>
@@ -887,7 +869,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
                   step={0.5}
                   value={bathrooms}
                   onChange={(e) => setBathrooms(e.target.value)}
-                  className={fieldClass}
+                  className={`${fieldClass} no-spinner`}
                 />
               </div>
               <div>
@@ -901,7 +883,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
                   step={1}
                   value={sqft}
                   onChange={(e) => setSqft(e.target.value)}
-                  className={fieldClass}
+                  className={`${fieldClass} no-spinner`}
                 />
               </div>
             </div>
@@ -965,22 +947,6 @@ export default function ListForm({ locale }: { locale: Locale }) {
           <h2 className="mb-4 font-display text-xl text-ink">{l.sectionTerms}</h2>
           <div className="flex flex-col gap-5">
             <div>
-              <label htmlFor="min-credit-score" className={labelClass}>
-                {l.minCreditScoreLabel}
-              </label>
-              <input
-                id="min-credit-score"
-                type="number"
-                min={300}
-                max={850}
-                step={1}
-                value={minCreditScore}
-                onChange={(e) => setMinCreditScore(e.target.value)}
-                className={fieldClass}
-              />
-              <p className="mt-1 text-xs text-muted">{l.minCreditScoreHint}</p>
-            </div>
-            <div>
               <label htmlFor="gratitude" className={labelClass}>
                 {l.gratitudeLabel}
               </label>
@@ -991,7 +957,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
                 step={1}
                 value={gratitudeAmount}
                 onChange={(e) => setGratitudeAmount(e.target.value)}
-                className={fieldClass}
+                className={`${fieldClass} no-spinner`}
               />
               <p className="mt-1 text-xs text-muted">{l.gratitudeHint}</p>
             </div>

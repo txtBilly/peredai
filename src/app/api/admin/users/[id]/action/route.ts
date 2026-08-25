@@ -28,6 +28,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .update({ is_banned: banning, banned_at: banning ? new Date().toISOString() : null })
       .eq('id', params.id);
     if (error) return NextResponse.json({ error: 'action_failed' }, { status: 500 });
+
+    // Bind/unbind the ban to the verified bank identity so the person can't
+    // re-register around it (one identity = one account).
+    const { data: prof } = await admin
+      .from('profiles')
+      .select('verified_identity_key')
+      .eq('id', params.id)
+      .maybeSingle();
+    const key = prof?.verified_identity_key as string | null | undefined;
+    if (key) {
+      if (banning) {
+        await admin
+          .from('banned_identities')
+          .upsert({ identity_key: key, reason: `full_ban by ${staff.id.slice(0, 8)}` }, { onConflict: 'identity_key' });
+      } else {
+        await admin.from('banned_identities').delete().eq('identity_key', key);
+      }
+    }
     return NextResponse.json({ ok: true });
   }
 

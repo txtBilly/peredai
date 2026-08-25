@@ -12,7 +12,7 @@ export default function SafetyPage({ params }: { params: { locale: string } }) {
         verify with a government ID before they can publish.
       </p>
       <p>
-        Keep conversations on Ten2Ten. Never share sensitive financial details, wire money, or pay a deposit before
+        Keep conversations on Peredai. Never share sensitive financial details, wire money, or pay a deposit before
         you’ve seen the apartment and confirmed the arrangement in person. Meet in a safe, public way.
       </p>
       <p>

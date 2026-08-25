@@ -1,0 +1,74 @@
+diff --git a/src/app/[locale]/browse/[id]/ListingDetailView.tsx b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+index 1856efd..be5db2e 100644
+--- a/src/app/[locale]/browse/[id]/ListingDetailView.tsx
++++ b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+@@ -230,7 +230,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id:
+       const data = await res.json();
+       if (!res.ok) {
+         const reasons: Record<string, string> = {
+-          no_credits: 'У вас нет кредитов на контакты.',
++          no_credits: 'У вас нет токенов на контакты.',
+           active_chat_exists: 'У вас уже есть активный диалог.',
+           not_verified: 'Сначала нужно пройти проверку личности.',
+           listing_unavailable: 'This listing is no longer available.',
+diff --git a/src/app/[locale]/chats/[id]/ChatView.tsx b/src/app/[locale]/chats/[id]/ChatView.tsx
+index 7a89856..e6efd17 100644
+--- a/src/app/[locale]/chats/[id]/ChatView.tsx
++++ b/src/app/[locale]/chats/[id]/ChatView.tsx
+@@ -473,7 +473,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
+               How did it go?
+             </h2>
+             <p className="mb-5 text-sm text-muted">
+-              Terminating ends this conversation. Choose an outcome — “Didn’t work out” uses this credit and lets you
++              Terminating ends this conversation. Choose an outcome — “Didn’t work out” uses this token and lets you
+               open your next one.
+             </p>
+             <div className="flex flex-col gap-2.5">
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index d724292..eec600b 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -93,7 +93,7 @@
+     "deleteAccount": "Delete account",
+     "memberSince": "Member since",
+     "verifiedAs": "Verified as",
+-    "creditsLabel": "Contact credits"
++    "creditsLabel": "Contact tokens"
+   },
+   "profile": {
+     "title": "Edit profile",
+@@ -402,8 +402,8 @@
+         "body": "Browse verified apartments being passed on directly by the current renter."
+       },
+       {
+-        "title": "Buy credits to connect",
+-        "body": "One pack is 3 contact credits. Every member is identity-verified."
++        "title": "Buy tokens to connect",
++        "body": "One pack is 3 contact tokens. Every member is identity-verified."
+       },
+       {
+         "title": "Meet & take it over",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index d66208c..6dda345 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -93,7 +93,7 @@
+     "deleteAccount": "Удалить аккаунт",
+     "memberSince": "С нами с",
+     "verifiedAs": "Подтверждён как",
+-    "creditsLabel": "Кредиты на контакты"
++    "creditsLabel": "Токены на контакты"
+   },
+   "profile": {
+     "title": "Редактировать профиль",
+@@ -402,8 +402,8 @@
+         "body": "Смотрите проверенные квартиры, которые арендаторы передают напрямую."
+       },
+       {
+-        "title": "Купите кредиты, чтобы связаться",
+-        "body": "Один пакет — 3 кредита на контакты. Все участники проходят проверку личности."
++        "title": "Купите токены, чтобы связаться",
++        "body": "Один пакет — 3 токена на контакты. Все участники проходят проверку личности."
+       },
+       {
+         "title": "Познакомьтесь и примите квартиру",

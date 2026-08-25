@@ -1,0 +1,228 @@
+diff --git a/src/app/[locale]/browse/[id]/ListingDetailView.tsx b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+index 0ef3152..9550f3c 100644
+--- a/src/app/[locale]/browse/[id]/ListingDetailView.tsx
++++ b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+@@ -28,6 +28,7 @@ type ListingDetail = {
+   neighborhood: string | null;
+   cross_streets: string | null;
+   city: string | null;
++  full_address: string | null;
+   type: string | null;
+   monthly_rent: number | null;
+   floor: string | null;
+@@ -109,7 +110,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id:
+       const { data: row, error: listingError } = await supabase
+         .from('listings')
+         .select(
+-          'id, lister_id, neighborhood, cross_streets, city, type, monthly_rent, floor, sqft, bathrooms, description, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, gratitude_amount, status'
++          'id, lister_id, neighborhood, cross_streets, city, full_address, type, monthly_rent, floor, sqft, bathrooms, description, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, gratitude_amount, status'
+         )
+         .eq('id', id)
+         .single();
+@@ -407,6 +408,9 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id:
+             {listing.cross_streets}
+             {listing.city ? ` · ${listing.city}` : ''}
+           </p>
++          {listing.full_address && (
++            <p className="mt-1 text-[1.05rem] leading-snug text-ink">{listing.full_address}</p>
++          )}
+         </div>
+         <button
+           type="button"
+diff --git a/src/app/[locale]/list/ListForm.tsx b/src/app/[locale]/list/ListForm.tsx
+index b2a950a..39e51ee 100644
+--- a/src/app/[locale]/list/ListForm.tsx
++++ b/src/app/[locale]/list/ListForm.tsx
+@@ -824,7 +824,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
+                 required
+                 value={monthlyRent}
+                 onChange={(e) => setMonthlyRent(e.target.value)}
+-                className={fieldClass}
++                className={`${fieldClass} no-spinner`}
+               />
+               <p className="mt-1 text-xs text-muted">{l.rentHint}</p>
+             </div>
+@@ -852,7 +852,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
+                   step={0.5}
+                   value={bathrooms}
+                   onChange={(e) => setBathrooms(e.target.value)}
+-                  className={fieldClass}
++                  className={`${fieldClass} no-spinner`}
+                 />
+               </div>
+               <div>
+@@ -866,7 +866,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
+                   step={1}
+                   value={sqft}
+                   onChange={(e) => setSqft(e.target.value)}
+-                  className={fieldClass}
++                  className={`${fieldClass} no-spinner`}
+                 />
+               </div>
+             </div>
+@@ -940,7 +940,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
+                 step={1}
+                 value={gratitudeAmount}
+                 onChange={(e) => setGratitudeAmount(e.target.value)}
+-                className={fieldClass}
++                className={`${fieldClass} no-spinner`}
+               />
+               <p className="mt-1 text-xs text-muted">{l.gratitudeHint}</p>
+             </div>
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index 693f36f..b7babff 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -254,7 +254,7 @@
+     "crossStreetsLabel": "Metro / district",
+     "crossStreetsPlaceholder": "Park Kultury station",
+     "fullAddressLabel": "Full street address",
+-    "fullAddressHint": "Shown only inside an open chat — never on browse or the listing page.",
++    "fullAddressHint": "Shown publicly on the listing.",
+     "typeLabel": "Type",
+     "typeRoom": "Room",
+     "typeStudio": "Studio",
+@@ -278,11 +278,11 @@
+     "amenityOutdoor": "Balcony / terrace",
+     "amenityNoFee": "No fee",
+     "gratitudeLabel": "Gratuity",
+-    "gratitudeHint": "Off-platform thank-you to the person leaving. We don't facilitate or verify this.",
++    "gratitudeHint": "State the thank-you amount you'd like to receive from the new tenant if the owner agrees to rent your place to them. We don't process or track this payment — arrange the method and terms of settlement directly with the new tenant.",
+     "contactNameLabel": "Contact name",
+     "contactNameVerifiedHint": "From your verified identity — can't be changed.",
+     "contactPhoneLabel": "Contact phone",
+-    "confirmAvailability": "I have contacted this person and confirmed the apartment is available.",
++    "confirmAvailability": "I personally know the property owner and this apartment is available for long-term rent.",
+     "confirmAccuracy": "I understand inaccurate details may get my listing removed.",
+     "saving": "Saving…",
+     "saved": "Draft saved",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index c298219..c955f35 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -254,7 +254,7 @@
+     "crossStreetsLabel": "Метро / район",
+     "crossStreetsPlaceholder": "м. Парк культуры",
+     "fullAddressLabel": "Полный адрес",
+-    "fullAddressHint": "Виден только внутри открытого чата — никогда в поиске или на странице объявления.",
++    "fullAddressHint": "Виден всем в объявлении.",
+     "typeLabel": "Тип",
+     "typeRoom": "Комната",
+     "typeStudio": "Студия",
+@@ -278,11 +278,11 @@
+     "amenityOutdoor": "Балкон / терраса",
+     "amenityNoFee": "Без комиссии",
+     "gratitudeLabel": "Благодарность",
+-    "gratitudeHint": "Благодарность уезжающему вне платформы. Мы не проводим и не проверяем этот платёж.",
++    "gratitudeHint": "Укажите размер благодарности, которую Вы хотите получить от нового Арендатора, если хозяин квартиры согласится сдать ему ваше жилье. Мы не проводим и не отслеживаем этот платеж. Вам необходимо договариваться о способе и порядке расчёта напрямую с новым жильцом.",
+     "contactNameLabel": "Контактное имя",
+     "contactNameVerifiedHint": "Из вашей подтверждённой личности — изменить нельзя.",
+     "contactPhoneLabel": "Контактный телефон",
+-    "confirmAvailability": "Я связался с этим человеком и подтвердил, что квартира доступна.",
++    "confirmAvailability": "Я лично знаком с собственником жилого помещения и данная квартира доступна для сдачи в долгосрочную аренду.",
+     "confirmAccuracy": "Я понимаю, что неточные данные могут привести к удалению объявления.",
+     "saving": "Сохраняем…",
+     "saved": "Черновик сохранён",
+diff --git a/src/lib/listings.ts b/src/lib/listings.ts
+index bf6df22..edfdd1c 100644
+--- a/src/lib/listings.ts
++++ b/src/lib/listings.ts
+@@ -5,9 +5,95 @@ export type ListingTypeValue = (typeof LISTING_TYPES)[number];
+ 
+ // Canonical set of cities we support. The listing form picks from this list
+ // (no free text) so city values stay consistent across listings and the filter.
+-// Launch: Moscow + St. Petersburg. Add more here (Новосибирск, Екатеринбург,
+-// Казань, Нижний Новгород, Краснодар, Сочи, …) as the market expands.
+-export const SUPPORTED_CITIES = ['Москва', 'Санкт-Петербург'] as const;
++// Москва + Санкт-Петербург lead; the rest are major Russian cities, alphabetical.
++// Add/remove freely — this is the single source of truth for the city picker.
++export const SUPPORTED_CITIES = [
++  'Москва',
++  'Санкт-Петербург',
++  'Абакан',
++  'Архангельск',
++  'Астрахань',
++  'Барнаул',
++  'Белгород',
++  'Благовещенск',
++  'Братск',
++  'Брянск',
++  'Великий Новгород',
++  'Владивосток',
++  'Владикавказ',
++  'Владимир',
++  'Волгоград',
++  'Волжский',
++  'Вологда',
++  'Воронеж',
++  'Грозный',
++  'Дзержинск',
++  'Екатеринбург',
++  'Иваново',
++  'Ижевск',
++  'Иркутск',
++  'Йошкар-Ола',
++  'Казань',
++  'Калининград',
++  'Калуга',
++  'Кемерово',
++  'Киров',
++  'Кострома',
++  'Краснодар',
++  'Красноярск',
++  'Курган',
++  'Курск',
++  'Липецк',
++  'Магнитогорск',
++  'Махачкала',
++  'Мурманск',
++  'Набережные Челны',
++  'Нальчик',
++  'Нижневартовск',
++  'Нижний Новгород',
++  'Нижний Тагил',
++  'Новокузнецк',
++  'Новороссийск',
++  'Новосибирск',
++  'Обнинск',
++  'Омск',
++  'Орёл',
++  'Оренбург',
++  'Пенза',
++  'Пермь',
++  'Петрозаводск',
++  'Псков',
++  'Ростов-на-Дону',
++  'Рязань',
++  'Самара',
++  'Саранск',
++  'Саратов',
++  'Смоленск',
++  'Сочи',
++  'Ставрополь',
++  'Стерлитамак',
++  'Сургут',
++  'Сыктывкар',
++  'Таганрог',
++  'Тамбов',
++  'Тверь',
++  'Тольятти',
++  'Томск',
++  'Тула',
++  'Тюмень',
++  'Улан-Удэ',
++  'Ульяновск',
++  'Уфа',
++  'Хабаровск',
++  'Чебоксары',
++  'Челябинск',
++  'Череповец',
++  'Чита',
++  'Элиста',
++  'Южно-Сахалинск',
++  'Якутск',
++  'Ярославль',
++] as const;
+ 
+ // The launch city — default selection for the Browse city filter and the form.
+ export const DEFAULT_CITY = 'Москва';

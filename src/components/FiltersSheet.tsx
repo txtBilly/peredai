@@ -23,7 +23,6 @@ export function FiltersSheet({
     rentMin: string;
     rentMax: string;
     bathrooms: string;
-    zip: string;
     moveInBy: string;
     laundry: string;
     petsOk: string;
@@ -31,6 +30,8 @@ export function FiltersSheet({
     walkUp: string;
     doorman: string;
     outdoor: string;
+    allowNonRf: string;
+    allowChildren: string;
     apply: string;
     clear: string;
     close: string;
@@ -53,6 +54,8 @@ export function FiltersSheet({
     { key: 'walkUp', label: labels.walkUp },
     { key: 'doorman', label: labels.doorman },
     { key: 'outdoor', label: labels.outdoor },
+    { key: 'allowNonRf', label: labels.allowNonRf },
+    { key: 'allowChildren', label: labels.allowChildren },
   ];
 
   return (
@@ -95,20 +98,6 @@ export function FiltersSheet({
                 className={`${fieldClass} no-spinner`}
               />
             </div>
-          </div>
-
-          <div>
-            <label htmlFor="filter-zip" className={labelClass}>
-              {labels.zip}
-            </label>
-            <input
-              id="filter-zip"
-              type="text"
-              inputMode="numeric"
-              value={draft.zip}
-              onChange={(e) => setDraft((cur) => ({ ...cur, zip: e.target.value }))}
-              className={fieldClass}
-            />
           </div>
 
           <div>

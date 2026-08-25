@@ -5,79 +5,128 @@ export type ListingTypeValue = (typeof LISTING_TYPES)[number];
 
 // Canonical set of cities we support. The listing form picks from this list
 // (no free text) so city values stay consistent across listings and the filter.
+// Москва + Санкт-Петербург lead; the rest are major Russian cities, alphabetical.
+// Add/remove freely — this is the single source of truth for the city picker.
 export const SUPPORTED_CITIES = [
-  'New York City',
-  'Chicago',
-  'Los Angeles',
-  'San Diego',
-  'Miami',
-  'Fort Lauderdale',
-  'Seattle',
-  'Boston',
-  'New Jersey',
+  'Москва',
+  'Санкт-Петербург',
+  'Абакан',
+  'Архангельск',
+  'Астрахань',
+  'Барнаул',
+  'Белгород',
+  'Благовещенск',
+  'Братск',
+  'Брянск',
+  'Великий Новгород',
+  'Владивосток',
+  'Владикавказ',
+  'Владимир',
+  'Волгоград',
+  'Волжский',
+  'Вологда',
+  'Воронеж',
+  'Грозный',
+  'Джанкой',
+  'Дзержинск',
+  'Евпатория',
+  'Екатеринбург',
+  'Иваново',
+  'Ижевск',
+  'Иркутск',
+  'Йошкар-Ола',
+  'Казань',
+  'Калининград',
+  'Калуга',
+  'Кемерово',
+  'Керчь',
+  'Киров',
+  'Кострома',
+  'Краснодар',
+  'Красноярск',
+  'Курган',
+  'Курск',
+  'Липецк',
+  'Магнитогорск',
+  'Махачкала',
+  'Мурманск',
+  'Набережные Челны',
+  'Нальчик',
+  'Нижневартовск',
+  'Нижний Новгород',
+  'Нижний Тагил',
+  'Новокузнецк',
+  'Новороссийск',
+  'Новосибирск',
+  'Обнинск',
+  'Омск',
+  'Орёл',
+  'Оренбург',
+  'Пенза',
+  'Пермь',
+  'Петрозаводск',
+  'Псков',
+  'Ростов-на-Дону',
+  'Рязань',
+  'Самара',
+  'Саранск',
+  'Саратов',
+  'Севастополь',
+  'Симферополь',
+  'Смоленск',
+  'Сочи',
+  'Ставрополь',
+  'Стерлитамак',
+  'Сургут',
+  'Сыктывкар',
+  'Таганрог',
+  'Тамбов',
+  'Тверь',
+  'Тольятти',
+  'Томск',
+  'Тула',
+  'Тюмень',
+  'Улан-Удэ',
+  'Ульяновск',
+  'Уфа',
+  'Феодосия',
+  'Хабаровск',
+  'Чебоксары',
+  'Челябинск',
+  'Череповец',
+  'Чита',
+  'Элиста',
+  'Южно-Сахалинск',
+  'Якутск',
+  'Ялта',
+  'Ярославль',
 ] as const;
 
-// ZIP → canonical city, defined as numeric ranges over the 5-digit ZIP (leading
-// zeros drop out via parseInt, e.g. "02108" → 2108). Covers each city's core;
-// suburbs of the same metro are intentionally excluded. Add ranges to extend.
-const ZIP_CITY_RANGES: { min: number; max: number; city: string }[] = [
-  // New York City
-  { min: 10001, max: 10292, city: 'New York City' }, // Manhattan
-  { min: 10301, max: 10314, city: 'New York City' }, // Staten Island
-  { min: 10451, max: 10475, city: 'New York City' }, // Bronx
-  { min: 11004, max: 11109, city: 'New York City' }, // Queens (west)
-  { min: 11201, max: 11256, city: 'New York City' }, // Brooklyn
-  { min: 11351, max: 11697, city: 'New York City' }, // Queens
-  // Chicago
-  { min: 60601, max: 60827, city: 'Chicago' },
-  // Los Angeles
-  { min: 90001, max: 90089, city: 'Los Angeles' },
-  { min: 90090, max: 90096, city: 'Los Angeles' },
-  { min: 90189, max: 90189, city: 'Los Angeles' },
-  { min: 91040, max: 91043, city: 'Los Angeles' }, // Sunland/Tujunga
-  { min: 91300, max: 91499, city: 'Los Angeles' }, // San Fernando Valley (LA)
-  // San Diego
-  { min: 92037, max: 92037, city: 'San Diego' }, // La Jolla
-  { min: 92101, max: 92199, city: 'San Diego' },
-  // Miami
-  { min: 33101, max: 33199, city: 'Miami' },
-  // Fort Lauderdale
-  { min: 33301, max: 33351, city: 'Fort Lauderdale' },
-  // Seattle
-  { min: 98101, max: 98199, city: 'Seattle' },
-  // Boston
-  { min: 2108, max: 2137, city: 'Boston' },
-  { min: 2163, max: 2163, city: 'Boston' },
-  { min: 2199, max: 2199, city: 'Boston' },
-  { min: 2203, max: 2203, city: 'Boston' },
-  { min: 2210, max: 2210, city: 'Boston' },
-  { min: 2215, max: 2215, city: 'Boston' },
-  { min: 2222, max: 2222, city: 'Boston' },
-  // New Jersey — state-wide (07xxx–08xxx), a catch-all rather than a single city.
-  { min: 7001, max: 8989, city: 'New Jersey' },
-];
-
 // The launch city — default selection for the Browse city filter and the form.
-export const DEFAULT_CITY = 'New York City';
+export const DEFAULT_CITY = 'Москва';
 
-// Collapse common spellings/aliases to a canonical city so old free-text values
-// ("New York", "NYC", "NY") unify with the canonical name. Unknown values are
-// returned trimmed as-is.
+// Collapse common spellings/aliases to a canonical city so old/free-text values
+// unify with the canonical name. Unknown values are returned trimmed as-is.
 export function normalizeCity(input: string | null | undefined): string | null {
   const s = (input ?? '').trim();
   if (!s) return null;
-  const key = s.toLowerCase().replace(/\./g, '');
-  if (['new york', 'new york city', 'nyc', 'ny', 'new york, ny'].includes(key)) return DEFAULT_CITY;
+  const key = s.toLowerCase().replace(/[.\-]/g, '').replace(/\s+/g, ' ').trim();
+  if (['москва', 'мск', 'msk', 'moscow'].includes(key)) return 'Москва';
+  if (
+    [
+      'санкт петербург',
+      'санктпетербург',
+      'спб',
+      'питер',
+      'петербург',
+      'saint petersburg',
+      'st petersburg',
+      'spb',
+    ].includes(key)
+  ) {
+    return 'Санкт-Петербург';
+  }
   return s;
-}
-
-// Best-effort city from a ZIP, used as the fallback when a lister doesn't set
-// the city field. Keep in sync with the backfill in migration 0031. Returns
-// null for ZIPs we don't recognize (city stays whatever the lister entered).
-export function cityFromZip(zip: string | null | undefined): string | null {
-  const n = parseInt((zip ?? '').trim(), 10);
-  if (Number.isNaN(n)) return null;
-  return ZIP_CITY_RANGES.find((r) => n >= r.min && n <= r.max)?.city ?? null;
 }
 
 const PHOTO_BUCKET = 'listing-photos';
@@ -110,11 +159,12 @@ export function listingTypeLabel(type: string | null, l: TypeLabelDict): string 
   return listingTypeLabels(l)[type as ListingTypeValue] ?? type;
 }
 
+// Browse filters. Location is driven by the city selector + free-text search
+// (district / metro / street) — there is no postal-code filter in the RU market.
 export type BrowseFilters = {
   rentMin: string;
   rentMax: string;
   bathrooms: string; // minimum bathrooms ('', '1', '2', '3')
-  zip: string;
   moveInBy: string;
   laundry: boolean;
   petsOk: boolean;
@@ -122,13 +172,14 @@ export type BrowseFilters = {
   walkUp: boolean;
   doorman: boolean;
   outdoor: boolean;
+  allowNonRf: boolean;
+  allowChildren: boolean;
 };
 
 export const EMPTY_FILTERS: BrowseFilters = {
   rentMin: '',
   rentMax: '',
   bathrooms: '',
-  zip: '',
   moveInBy: '',
   laundry: false,
   petsOk: false,
@@ -136,6 +187,8 @@ export const EMPTY_FILTERS: BrowseFilters = {
   walkUp: false,
   doorman: false,
   outdoor: false,
+  allowNonRf: false,
+  allowChildren: false,
 };
 
 export function hasActiveFilters(filters: BrowseFilters): boolean {

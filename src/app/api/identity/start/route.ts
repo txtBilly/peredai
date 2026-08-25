@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { getIdentityProvider } from '@/lib/identity';
+import {
+  getIdentityProvider,
+  isProviderEnabled,
+  enabledIdentityProviders,
+  identityKeyFor,
+} from '@/lib/identity';
 import { applyVerificationResult } from '@/lib/identity/apply';
 
-const PROVIDER = process.env.IDENTITY_PROVIDER ?? 'mock';
-
-// Kicks off identity verification.
-//   Stripe: creates a hosted VerificationSession and returns its URL; the
-//           client redirects there and the webhook finalizes the result.
-//   Mock:   there's no async webhook, so we process the outcome inline.
+// Kicks off identity verification with a chosen provider.
+//   Body: { provider?: 'sber' | 'tid' | 'mock', mock?: 'success'|'fail'|'underage' }
+//   Bank providers (sber/tid): returns a hosted-flow redirectUrl; the callback
+//   (/api/identity/callback) finalizes the result.
+//   Mock: processed inline (no webhook), for preview/dev.
 export async function POST(req: NextRequest) {
   const supabase = createClient();
   const {
@@ -26,25 +30,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Already verified' }, { status: 400 });
   }
 
-  const provider = await getIdentityProvider();
+  const body = (await req.json().catch(() => ({}))) as { provider?: string; mock?: string };
+  const requested = (body.provider ?? enabledIdentityProviders()[0] ?? 'mock').toLowerCase();
+  if (!isProviderEnabled(requested)) {
+    return NextResponse.json({ error: 'provider_not_enabled' }, { status: 400 });
+  }
 
-  // Resolve a vendor ref (+ hosted URL for real providers). A dev-only override
-  // lets the mock simulate outcomes via ?mock=success|fail|underage.
+  const provider = await getIdentityProvider(requested);
+
+  // Dev-only mock outcome override.
   const mockOverride =
-    PROVIDER === 'mock' && process.env.NODE_ENV === 'development'
-      ? req.nextUrl.searchParams.get('mock')
-      : null;
+    requested === 'mock' && process.env.NODE_ENV === 'development' ? body.mock ?? null : null;
 
   let vendorRef: string;
   let redirectUrl: string | undefined;
   if (mockOverride) {
     vendorRef = `mock_${mockOverride}_${user.id.slice(0, 8)}_${Date.now()}`;
   } else {
-    // Build the return URL from the actual request origin (honors Vercel's
-    // forwarded host), so Stripe sends the user back to whatever domain they're
-    // on — not a stale build-time default.
     const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
-    const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+    const proto = req.headers.get('x-forwarded-proto') ?? (host?.includes('localhost') ? 'http' : 'https');
     const baseUrl = host ? `${proto}://${host}` : undefined;
     const started = await provider.startVerification(user.id, baseUrl);
     vendorRef = started.vendorRef;
@@ -56,21 +60,24 @@ export async function POST(req: NextRequest) {
     .update({ verification_status: 'pending', kyc_vendor_ref: vendorRef })
     .eq('id', user.id);
 
-  // Append-only audit row for this attempt.
+  // Append-only audit row; `kind` records which provider this attempt used so the
+  // callback can dispatch the token exchange to the right provider.
   await admin.from('identity_documents').insert({
     user_id: user.id,
-    kind: PROVIDER === 'stripe' ? 'stripe' : 'mock',
+    kind: requested,
     vendor_ref: vendorRef,
     status: 'pending',
   });
 
-  // Real provider: redirect to the hosted flow; the webhook finalizes.
+  // Bank provider: redirect to the hosted flow; the callback finalizes + binds.
   if (redirectUrl) {
     return NextResponse.json({ status: 'pending', redirectUrl });
   }
 
-  // Mock: no webhook — process the outcome inline now.
+  // Mock: process inline. Bind a per-user identity key so both test accounts can
+  // verify (each mock account is its own identity).
   const result = await provider.processResult(vendorRef);
-  await applyVerificationResult(admin, user.id, vendorRef, result);
+  const identityKey = identityKeyFor('mock', user.id);
+  await applyVerificationResult(admin, user.id, vendorRef, result, identityKey);
   return NextResponse.json({ status: result.status, failureReason: result.failureReason });
 }

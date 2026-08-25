@@ -1,0 +1,957 @@
+diff --git a/.env.example b/.env.example
+index bec08a6..ad37f8b 100644
+--- a/.env.example
++++ b/.env.example
+@@ -15,16 +15,23 @@ YOOKASSA_SECRET_KEY=live_or_test_secret_key
+ # Price (whole rubles) for the 3-contact-credit bundle
+ CONTACT_BUNDLE_PRICE_RUB=1490
+ 
+-# ---- Identity: OAuth (Yandex ID first; Sber ID / T-ID later) ----
+-IDENTITY_PROVIDER=mock            # mock | yandex | sber | tid
++# ---- Identity: bank OAuth (Sber ID + T-ID). Yandex ID is NOT offered. ----
++# Providers shown on the verify screen (comma-separated). "mock" = preview.
++NEXT_PUBLIC_IDENTITY_PROVIDERS=mock       # mock  |  sber,tid
+ IDENTITY_REDIRECT_URL=http://localhost:3000/api/identity/callback
+-YANDEX_CLIENT_ID=your-yandex-app-id
+-YANDEX_CLIENT_SECRET=your-yandex-app-secret
+-# SBER_CLIENT_ID= / SBER_CLIENT_SECRET=   (Sber ID, later)
+-# TID_CLIENT_ID= / TID_CLIENT_SECRET=     (Tinkoff ID, later)
+-
+-# ---- Mock provider outcomes (dev/preview only) ----
+-MOCK_KYC_RESULT=verified          # verified | failed | pending
++# Secret that hashes the bank identity (provider:sub) for one-account binding + bans.
++IDENTITY_KEY_SECRET=change-me-to-a-long-random-secret
++MOCK_KYC_RESULT=verified                  # mock outcome: verified | fail | underage
++
++# Sber ID — from the Sber B2B portal after onboarding
++SBER_CLIENT_ID=
++SBER_CLIENT_SECRET=
++# SBER_AUTHORIZE_URL= / SBER_TOKEN_URL= / SBER_USERINFO_URL=   # override for sandbox
++
++# T-ID (T-Bank) — from the T-ID partner onboarding
++TID_CLIENT_ID=
++TID_CLIENT_SECRET=
++# TID_AUTHORIZE_URL= / TID_TOKEN_URL= / TID_USERINFO_URL=      # override for sandbox
+ 
+ # ---- SMS (optional) ----
+ # Swap Twilio for a Russian SMS aggregator (SMSC.ru / SMS Aero) before launch.
+diff --git a/src/app/[locale]/verify/VerifyView.tsx b/src/app/[locale]/verify/VerifyView.tsx
+index 4f9674e..678dcb9 100644
+--- a/src/app/[locale]/verify/VerifyView.tsx
++++ b/src/app/[locale]/verify/VerifyView.tsx
+@@ -80,18 +80,22 @@ export default function VerifyView({
+     setChecking(false);
+   }
+ 
+-  async function startVerify() {
++  async function startVerify(provider: string) {
+     setError('');
+     setStarting(true);
+     try {
+-      const res = await fetch('/api/identity/start', { method: 'POST' });
++      const res = await fetch('/api/identity/start', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ provider }),
++      });
+       const data = await res.json().catch(() => ({}));
+       if (!res.ok) {
+         setError(v.errorGeneric);
+         setStarting(false);
+         return;
+       }
+-      // Real provider: redirect to the hosted flow.
++      // Bank provider: redirect to the hosted flow.
+       if (data.redirectUrl) {
+         window.location.href = data.redirectUrl;
+         return;
+@@ -107,6 +111,28 @@ export default function VerifyView({
+     }
+   }
+ 
++  // Which providers to offer (NEXT_PUBLIC_IDENTITY_PROVIDERS, e.g. "sber,tid" or "mock").
++  const providers = (process.env.NEXT_PUBLIC_IDENTITY_PROVIDERS ?? 'mock')
++    .split(',')
++    .map((s) => s.trim().toLowerCase())
++    .filter(Boolean);
++  const providerLabel = (p: string) =>
++    p === 'sber' ? v.providerSber : p === 'tid' ? v.providerTid : p === 'mock' ? v.providerMock : p;
++  const providerButtons = (
++    <div className="flex w-full flex-col gap-2.5">
++      {providers.map((p) => (
++        <button
++          key={p}
++          onClick={() => startVerify(p)}
++          disabled={starting || checking}
++          className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
++        >
++          {starting ? v.starting : providerLabel(p)}
++        </button>
++      ))}
++    </div>
++  );
++
+   // Shared with every resolved phase so the screens stay consistent with the
+   // rest of the app (header comes from the server wrapper; this adds the Back
+   // control and positions content in the upper area like the intro screen).
+@@ -165,13 +191,7 @@ export default function VerifyView({
+           >
+             {checking ? v.checkingCta : v.refreshCta}
+           </button>
+-          <button
+-            onClick={startVerify}
+-            disabled={starting || checking}
+-            className="w-full rounded-lg px-5 py-3 text-sm font-medium text-cobalt transition hover:bg-cobalt/5 disabled:opacity-50"
+-          >
+-            {starting ? v.starting : v.startOverCta}
+-          </button>
++          {providerButtons}
+         </div>
+         {error && (
+           <p role="alert" className="mt-3 text-sm text-red-600">
+@@ -193,13 +213,7 @@ export default function VerifyView({
+           </div>
+           <h1 className="mb-2 font-display text-2xl font-bold text-ink">{v.failedTitle}</h1>
+           <p className="mb-8 text-sm text-muted">{v.failedBody}</p>
+-          <button
+-            onClick={startVerify}
+-            disabled={starting}
+-            className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
+-          >
+-            {starting ? v.starting : v.retryCta}
+-          </button>
++          {providerButtons}
+         </div>
+       </main>
+     );
+@@ -232,13 +246,8 @@ export default function VerifyView({
+         </p>
+       )}
+ 
+-      <button
+-        onClick={startVerify}
+-        disabled={starting}
+-        className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
+-      >
+-        {starting ? v.starting : v.startCta}
+-      </button>
++      <p className="mb-3 text-sm text-muted">{v.chooseProvider}</p>
++      {providerButtons}
+       </div>
+     </main>
+   );
+diff --git a/src/app/api/admin/users/[id]/action/route.ts b/src/app/api/admin/users/[id]/action/route.ts
+index d67652a..9e6d334 100644
+--- a/src/app/api/admin/users/[id]/action/route.ts
++++ b/src/app/api/admin/users/[id]/action/route.ts
+@@ -28,6 +28,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string
+       .update({ is_banned: banning, banned_at: banning ? new Date().toISOString() : null })
+       .eq('id', params.id);
+     if (error) return NextResponse.json({ error: 'action_failed' }, { status: 500 });
++
++    // Bind/unbind the ban to the verified bank identity so the person can't
++    // re-register around it (one identity = one account).
++    const { data: prof } = await admin
++      .from('profiles')
++      .select('verified_identity_key')
++      .eq('id', params.id)
++      .maybeSingle();
++    const key = prof?.verified_identity_key as string | null | undefined;
++    if (key) {
++      if (banning) {
++        await admin
++          .from('banned_identities')
++          .upsert({ identity_key: key, reason: `full_ban by ${staff.id.slice(0, 8)}` }, { onConflict: 'identity_key' });
++      } else {
++        await admin.from('banned_identities').delete().eq('identity_key', key);
++      }
++    }
+     return NextResponse.json({ ok: true });
+   }
+ 
+diff --git a/src/app/api/identity/callback/route.ts b/src/app/api/identity/callback/route.ts
+index 7b41054..047524b 100644
+--- a/src/app/api/identity/callback/route.ts
++++ b/src/app/api/identity/callback/route.ts
+@@ -1,16 +1,16 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createClient, createAdminClient } from '@/lib/supabase/server';
+ import { applyVerificationResult } from '@/lib/identity/apply';
+-import { exchangeCodeForToken, fetchUserInfo, toVerificationResult } from '@/lib/identity/yandex';
++import { completeOAuthCallback, identityKeyFor } from '@/lib/identity';
+ import { defaultLocale, isLocale } from '@/i18n/config';
+ 
+ export const runtime = 'nodejs';
+ 
+-// OAuth redirect target for Yandex ID (and, later, Sber ID / T-ID). The user's
+-// browser lands here after authorizing. We validate the `state` against the
+-// profile it was issued for, exchange the `code` for a token, read the user's
+-// Yandex profile, and write the verification result — then send the user back
+-// to the verify screen.
++// OAuth redirect target shared by all bank providers (Sber ID, T-ID; Yandex too
++// if ever enabled). The user's browser lands here after authorizing. We look up
++// which provider + user this `state` was issued for, exchange the code, read the
++// verified profile, bind the identity, and write the result — then send the user
++// back to the verify screen.
+ export async function GET(req: NextRequest) {
+   const url = req.nextUrl;
+   const code = url.searchParams.get('code');
+@@ -20,31 +20,35 @@ export async function GET(req: NextRequest) {
+   const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+   const proto = req.headers.get('x-forwarded-proto') ?? (host?.includes('localhost') ? 'http' : 'https');
+   const appUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000');
++  const baseUrl = host ? `${proto}://${host}` : undefined;
+ 
+   const admin = createAdminClient();
+ 
+-  // Resolve the user this state was issued for (set at /api/identity/start).
++  // Resolve the user + provider this state was issued for (set at /identity/start).
+   let userId: string | undefined;
+-  let locale = defaultLocale as string;
++  let provider: string | undefined;
+   if (state) {
+-    const { data: profile } = await admin
+-      .from('profiles')
+-      .select('id, preferred_locale')
+-      .eq('kyc_vendor_ref', state)
++    const { data: doc } = await admin
++      .from('identity_documents')
++      .select('user_id, kind')
++      .eq('vendor_ref', state)
++      .order('created_at', { ascending: false })
+       .maybeSingle();
+-    userId = profile?.id;
+-    if (profile?.preferred_locale && isLocale(profile.preferred_locale)) {
+-      locale = profile.preferred_locale;
+-    }
++    userId = doc?.user_id;
++    provider = doc?.kind;
++  }
++
++  let locale: string = defaultLocale;
++  if (userId) {
++    const { data: p } = await admin.from('profiles').select('preferred_locale').eq('id', userId).maybeSingle();
++    if (p?.preferred_locale && isLocale(p.preferred_locale)) locale = p.preferred_locale;
+   }
+ 
+   const backTo = (params: string) =>
+     NextResponse.redirect(`${appUrl}/${locale}/verify?return=1${params}`, 303);
+ 
+-  // User denied, or the provider returned an error, or the state is unknown.
+-  if (oauthError || !code || !state || !userId) {
++  if (oauthError || !code || !state || !userId || !provider) {
+     if (userId && (oauthError || !code)) {
+-      // An explicit denial/error → mark the attempt failed so the UI reflects it.
+       await applyVerificationResult(admin, userId, state ?? 'unknown', {
+         status: 'failed',
+         failureReason: oauthError ?? 'no_code',
+@@ -53,30 +57,23 @@ export async function GET(req: NextRequest) {
+     return backTo(oauthError ? `&error=${encodeURIComponent(oauthError)}` : '');
+   }
+ 
+-  // CSRF defense-in-depth: if a session is present, it must match the user the
+-  // state was issued for. (The state itself is an unguessable per-user token.)
++  // CSRF defense-in-depth: a present session must match the state's user.
+   try {
+     const supabase = createClient();
+     const {
+       data: { user: sessionUser },
+     } = await supabase.auth.getUser();
+-    if (sessionUser && sessionUser.id !== userId) {
+-      return backTo('&error=session_mismatch');
+-    }
++    if (sessionUser && sessionUser.id !== userId) return backTo('&error=session_mismatch');
+   } catch {
+-    // No/invalid session cookie — fall through; state binding is the primary check.
++    // No/invalid session — state binding is the primary check.
+   }
+ 
+   try {
+-    const token = await exchangeCodeForToken(code);
+-    const info = await fetchUserInfo(token);
+-    const result = toVerificationResult(info, state);
+-    if (result.age == null) {
+-      console.warn('[identity] Yandex returned no birthday — 18+ gate not enforced for', userId);
+-    }
+-    await applyVerificationResult(admin, userId, state, result);
++    const result = await completeOAuthCallback(provider, code, baseUrl);
++    const identityKey = result.providerSub ? identityKeyFor(provider, result.providerSub) : undefined;
++    await applyVerificationResult(admin, userId, state, result, identityKey);
+   } catch (e) {
+-    console.error('[identity] Yandex callback failed', e);
++    console.error(`[identity] ${provider} callback failed`, e);
+     await applyVerificationResult(admin, userId, state, {
+       status: 'failed',
+       failureReason: 'provider_error',
+diff --git a/src/app/api/identity/start/route.ts b/src/app/api/identity/start/route.ts
+index 56a2e8f..5d898d4 100644
+--- a/src/app/api/identity/start/route.ts
++++ b/src/app/api/identity/start/route.ts
+@@ -1,14 +1,18 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createClient, createAdminClient } from '@/lib/supabase/server';
+-import { getIdentityProvider } from '@/lib/identity';
++import {
++  getIdentityProvider,
++  isProviderEnabled,
++  enabledIdentityProviders,
++  identityKeyFor,
++} from '@/lib/identity';
+ import { applyVerificationResult } from '@/lib/identity/apply';
+ 
+-const PROVIDER = process.env.IDENTITY_PROVIDER ?? 'mock';
+-
+-// Kicks off identity verification.
+-//   Stripe: creates a hosted VerificationSession and returns its URL; the
+-//           client redirects there and the webhook finalizes the result.
+-//   Mock:   there's no async webhook, so we process the outcome inline.
++// Kicks off identity verification with a chosen provider.
++//   Body: { provider?: 'sber' | 'tid' | 'mock', mock?: 'success'|'fail'|'underage' }
++//   Bank providers (sber/tid): returns a hosted-flow redirectUrl; the callback
++//   (/api/identity/callback) finalizes the result.
++//   Mock: processed inline (no webhook), for preview/dev.
+ export async function POST(req: NextRequest) {
+   const supabase = createClient();
+   const {
+@@ -26,25 +30,25 @@ export async function POST(req: NextRequest) {
+     return NextResponse.json({ error: 'Already verified' }, { status: 400 });
+   }
+ 
+-  const provider = await getIdentityProvider();
++  const body = (await req.json().catch(() => ({}))) as { provider?: string; mock?: string };
++  const requested = (body.provider ?? enabledIdentityProviders()[0] ?? 'mock').toLowerCase();
++  if (!isProviderEnabled(requested)) {
++    return NextResponse.json({ error: 'provider_not_enabled' }, { status: 400 });
++  }
++
++  const provider = await getIdentityProvider(requested);
+ 
+-  // Resolve a vendor ref (+ hosted URL for real providers). A dev-only override
+-  // lets the mock simulate outcomes via ?mock=success|fail|underage.
++  // Dev-only mock outcome override.
+   const mockOverride =
+-    PROVIDER === 'mock' && process.env.NODE_ENV === 'development'
+-      ? req.nextUrl.searchParams.get('mock')
+-      : null;
++    requested === 'mock' && process.env.NODE_ENV === 'development' ? body.mock ?? null : null;
+ 
+   let vendorRef: string;
+   let redirectUrl: string | undefined;
+   if (mockOverride) {
+     vendorRef = `mock_${mockOverride}_${user.id.slice(0, 8)}_${Date.now()}`;
+   } else {
+-    // Build the return URL from the actual request origin (honors Vercel's
+-    // forwarded host), so Stripe sends the user back to whatever domain they're
+-    // on — not a stale build-time default.
+     const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+-    const proto = req.headers.get('x-forwarded-proto') ?? 'https';
++    const proto = req.headers.get('x-forwarded-proto') ?? (host?.includes('localhost') ? 'http' : 'https');
+     const baseUrl = host ? `${proto}://${host}` : undefined;
+     const started = await provider.startVerification(user.id, baseUrl);
+     vendorRef = started.vendorRef;
+@@ -56,21 +60,24 @@ export async function POST(req: NextRequest) {
+     .update({ verification_status: 'pending', kyc_vendor_ref: vendorRef })
+     .eq('id', user.id);
+ 
+-  // Append-only audit row for this attempt.
++  // Append-only audit row; `kind` records which provider this attempt used so the
++  // callback can dispatch the token exchange to the right provider.
+   await admin.from('identity_documents').insert({
+     user_id: user.id,
+-    kind: PROVIDER,
++    kind: requested,
+     vendor_ref: vendorRef,
+     status: 'pending',
+   });
+ 
+-  // Real provider: redirect to the hosted flow; the webhook finalizes.
++  // Bank provider: redirect to the hosted flow; the callback finalizes + binds.
+   if (redirectUrl) {
+     return NextResponse.json({ status: 'pending', redirectUrl });
+   }
+ 
+-  // Mock: no webhook — process the outcome inline now.
++  // Mock: process inline. Bind a per-user identity key so both test accounts can
++  // verify (each mock account is its own identity).
+   const result = await provider.processResult(vendorRef);
+-  await applyVerificationResult(admin, user.id, vendorRef, result);
++  const identityKey = identityKeyFor('mock', user.id);
++  await applyVerificationResult(admin, user.id, vendorRef, result, identityKey);
+   return NextResponse.json({ status: result.status, failureReason: result.failureReason });
+ }
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index 289eaca..d724292 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -130,6 +130,10 @@
+     "backCta": "Back",
+     "closeCta": "Close",
+     "startCta": "Start verification",
++    "chooseProvider": "Choose how to verify",
++    "providerSber": "Continue with Sber ID",
++    "providerTid": "Continue with T-Bank",
++    "providerMock": "Verify (test)",
+     "starting": "Starting…",
+     "pendingTitle": "Verification in progress",
+     "pendingBody": "We're reviewing your information. This usually takes a few seconds.",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index 7008d20..d66208c 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -130,6 +130,10 @@
+     "backCta": "Назад",
+     "closeCta": "Закрыть",
+     "startCta": "Начать проверку",
++    "chooseProvider": "Выберите способ подтверждения",
++    "providerSber": "Войти через Сбер ID",
++    "providerTid": "Войти через Т-Банк",
++    "providerMock": "Подтвердить (тест)",
+     "starting": "Начинаем…",
+     "pendingTitle": "Идёт проверка",
+     "pendingBody": "Мы проверяем ваши данные. Обычно это занимает несколько секунд.",
+diff --git a/src/lib/identity/apply.ts b/src/lib/identity/apply.ts
+index 596bc86..49dce73 100644
+--- a/src/lib/identity/apply.ts
++++ b/src/lib/identity/apply.ts
+@@ -1,10 +1,11 @@
+ // Shared "write a verification result to the DB" logic, used by both the mock
+-// inline flow (identity/start) and the real webhook (identity/webhook) so the
+-// two can never drift.
++// inline flow (identity/start) and the real OAuth callback (identity/callback)
++// so the two can never drift.
+ //
+-// Writes the verified summary to the profile (name is locked by the
+-// lock_verified_full_name trigger once a bg-check exists) and closes out the
+-// matching identity_documents audit row. Enforces 18+ regardless of vendor.
++// Also enforces the anti-abuse identity binding: one real verified identity
++// (provider `sub`, hashed into `identityKey`) maps to exactly one account, and a
++// banned identity can never re-verify. When those checks fail, verification is
++// recorded as failed instead of verified.
+ 
+ import { createAdminClient } from '@/lib/supabase/server';
+ import type { VerificationResult } from './index';
+@@ -15,25 +16,57 @@ export async function applyVerificationResult(
+   admin: Admin,
+   userId: string,
+   vendorRef: string,
+-  result: VerificationResult
++  result: VerificationResult,
++  identityKey?: string
+ ): Promise<void> {
+   const updates: Record<string, unknown> = { kyc_vendor_ref: vendorRef };
+   let historyStatus: 'verified' | 'failed' | 'pending' = result.status;
+   let failureReason: string | null = result.failureReason ?? null;
+ 
+   if (result.status === 'verified') {
++    // 18+ gate — only enforced when the provider actually returns an age.
+     if (result.age !== undefined && result.age < 18) {
+-      // Belt-and-suspenders: reject an under-18 even if the vendor passed them.
+       updates.verification_status = 'failed';
+       historyStatus = 'failed';
+       failureReason = 'age_under_18';
+     } else {
+-      updates.verification_status = 'verified';
+-      updates.identity_verified_at = new Date().toISOString();
+-      if (result.age !== undefined) updates.age = result.age;
+-      if (result.fullName) updates.full_name = result.fullName; // locked by trigger
+-      if (result.idType) updates.id_type = result.idType;
+-      if (result.idLast4) updates.id_last4 = result.idLast4;
++      // Anti-abuse identity binding (bank providers return a stable `sub`).
++      let identityOk = true;
++      if (identityKey) {
++        const { data: banned } = await admin
++          .from('banned_identities')
++          .select('identity_key')
++          .eq('identity_key', identityKey)
++          .maybeSingle();
++        if (banned) {
++          identityOk = false;
++          failureReason = 'identity_banned';
++        } else {
++          const { data: other } = await admin
++            .from('profiles')
++            .select('id')
++            .eq('verified_identity_key', identityKey)
++            .neq('id', userId)
++            .maybeSingle();
++          if (other) {
++            identityOk = false;
++            failureReason = 'identity_in_use';
++          }
++        }
++      }
++
++      if (!identityOk) {
++        updates.verification_status = 'failed';
++        historyStatus = 'failed';
++      } else {
++        updates.verification_status = 'verified';
++        updates.identity_verified_at = new Date().toISOString();
++        if (identityKey) updates.verified_identity_key = identityKey;
++        if (result.age !== undefined) updates.age = result.age;
++        if (result.fullName) updates.full_name = result.fullName; // locked by trigger
++        if (result.idType) updates.id_type = result.idType;
++        if (result.idLast4) updates.id_last4 = result.idLast4;
++      }
+     }
+   } else if (result.status === 'failed') {
+     updates.verification_status = 'failed';
+@@ -44,7 +77,7 @@ export async function applyVerificationResult(
+   const { error: profileErr } = await admin.from('profiles').update(updates).eq('id', userId);
+   if (profileErr) throw profileErr;
+ 
+-  // Close out the audit row for this attempt (best-effort; don't fail the flow).
++  // Close out the audit row for this attempt (best-effort).
+   await admin
+     .from('identity_documents')
+     .update({
+diff --git a/src/lib/identity/index.ts b/src/lib/identity/index.ts
+index fe4cc98..729d92f 100644
+--- a/src/lib/identity/index.ts
++++ b/src/lib/identity/index.ts
+@@ -1,21 +1,28 @@
+-// IdentityProvider interface + factory
+-// To swap in a real provider (e.g. Stripe Identity), set:
+-//   IDENTITY_PROVIDER=stripe   in .env.local
+-// and implement StripeIdentityProvider in ./stripe.ts.
+-// Default is 'mock' — simulates success/failure in dev via query params.
++// IdentityProvider interface + factory.
++//
++// RU market: verification is via bank OAuth/OIDC — Sber ID and T-ID (T-Bank).
++// Yandex ID exists in code but is intentionally NOT offered (self-asserted data
++// is too weak for the anti-abuse / trust model). `mock` is the dev/preview
++// provider that auto-verifies without any real credentials.
++//
++// Which providers are OFFERED on the verify screen is driven by
++// NEXT_PUBLIC_IDENTITY_PROVIDERS (comma-separated), e.g. "mock" or "sber,tid".
++
++import { createHmac } from 'crypto';
+ 
+ export type VerificationResult = {
+   // 'pending' = provider is still processing (real vendors are async).
+   status: 'verified' | 'failed' | 'pending';
+-  age?: number;           // derived from DOB; never store full DOB
++  age?: number;           // derived from DOB if the provider returns it; never store full DOB
+   vendorRef?: string;     // provider inquiry/session id
+   failureReason?: string;
+-  // Verified outputs we're permitted to keep (document number is truncated to
+-  // last 4 by the provider adapter — the full number is never returned here).
+   fullName?: string;      // verified legal name (locked on the profile)
+-  idType?: string;        // passport | driving_license | id_card
+-  idLast4?: string;       // last 4 of the document number only
++  idType?: string;        // provider tag, e.g. 'sber_id' | 'tid'
++  idLast4?: string;
+   issuingCountry?: string;
++  // Stable per-user subject id from the provider (OIDC `sub`). Used to bind one
++  // real identity to one account and to enforce bans across re-registration.
++  providerSub?: string;
+ };
+ 
+ export type StartVerification = {
+@@ -25,32 +32,80 @@ export type StartVerification = {
+ };
+ 
+ export interface IdentityProvider {
+-  /**
+-   * Kick off verification for a user. Returns a vendor ref (+ redirect URL).
+-   * `baseUrl` is the origin the request came in on (e.g. https://ten2ten.app),
+-   * used to build the provider return URL so it always matches the live domain.
+-   */
+   startVerification(userId: string, baseUrl?: string): Promise<StartVerification>;
+-
+-  /** Process a completed verification (called from webhook or mock callback). */
+   processResult(vendorRef: string): Promise<VerificationResult>;
+ }
+ 
+-// Factory — reads IDENTITY_PROVIDER env var; defaults to mock.
+-export async function getIdentityProvider(): Promise<IdentityProvider> {
+-  const provider = process.env.IDENTITY_PROVIDER ?? 'mock';
++// Providers offered to users on the verify screen (order preserved).
++export function enabledIdentityProviders(): string[] {
++  const raw = process.env.NEXT_PUBLIC_IDENTITY_PROVIDERS ?? 'mock';
++  return raw
++    .split(',')
++    .map((s) => s.trim().toLowerCase())
++    .filter(Boolean);
++}
++
++export function isProviderEnabled(name: string): boolean {
++  return enabledIdentityProviders().includes(name.toLowerCase());
++}
++
++// Factory — resolve a provider by explicit name (falls back to the first enabled).
++export async function getIdentityProvider(name?: string): Promise<IdentityProvider> {
++  const provider = (name ?? enabledIdentityProviders()[0] ?? 'mock').toLowerCase();
+   if (provider === 'mock') {
+     const { MockIdentityProvider } = await import('./mock');
+     return new MockIdentityProvider();
+   }
++  if (provider === 'sber') {
++    const { SberIdentityProvider } = await import('./sber');
++    return new SberIdentityProvider();
++  }
++  if (provider === 'tid') {
++    const { TidIdentityProvider } = await import('./tid');
++    return new TidIdentityProvider();
++  }
+   if (provider === 'yandex') {
+     const { YandexIdentityProvider } = await import('./yandex');
+     return new YandexIdentityProvider();
+   }
+-  if (provider === 'stripe') {
+-    const { StripeIdentityProvider } = await import('./stripe');
+-    return new StripeIdentityProvider();
++  throw new Error(`Unknown identity provider: ${provider}`);
++}
++
++// Complete an OAuth callback for a redirect-based provider: exchange the code,
++// fetch the profile, and return a VerificationResult (with providerSub).
++export async function completeOAuthCallback(
++  provider: string,
++  code: string,
++  baseUrl?: string
++): Promise<VerificationResult> {
++  const p = provider.toLowerCase();
++  if (p === 'sber') {
++    const { completeSberCallback } = await import('./sber');
++    return completeSberCallback(code, baseUrl);
++  }
++  if (p === 'tid') {
++    const { completeTidCallback } = await import('./tid');
++    return completeTidCallback(code, baseUrl);
++  }
++  if (p === 'yandex') {
++    const { completeYandexCallback } = await import('./yandex');
++    return completeYandexCallback(code, baseUrl);
+   }
+-  // sber | tid are planned (Sber ID / Tinkoff ID) — same OAuth shape as yandex.
+-  throw new Error(`Unknown IDENTITY_PROVIDER: ${provider}`);
++  throw new Error(`Provider ${provider} has no OAuth callback`);
++}
++
++// The OAuth redirect URI (shared callback for all providers). Must EXACTLY match
++// the Callback URI registered on each provider's app. Prefer the explicit env.
++export function resolveRedirectUri(baseUrl?: string): string {
++  const explicit = process.env.IDENTITY_REDIRECT_URL;
++  if (explicit) return explicit;
++  if (baseUrl) return `${baseUrl.replace(/\/+$/, '')}/api/identity/callback`;
++  return 'http://localhost:3000/api/identity/callback';
++}
++
++// Deterministic, non-reversible identity key = HMAC(secret, "provider:sub").
++// One real identity → one key → one account. Bans bind to this key.
++export function identityKeyFor(provider: string, sub: string): string {
++  const secret = process.env.IDENTITY_KEY_SECRET ?? 'peredai-dev-identity-salt';
++  return createHmac('sha256', secret).update(`${provider.toLowerCase()}:${sub}`).digest('hex');
+ }
+diff --git a/src/lib/identity/sber.ts b/src/lib/identity/sber.ts
+new file mode 100644
+index 0000000..c9cd32d
+--- /dev/null
++++ b/src/lib/identity/sber.ts
+@@ -0,0 +1,123 @@
++// Sber ID (OIDC) identity provider.
++//
++// Flow (authorization-code, user-facing redirect):
++//   1. startVerification() builds the Sber ID authorize URL → returned as redirectUrl.
++//   2. Sber redirects back to /api/identity/callback?code=…&state=…
++//   3. completeSberCallback() exchanges the code, reads the user's profile
++//      (sub + verified name), and returns a VerificationResult.
++//
++// Scope: "openid name" — we request ONLY the stable subject id and the verified
++// legal name. No birthdate, no passport/ИНН/СНИЛС.
++//
++// IMPORTANT (onboarding): Sber ID endpoints, and whether the token/userinfo calls
++// require an RqUID header and/or a client TLS certificate (mTLS), depend on your
++// Sber B2B onboarding + sandbox vs production. All endpoints are env-overridable
++// so you can point them at the sandbox first. Confirm exact hosts/headers in the
++// Sber ID docs for your app before go-live.
++//
++// Env: SBER_CLIENT_ID, SBER_CLIENT_SECRET, IDENTITY_REDIRECT_URL,
++//      SBER_AUTHORIZE_URL, SBER_TOKEN_URL, SBER_USERINFO_URL (optional overrides)
++
++import { randomBytes, randomUUID } from 'crypto';
++import type { IdentityProvider, StartVerification, VerificationResult } from './index';
++import { resolveRedirectUri } from './index';
++
++const DEFAULTS = {
++  authorize: 'https://online.sberbank.ru/CSAFront/oidc/authorize.do',
++  token: 'https://api.sberbank.ru/ru/prod/tokens/v3/oidc',
++  userinfo: 'https://api.sberbank.ru/ru/prod/sberbankid/v2.1/userInfo',
++};
++
++const SCOPE = 'openid name';
++
++function endpoints() {
++  return {
++    authorize: process.env.SBER_AUTHORIZE_URL ?? DEFAULTS.authorize,
++    token: process.env.SBER_TOKEN_URL ?? DEFAULTS.token,
++    userinfo: process.env.SBER_USERINFO_URL ?? DEFAULTS.userinfo,
++  };
++}
++
++function requireCreds(): { clientId: string; clientSecret: string } {
++  const clientId = process.env.SBER_CLIENT_ID;
++  const clientSecret = process.env.SBER_CLIENT_SECRET;
++  if (!clientId || !clientSecret) {
++    throw new Error('Sber ID credentials missing (SBER_CLIENT_ID / SBER_CLIENT_SECRET)');
++  }
++  return { clientId, clientSecret };
++}
++
++function fullNameFrom(info: Record<string, unknown>): string | undefined {
++  const parts = [info.family_name, info.given_name, info.middle_name]
++    .filter((p): p is string => typeof p === 'string' && p.trim().length > 0)
++    .map((p) => p.trim());
++  if (parts.length) return parts.join(' ');
++  return typeof info.name === 'string' ? info.name.trim() : undefined;
++}
++
++export async function completeSberCallback(code: string, baseUrl?: string): Promise<VerificationResult> {
++  const { clientId, clientSecret } = requireCreds();
++  const ep = endpoints();
++  const redirectUri = resolveRedirectUri(baseUrl);
++
++  const tokenRes = await fetch(ep.token, {
++    method: 'POST',
++    headers: {
++      'Content-Type': 'application/x-www-form-urlencoded',
++      Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
++      RqUID: randomUUID().replace(/-/g, ''),
++    },
++    body: new URLSearchParams({
++      grant_type: 'authorization_code',
++      code,
++      client_id: clientId,
++      redirect_uri: redirectUri,
++      scope: SCOPE,
++    }),
++  });
++  if (!tokenRes.ok) {
++    const t = await tokenRes.text().catch(() => '');
++    throw new Error(`Sber token exchange failed: ${tokenRes.status} ${t}`);
++  }
++  const token = (await tokenRes.json()) as { access_token?: string };
++  if (!token.access_token) throw new Error('Sber token response had no access_token');
++
++  const infoRes = await fetch(ep.userinfo, {
++    headers: { Authorization: `Bearer ${token.access_token}`, RqUID: randomUUID().replace(/-/g, '') },
++  });
++  if (!infoRes.ok) {
++    const t = await infoRes.text().catch(() => '');
++    throw new Error(`Sber userinfo failed: ${infoRes.status} ${t}`);
++  }
++  const info = (await infoRes.json()) as Record<string, unknown>;
++  const sub = typeof info.sub === 'string' ? info.sub : undefined;
++  if (!sub) throw new Error('Sber userinfo had no sub');
++
++  return {
++    status: 'verified',
++    providerSub: sub,
++    ...(fullNameFrom(info) ? { fullName: fullNameFrom(info) } : {}),
++    idType: 'sber_id',
++    issuingCountry: 'RU',
++  };
++}
++
++export class SberIdentityProvider implements IdentityProvider {
++  async startVerification(_userId: string, baseUrl?: string): Promise<StartVerification> {
++    const { clientId } = requireCreds();
++    const state = randomBytes(24).toString('hex');
++    const nonce = randomBytes(16).toString('hex');
++    const url = new URL(endpoints().authorize);
++    url.searchParams.set('response_type', 'code');
++    url.searchParams.set('client_id', clientId);
++    url.searchParams.set('redirect_uri', resolveRedirectUri(baseUrl));
++    url.searchParams.set('scope', SCOPE);
++    url.searchParams.set('state', state);
++    url.searchParams.set('nonce', nonce);
++    return { vendorRef: state, redirectUrl: url.toString() };
++  }
++
++  async processResult(vendorRef: string): Promise<VerificationResult> {
++    return { status: 'pending', vendorRef };
++  }
++}
+diff --git a/src/lib/identity/tid.ts b/src/lib/identity/tid.ts
+new file mode 100644
+index 0000000..e7ef19f
+--- /dev/null
++++ b/src/lib/identity/tid.ts
+@@ -0,0 +1,118 @@
++// T-ID (T-Bank / Tinkoff ID, OIDC) identity provider.
++//
++// Flow (authorization-code, user-facing redirect):
++//   1. startVerification() builds the T-ID authorize URL → returned as redirectUrl.
++//   2. T-ID redirects back to /api/identity/callback?code=…&state=…
++//   3. completeTidCallback() exchanges the code, reads the user's profile
++//      (sub + verified name), and returns a VerificationResult.
++//
++// Scope: "openid name" — stable subject id + verified legal name only. No DOB.
++//
++// Endpoints are the documented T-ID hosts and are env-overridable for the
++// sandbox. Onboarding is via tinkoff_id@tinkoff.ru (partner application).
++//
++// Env: TID_CLIENT_ID, TID_CLIENT_SECRET, IDENTITY_REDIRECT_URL,
++//      TID_AUTHORIZE_URL, TID_TOKEN_URL, TID_USERINFO_URL (optional overrides)
++
++import { randomBytes } from 'crypto';
++import type { IdentityProvider, StartVerification, VerificationResult } from './index';
++import { resolveRedirectUri } from './index';
++
++const DEFAULTS = {
++  authorize: 'https://id.tinkoff.ru/auth/authorize',
++  token: 'https://id.tinkoff.ru/auth/token',
++  userinfo: 'https://id.tinkoff.ru/userinfo/userinfo',
++};
++
++const SCOPE = 'openid name';
++
++function endpoints() {
++  return {
++    authorize: process.env.TID_AUTHORIZE_URL ?? DEFAULTS.authorize,
++    token: process.env.TID_TOKEN_URL ?? DEFAULTS.token,
++    userinfo: process.env.TID_USERINFO_URL ?? DEFAULTS.userinfo,
++  };
++}
++
++function requireCreds(): { clientId: string; clientSecret: string } {
++  const clientId = process.env.TID_CLIENT_ID;
++  const clientSecret = process.env.TID_CLIENT_SECRET;
++  if (!clientId || !clientSecret) {
++    throw new Error('T-ID credentials missing (TID_CLIENT_ID / TID_CLIENT_SECRET)');
++  }
++  return { clientId, clientSecret };
++}
++
++function fullNameFrom(info: Record<string, unknown>): string | undefined {
++  const parts = [info.family_name, info.given_name, info.middle_name]
++    .filter((p): p is string => typeof p === 'string' && p.trim().length > 0)
++    .map((p) => p.trim());
++  if (parts.length) return parts.join(' ');
++  return typeof info.name === 'string' ? info.name.trim() : undefined;
++}
++
++export async function completeTidCallback(code: string, baseUrl?: string): Promise<VerificationResult> {
++  const { clientId, clientSecret } = requireCreds();
++  const ep = endpoints();
++  const redirectUri = resolveRedirectUri(baseUrl);
++
++  const tokenRes = await fetch(ep.token, {
++    method: 'POST',
++    headers: {
++      'Content-Type': 'application/x-www-form-urlencoded',
++      Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
++    },
++    body: new URLSearchParams({
++      grant_type: 'authorization_code',
++      code,
++      redirect_uri: redirectUri,
++    }),
++  });
++  if (!tokenRes.ok) {
++    const t = await tokenRes.text().catch(() => '');
++    throw new Error(`T-ID token exchange failed: ${tokenRes.status} ${t}`);
++  }
++  const token = (await tokenRes.json()) as { access_token?: string };
++  if (!token.access_token) throw new Error('T-ID token response had no access_token');
++
++  const infoRes = await fetch(ep.userinfo, {
++    method: 'POST',
++    headers: {
++      'Content-Type': 'application/x-www-form-urlencoded',
++    },
++    body: new URLSearchParams({ access_token: token.access_token }),
++  });
++  if (!infoRes.ok) {
++    const t = await infoRes.text().catch(() => '');
++    throw new Error(`T-ID userinfo failed: ${infoRes.status} ${t}`);
++  }
++  const info = (await infoRes.json()) as Record<string, unknown>;
++  const sub = typeof info.sub === 'string' ? info.sub : undefined;
++  if (!sub) throw new Error('T-ID userinfo had no sub');
++
++  return {
++    status: 'verified',
++    providerSub: sub,
++    ...(fullNameFrom(info) ? { fullName: fullNameFrom(info) } : {}),
++    idType: 'tid',
++    issuingCountry: 'RU',
++  };
++}
++
++export class TidIdentityProvider implements IdentityProvider {
++  async startVerification(_userId: string, baseUrl?: string): Promise<StartVerification> {
++    const { clientId } = requireCreds();
++    const state = randomBytes(24).toString('hex');
++    const url = new URL(endpoints().authorize);
++    url.searchParams.set('response_type', 'code');
++    url.searchParams.set('client_id', clientId);
++    url.searchParams.set('redirect_uri', resolveRedirectUri(baseUrl));
++    url.searchParams.set('scope', SCOPE);
++    url.searchParams.set('state', state);
++    return { vendorRef: state, redirectUrl: url.toString() };
++  }
++
++  async processResult(vendorRef: string): Promise<VerificationResult> {
++    return { status: 'pending', vendorRef };
++  }
++}
+diff --git a/src/lib/identity/yandex.ts b/src/lib/identity/yandex.ts
+index a758f92..53e6eb5 100644
+--- a/src/lib/identity/yandex.ts
++++ b/src/lib/identity/yandex.ts
+@@ -119,6 +119,7 @@ export function toVerificationResult(info: YandexUserInfo, vendorRef: string): V
+   return {
+     status: 'verified',
+     vendorRef,
++    providerSub: info.id,
+     ...(fullName ? { fullName } : {}),
+     ...(age != null ? { age } : {}),
+     idType: 'yandex_id',
+@@ -127,6 +128,13 @@ export function toVerificationResult(info: YandexUserInfo, vendorRef: string): V
+   };
+ }
+ 
++// Uniform OAuth-callback entrypoint (mirrors sber.ts / tid.ts).
++export async function completeYandexCallback(code: string, _baseUrl?: string): Promise<VerificationResult> {
++  const token = await exchangeCodeForToken(code);
++  const info = await fetchUserInfo(token);
++  return toVerificationResult(info, info.id);
++}
++
+ export class YandexIdentityProvider implements IdentityProvider {
+   async startVerification(userId: string, baseUrl?: string): Promise<StartVerification> {
+     const { clientId } = requireCreds();
+diff --git a/supabase/migrations/0040_identity_binding.sql b/supabase/migrations/0040_identity_binding.sql
+new file mode 100644
+index 0000000..10fcf79
+--- /dev/null
++++ b/supabase/migrations/0040_identity_binding.sql
+@@ -0,0 +1,26 @@
++-- 0040_identity_binding.sql
++-- Anti-abuse identity binding for the RU bank-ID verification (Sber ID / T-ID).
++--
++--  * profiles.verified_identity_key — HMAC(secret, "provider:sub") of the bank
++--    identity that verified this account. UNIQUE (one real identity = one
++--    account): a second account cannot verify with the same bank identity.
++--  * banned_identities — identity keys that are barred from ever verifying again,
++--    so a banned person cannot re-register around the ban.
++--
++-- Apply by hand in the Supabase SQL editor.
++
++alter table public.profiles
++  add column if not exists verified_identity_key text;
++
++create unique index if not exists profiles_verified_identity_key_uidx
++  on public.profiles (verified_identity_key)
++  where verified_identity_key is not null;
++
++create table if not exists public.banned_identities (
++  identity_key text primary key,
++  reason       text,
++  banned_at    timestamptz not null default now()
++);
++
++alter table public.banned_identities enable row level security;
++-- No policies → only the service-role (RLS-bypassing) server client can touch it.

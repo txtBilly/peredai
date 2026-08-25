@@ -9,7 +9,7 @@ export default function BannedPage({ params }: { params: { locale: string } }) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-      <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
       <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15">
         <span className="text-2xl text-red-600">⛔</span>
       </div>

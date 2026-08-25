@@ -17,10 +17,10 @@ export default function GatePage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 py-16 text-center">
-      <p className="mb-3 text-sm uppercase tracking-[0.2em] text-cobalt">Ten2Ten</p>
+      <p className="mb-3 text-sm uppercase tracking-[0.2em] text-cobalt">Peredai</p>
       <h1 className="mb-2 font-display text-3xl text-ink">Invite only, for now</h1>
       <p className="mb-8 text-sm text-muted">
-        Ten2Ten is in a private preview. Enter your access code to continue.
+        Peredai is in a private preview. Enter your access code to continue.
       </p>
 
       <form action="/api/gate" method="POST" className="flex flex-col gap-3">

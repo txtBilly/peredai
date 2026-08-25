@@ -1,0 +1,26 @@
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index 7eaa99a..4c5060d 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -31,7 +31,7 @@
+   "chat": {
+     "terminate": "Terminate chat",
+     "report": "Report",
+-    "verifiedId": "Identity verified",
++    "verifiedId": "Verified",
+     "seekerLabel": "Renter:",
+     "addressLabel": "Address:",
+     "available": "Available:",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index cb0f011..e098aa1 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -31,7 +31,7 @@
+   "chat": {
+     "terminate": "Завершить чат",
+     "report": "Пожаловаться",
+-    "verifiedId": "Личность подтверждена",
++    "verifiedId": "Верифицирован",
+     "seekerLabel": "Арендатор:",
+     "addressLabel": "Адрес:",
+     "available": "Доступна:",

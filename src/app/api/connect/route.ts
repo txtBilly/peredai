@@ -12,7 +12,6 @@ const KNOWN_ERRORS = new Set([
   'listing_not_found',
   'listing_unavailable',
   'own_listing',
-  'below_min_score',
   'no_credits',
   'active_chat_exists',
   'account_restricted',

@@ -54,9 +54,9 @@ export async function POST(req: NextRequest) {
 
   // Fire-and-forget confirmation text (non-blocking; ignore failures).
   const confirm =
-    data.preferred_locale === 'es'
-      ? "Ten2Ten: ¡estás en la lista! Te enviaremos un mensaje en cuanto un lugar coincida con lo que buscas."
-      : "Ten2Ten: you're on the list! We'll text you the moment a place matches what you're looking for.";
+    data.preferred_locale === 'en'
+      ? "Peredai: you're on the list! We'll text you the moment a place matches what you're looking for."
+      : 'Peredai: вы в списке! Напишем, как только появится подходящий вариант.';
   sendSms(data.phone, confirm).catch((e) =>
     console.warn('[intake] confirm sms failed', e)
   );

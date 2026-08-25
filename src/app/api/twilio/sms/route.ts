@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const from = String(form.get('From') ?? '');
   const body = String(form.get('Body') ?? '').trim();
 
-  if (!from) return twiml('Sorry, we could not read your number. Please try again.');
+  if (!from) return twiml('Извините, не удалось прочитать ваш номер. Попробуйте ещё раз.');
 
   const admin = createAdminClient();
 
@@ -38,23 +38,23 @@ export async function POST(req: NextRequest) {
       .from('intake_requests')
       .update({ free_text: body, notes: 'updated via SMS' })
       .eq('id', open.id);
-    return twiml('Got it — we updated your request. We will text you when something matches.');
+    return twiml('Готово — мы обновили ваш запрос. Напишем, когда появится подходящий вариант.');
   }
 
-  // Detect Spanish loosely from accented characters / common words.
-  const looksSpanish = /[áéíóúñ¿¡]|busco|apartamento|habitaci/i.test(body);
+  // Detect language: Cyrillic → Russian (default market), otherwise English.
+  const looksRussian = /[а-яё]/i.test(body);
 
   await admin.from('intake_requests').insert({
     source: 'sms',
     phone: from,
     neighborhoods: [],
     free_text: body,
-    preferred_locale: looksSpanish ? 'es' : 'en',
+    preferred_locale: looksRussian ? 'ru' : 'en',
     status: 'new',
   });
 
-  const reply = looksSpanish
-    ? '¡Gracias! Estás en la lista de Ten2Ten. Te enviaremos un mensaje en cuanto encontremos un lugar que coincida.'
-    : "Thanks! You're on the Ten2Ten list. We'll text you the moment we find a place that matches.";
+  const reply = looksRussian
+    ? 'Спасибо! Вы в списке Peredai. Напишем, как только найдём подходящий вариант.'
+    : "Thanks! You're on the Peredai list. We'll text you the moment we find a place that matches.";
   return twiml(reply);
 }

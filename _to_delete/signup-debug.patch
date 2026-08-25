@@ -1,0 +1,25 @@
+diff --git a/src/app/[locale]/signup/SignUpView.tsx b/src/app/[locale]/signup/SignUpView.tsx
+index 51d3ca5..edbfb01 100644
+--- a/src/app/[locale]/signup/SignUpView.tsx
++++ b/src/app/[locale]/signup/SignUpView.tsx
+@@ -106,7 +106,9 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
+       if (signUpError.message.toLowerCase().includes('already registered')) {
+         setError(d.auth.errorEmailExists);
+       } else {
+-        setError(d.auth.errorGeneric);
++        // [TEMP DEBUG] surface the real message
++        setError(`DBG signup: ${signUpError.message}`);
++        console.error('signup error:', signUpError);
+       }
+       return;
+     }
+@@ -141,7 +143,8 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
+ 
+     if (profileError) {
+       setStatus('idle');
+-      setError(d.auth.errorGeneric);
++      // [TEMP DEBUG] surface the real message
++      setError(`DBG profile [${profileError.code ?? '?'}]: ${profileError.message}${profileError.details ? ' | ' + profileError.details : ''}`);
+       console.error('profile upsert error:', profileError);
+       return;
+     }

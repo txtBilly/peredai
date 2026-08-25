@@ -29,11 +29,11 @@ export type ListingCardData = {
   crossStreets: string;
   rentLabel: string;
   typeLabel: string;
+  sqftLabel: string | null;
   negotiating: boolean;
   negotiatingLabel: string;
   amenityLabels: string[];
   availableLabel: string | null;
-  minCreditScoreLabel: string | null;
   gratuityLabel: string | null;
   verified: boolean;
   favourited: boolean;
@@ -78,22 +78,27 @@ export function ListingCard({
           {/* Price leads, StreetEasy-style */}
           <div className="mb-0.5 font-display text-2xl font-bold leading-tight text-ink">{listing.rentLabel}</div>
 
-          {/* Facts row: type · min credit */}
+          {/* Facts row: type · neighborhood · area */}
           <div className="text-[15px] leading-snug text-ink">
             <span className="font-semibold">{listing.typeLabel}</span>
-            {listing.minCreditScoreLabel && (
+            {listing.neighborhood && (
               <>
-                <span className="px-1.5 text-muted">|</span>
-                <span className="text-muted">{listing.minCreditScoreLabel}</span>
+                <span className="px-1.5 text-muted">·</span>
+                {listing.neighborhood}
+              </>
+            )}
+            {listing.sqftLabel && (
+              <>
+                <span className="px-1.5 text-muted">·</span>
+                {listing.sqftLabel}
               </>
             )}
           </div>
 
-          {/* Address — cross-streets always drop to their own line */}
-          <div className="text-[15px] leading-snug text-ink">
-            {listing.neighborhood}
-            {listing.crossStreets && <span className="block">{listing.crossStreets}</span>}
-          </div>
+          {/* Nearest metro / cross-streets on its own line */}
+          {listing.crossStreets && (
+            <div className="text-[15px] leading-snug text-muted">{listing.crossStreets}</div>
+          )}
 
           {/* Amenity chiclets */}
           {listing.amenityLabels.length > 0 && (
@@ -112,10 +117,10 @@ export function ListingCard({
           {/* Verified ID + Gratuity */}
           {(listing.verified || listing.gratuityLabel) && (
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-              {listing.verified && <span className="text-sm font-semibold text-leaf">✓ Verified ID</span>}
+              {listing.verified && <span className="text-sm font-semibold text-leaf">✓ Личность подтверждена</span>}
               {listing.gratuityLabel && (
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  Gratuity {listing.gratuityLabel}
+                  Благодарность {listing.gratuityLabel}
                 </span>
               )}
             </div>

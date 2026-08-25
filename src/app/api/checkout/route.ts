@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { createContactCheckout, stripe } from '@/lib/stripe';
+import { createContactPayment } from '@/lib/yookassa';
 
-// Creates a Stripe Checkout Session for the contact-credit bundle and redirects
-// to it. Submit as a plain form POST (no client JS required):
+// Mock payments (preview/dev): no real processor is configured, so the purchase
+// completes instantly and tokens are granted here (there's no webhook). Active
+// when PAYMENTS_PROVIDER=mock, or when YooKassa credentials are absent/placeholder.
+function paymentsAreMock(): boolean {
+  return (
+    process.env.PAYMENTS_PROVIDER === 'mock' ||
+    !process.env.YOOKASSA_SHOP_ID ||
+    process.env.YOOKASSA_SHOP_ID === 'test-shop-id'
+  );
+}
+
+// Creates a YooKassa payment for the contact-credit bundle and redirects the
+// seeker to its hosted confirmation page. Submit as a plain form POST:
 //   <form action="/api/checkout" method="POST">
-//     <input type="hidden" name="locale" value="en" />
-//     <button>Buy 3 contact credits</button>
+//     <input type="hidden" name="locale" value="ru" />
+//     <input type="hidden" name="listing_id" value="…" />
+//     <button>Купить 3 кредита</button>
 //   </form>
+// Credits are granted by the YooKassa webhook on payment.succeeded — never here.
 export async function POST(req: NextRequest) {
   const supabase = createClient();
   const {
@@ -22,86 +35,59 @@ export async function POST(req: NextRequest) {
   const listingId = typeof listingIdRaw === 'string' && listingIdRaw ? listingIdRaw : null;
 
   const admin = createAdminClient();
-  const { data: profile, error } = await admin
+  const { data: profile } = await admin
     .from('profiles')
-    .select('bg_check_completed_at, bg_check_expires_at, preferred_locale, credit_score')
+    .select('preferred_locale')
     .eq('id', user.id)
-    .single();
-  if (error) {
-    console.error('[checkout] profile lookup failed', error);
-    return NextResponse.json({ error: 'profile_lookup_failed' }, { status: 500 });
-  }
-  if (!profile) {
-    return NextResponse.json({ error: 'profile_not_found' }, { status: 404 });
-  }
+    .maybeSingle();
 
-  const locale: 'en' | 'es' =
-    requestedLocale === 'es' || requestedLocale === 'en'
+  const locale: 'ru' | 'en' =
+    requestedLocale === 'en' || requestedLocale === 'ru'
       ? requestedLocale
-      : profile.preferred_locale === 'es'
-        ? 'es'
-        : 'en';
-
-  // Server-side only — this decides whether the seeker is charged the $35
-  // background-check fee. A client-supplied flag would let anyone skip it.
-  const includeBgCheck =
-    !profile.bg_check_completed_at ||
-    !profile.bg_check_expires_at ||
-    new Date(profile.bg_check_expires_at) <= new Date();
+      : profile?.preferred_locale === 'en'
+        ? 'en'
+        : 'ru';
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
-  // Load the listing once (when we know which one) for the owner + min-score
-  // guards below.
-  let listingRow: { lister_id: string; min_credit_score: number | null } | null = null;
+  // A lister can't connect to their own listing — refuse before any charge.
   if (listingId) {
-    const { data } = await admin
+    const { data: listingRow } = await admin
       .from('listings')
-      .select('lister_id, min_credit_score')
+      .select('lister_id')
       .eq('id', listingId)
       .maybeSingle();
-    listingRow = data;
-  }
-
-  // A lister can't connect to their own listing — refuse before any charge.
-  if (listingRow && listingRow.lister_id === user.id) {
-    return NextResponse.redirect(`${appUrl}/${locale}/browse/${listingId}?blocked=own_listing`, 303);
-  }
-
-  // Min-credit-score hard block (server-side enforcement). A verified seeker
-  // (!includeBgCheck) below this listing's minimum cannot connect — refuse the
-  // checkout entirely and bounce back to the listing's blocked state. First-
-  // timers (includeBgCheck) aren't gated here; they're checked post-screening
-  // in /api/background/start, since their score isn't known yet.
-  if (!includeBgCheck && listingRow) {
-    const minScore = listingRow.min_credit_score ?? null;
-    if (minScore != null && (profile.credit_score == null || profile.credit_score < minScore)) {
-      return NextResponse.redirect(`${appUrl}/${locale}/browse/${listingId}?blocked=min_score`, 303);
+    if (listingRow && listingRow.lister_id === user.id) {
+      return NextResponse.redirect(`${appUrl}/${locale}/browse/${listingId}?blocked=own_listing`, 303);
     }
   }
 
+  // After paying, YooKassa sends the seeker to return_url. Point them back at the
+  // listing they came from (so they can Connect once credits land), else account.
+  const returnUrl = listingId
+    ? `${appUrl}/${locale}/browse/${listingId}?purchase=success`
+    : `${appUrl}/${locale}/account?purchase=success`;
+
+  // Preview/dev: no real processor. Instead of granting silently, send the
+  // seeker to the mock SBP-QR page; credits are granted only when they confirm
+  // there (POST /api/checkout/confirm), mirroring the real flow where credits
+  // land after payment — never on the click.
+  if (paymentsAreMock()) {
+    const payUrl = listingId
+      ? `${appUrl}/${locale}/pay?listing_id=${encodeURIComponent(listingId)}`
+      : `${appUrl}/${locale}/pay`;
+    return NextResponse.redirect(payUrl, 303);
+  }
+
   try {
-    const session = await createContactCheckout({
+    const { confirmationUrl } = await createContactPayment({
       seekerId: user.id,
       email: user.email,
-      includeBgCheck,
-      locale,
-      listingId,
+      returnUrl,
     });
-    // Diagnostic: which Stripe account is STRIPE_SECRET_KEY actually pointing
-    // at? If this doesn't match the account `stripe listen` is authenticated
-    // to, the webhook will never see this session's events.
-    const account = await stripe.accounts.retrieve();
-    console.log('[checkout] session created', {
-      seekerId: user.id,
-      includeBgCheck,
-      sessionId: session.id,
-      stripeAccountId: account.id,
-      stripeAccountEmail: account.email,
-    });
-    return NextResponse.redirect(session.url, 303);
+    return NextResponse.redirect(confirmationUrl, 303);
   } catch (e) {
-    console.error('[checkout] failed to create session', e);
+    console.error('[checkout] failed to create YooKassa payment', e);
     return NextResponse.json({ error: 'checkout_failed' }, { status: 500 });
   }
 }

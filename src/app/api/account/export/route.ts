@@ -52,7 +52,7 @@ export async function GET() {
     status: 200,
     headers: {
       'Content-Type': 'application/json',
-      'Content-Disposition': 'attachment; filename="ten2ten-data-export.json"',
+      'Content-Disposition': 'attachment; filename="peredai-data-export.json"',
     },
   });
 }

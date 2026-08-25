@@ -1,0 +1,40 @@
+diff --git a/src/app/[locale]/browse/[id]/ListingDetailView.tsx b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+index fbbe17b..762ca7b 100644
+--- a/src/app/[locale]/browse/[id]/ListingDetailView.tsx
++++ b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+@@ -488,7 +488,10 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id:
+           <p>{l.availableFromLabel}: {availableLabel}</p>
+         )}
+         {listing.gratitude_amount != null && (
+-          <p>{l.gratitudeLabel}: {formatRubles(listing.gratitude_amount)}</p>
++          <div>
++            <p>{l.gratitudeLabel}: {formatRubles(listing.gratitude_amount)}</p>
++            <p className="mt-1 text-base text-muted">{l.gratitudePublicNote}</p>
++          </div>
+         )}
+       </div>
+ 
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index b7babff..79c1313 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -279,6 +279,7 @@
+     "amenityNoFee": "No fee",
+     "gratitudeLabel": "Gratuity",
+     "gratitudeHint": "State the thank-you amount you'd like to receive from the new tenant if the owner agrees to rent your place to them. We don't process or track this payment — arrange the method and terms of settlement directly with the new tenant.",
++    "gratitudePublicNote": "This amount is requested by the current tenant for the viewing and a successful agreement between you and the owner. Do not send rent or a deposit up front. Arrange the method and terms of settlement directly with the tenant and the owner, off-platform.",
+     "contactNameLabel": "Contact name",
+     "contactNameVerifiedHint": "From your verified identity — can't be changed.",
+     "contactPhoneLabel": "Contact phone",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index c955f35..8e7317d 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -279,6 +279,7 @@
+     "amenityNoFee": "Без комиссии",
+     "gratitudeLabel": "Благодарность",
+     "gratitudeHint": "Укажите размер благодарности, которую Вы хотите получить от нового Арендатора, если хозяин квартиры согласится сдать ему ваше жилье. Мы не проводим и не отслеживаем этот платеж. Вам необходимо договариваться о способе и порядке расчёта напрямую с новым жильцом.",
++    "gratitudePublicNote": "Эту сумму с Вас просит текущий жилец квартиры за показ и успешную договоренность между Вами и собственником. Не отправляйте деньги за аренду или депозит вперед. Вам следует договариваться о способе и порядке расчета напрямую с Жильцом и Собственником вне платформы.",
+     "contactNameLabel": "Контактное имя",
+     "contactNameVerifiedHint": "Из вашей подтверждённой личности — изменить нельзя.",
+     "contactPhoneLabel": "Контактный телефон",

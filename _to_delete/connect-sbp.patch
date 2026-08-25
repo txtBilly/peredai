@@ -1,0 +1,72 @@
+diff --git a/src/app/[locale]/browse/[id]/ListingDetailView.tsx b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+index 1efdebc..1856efd 100644
+--- a/src/app/[locale]/browse/[id]/ListingDetailView.tsx
++++ b/src/app/[locale]/browse/[id]/ListingDetailView.tsx
+@@ -591,6 +591,16 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id:
+             </>
+           )}
+         </div>
++      ) : userId && !seekerVerified ? (
++        <div className="rounded-xl border border-black/10 bg-white p-4">
++          <p className="mb-2 text-sm text-muted">{dd.verifyToConnect}</p>
++          <Link
++            href={`/${locale}/verify?next=browse/${id}`}
++            className="inline-block rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
++          >
++            {dd.verifyToConnectCta}
++          </Link>
++        </div>
+       ) : canDirectConnect ? (
+         <div>
+           <button
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index 80a9de7..289eaca 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -353,6 +353,8 @@
+     "emailConfirmResend": "Resend confirmation email",
+     "emailConfirmSent": "Sent — check your inbox.",
+     "connectCta": "Request — 1 token",
++    "verifyToConnect": "Verify your identity to send a request.",
++    "verifyToConnectCta": "Verify identity",
+     "connectStub": "Connect is coming in a future update.",
+     "ownerNote": "This is your listing — you can't connect to it.",
+     "ownerCta": "Manage your listings",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index 03bbd8a..7008d20 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -353,6 +353,8 @@
+     "emailConfirmResend": "Отправить письмо повторно",
+     "emailConfirmSent": "Отправлено — проверьте почту.",
+     "connectCta": "Запрос — 1 токен",
++    "verifyToConnect": "Подтвердите личность, чтобы отправить запрос.",
++    "verifyToConnectCta": "Подтвердить личность",
+     "connectStub": "Подключение появится в будущем обновлении.",
+     "ownerNote": "Это ваше объявление — вы не можете подключиться к нему.",
+     "ownerCta": "Управлять объявлениями",
+diff --git a/src/lib/yookassa.ts b/src/lib/yookassa.ts
+index b3439df..3854eab 100644
+--- a/src/lib/yookassa.ts
++++ b/src/lib/yookassa.ts
+@@ -61,15 +61,18 @@ export async function createContactPayment(params: {
+     body: JSON.stringify({
+       amount: { value: rubValue(CONTACT_BUNDLE_PRICE_RUB), currency: 'RUB' },
+       capture: true,
++      // Restrict to СБП (Faster Payments) only. YooKassa's confirmation page then
++      // shows a QR to scan on desktop, or a bank list on mobile.
++      payment_method_data: { type: 'sbp' },
+       confirmation: { type: 'redirect', return_url: params.returnUrl },
+-      description: '3 кредита на контакты — Peredai',
++      description: '3 токена на контакты — Peredai',
+       // 54-ФЗ receipt: the customer + a single service line item. YooKassa emails
+       // the fiscal receipt. VAT code 1 = "без НДС" (adjust for your tax mode).
+       receipt: {
+         customer: { email: params.email },
+         items: [
+           {
+-            description: '3 кредита на контакты',
++            description: '3 токена на контакты',
+             quantity: '1.00',
+             amount: { value: rubValue(CONTACT_BUNDLE_PRICE_RUB), currency: 'RUB' },
+             vat_code: 1,

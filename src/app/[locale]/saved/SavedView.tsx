@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { getDictionary } from '@/i18n/config';
+import { getDictionary, intlLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { listingPhotoUrl, listingTypeLabels, type ListingTypeValue } from '@/lib/listings';
+import { formatRubles } from '@/lib/format';
 import { ListingCard, type ListingCardData } from '@/components/ListingCard';
 
 type ListingRow = {
@@ -16,6 +17,7 @@ type ListingRow = {
   cross_streets: string | null;
   type: string | null;
   monthly_rent: number | null;
+  sqft: number | null;
   available_from: string | null;
   laundry: boolean | null;
   pets_ok: boolean | null;
@@ -24,7 +26,8 @@ type ListingRow = {
   doorman: boolean | null;
   outdoor: boolean | null;
   no_fee: boolean | null;
-  min_credit_score: number | null;
+  allow_non_rf: boolean | null;
+  allow_children: boolean | null;
   gratitude_amount: number | null;
   status: string;
 };
@@ -74,7 +77,7 @@ export default function SavedView({ locale }: { locale: Locale }) {
       const { data: rows, error: qErr } = await supabase
         .from('listings')
         .select(
-          'id, lister_id, neighborhood, cross_streets, type, monthly_rent, available_from, laundry, pets_ok, elevator, walk_up, doorman, outdoor, no_fee, min_credit_score, gratitude_amount, status'
+          'id, lister_id, neighborhood, cross_streets, type, monthly_rent, sqft, available_from, laundry, pets_ok, elevator, walk_up, doorman, outdoor, no_fee, allow_non_rf, allow_children, gratitude_amount, status'
         )
         .in('id', ids);
       if (cancelled) return;
@@ -103,7 +106,7 @@ export default function SavedView({ locale }: { locale: Locale }) {
         if (!current || p.slot === 'bedroom') photoByListing.set(p.listing_id, p.storage_path);
       });
       const verifiedListers = new Set((listersResult.data ?? []).filter((p) => p.is_verified).map((p) => p.id));
-      const dateLocale = locale === 'es' ? 'es-ES' : 'en-US';
+      const dateLocale = intlLocale(locale);
 
       // Preserve the favourites order (newest first).
       const orderIndex = new Map(ids.map((id, i) => [id, i]));
@@ -120,6 +123,8 @@ export default function SavedView({ locale }: { locale: Locale }) {
         if (row.walk_up) amenityLabels.push(l.amenityWalkUp);
         if (row.doorman) amenityLabels.push(l.amenityDoorman);
         if (row.outdoor) amenityLabels.push(l.amenityOutdoor);
+        if (row.allow_non_rf) amenityLabels.push(l.amenityNonRf);
+        if (row.allow_children) amenityLabels.push(l.amenityChildren);
 
         return {
           id: row.id,
@@ -127,8 +132,9 @@ export default function SavedView({ locale }: { locale: Locale }) {
           photoUrl: photoPath ? listingPhotoUrl(photoPath) : null,
           neighborhood: row.neighborhood ?? '',
           crossStreets: row.cross_streets ?? '',
-          rentLabel: row.monthly_rent != null ? `$${row.monthly_rent.toLocaleString('en-US')}/mo` : '',
+          rentLabel: row.monthly_rent != null ? formatRubles(row.monthly_rent, { perMonth: true }) : '',
           typeLabel: row.type ? typeLabels[row.type as ListingTypeValue] ?? row.type : '',
+          sqftLabel: row.sqft != null ? `${row.sqft} м²` : null,
           negotiating: row.status === 'negotiating',
           negotiatingLabel: b.statusNegotiating,
           amenityLabels,
@@ -141,9 +147,7 @@ export default function SavedView({ locale }: { locale: Locale }) {
                 })
               )
             : null,
-          minCreditScoreLabel:
-            row.min_credit_score != null ? b.minCreditScore.replace('{score}', String(row.min_credit_score)) : null,
-          gratuityLabel: row.gratitude_amount != null ? `$${row.gratitude_amount.toLocaleString('en-US')}` : null,
+          gratuityLabel: row.gratitude_amount != null ? formatRubles(row.gratitude_amount) : null,
           verified: verifiedListers.has(row.lister_id),
           favourited: true,
           favouriteAddLabel: b.favouriteAdd,

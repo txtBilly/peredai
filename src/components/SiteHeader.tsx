@@ -10,7 +10,9 @@ import AutoHideHeader from '@/components/AutoHideHeader';
 // seeker always has a way back to listings.
 export default async function SiteHeader({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
-  const otherLocale = locale === 'en' ? 'es' : 'en';
+  const otherLocale = locale === 'en' ? 'ru' : 'en';
+  // Show the Russian option in Cyrillic (РУ), English as EN.
+  const otherLocaleLabel = otherLocale === 'ru' ? 'РУС' : 'EN';
 
   // Red-dot badge: does the signed-in seeker have a saved listing that just
   // reopened and hasn't been seen yet? Cheap head-count against the partial
@@ -93,7 +95,7 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4">
       <Link href={`/${locale}/browse`} aria-label={dict.brand.name} className="inline-flex shrink-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/ten2ten-logo.svg?v=5" alt={dict.brand.name} className="h-7 w-auto" />
+        <img src="/peredai-logo.svg?v=1" alt={dict.brand.name} className="h-7 w-auto" />
       </Link>
 
       {/* Desktop: inline nav. Hidden below sm where it would wrap into a mess. */}
@@ -121,7 +123,7 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
           href={`/${otherLocale}`}
           className="rounded-full border border-black/15 px-3 py-1 uppercase hover:border-black/40"
         >
-          {otherLocale}
+          {otherLocaleLabel}
         </Link>
       </nav>
 
@@ -155,7 +157,7 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
             href={`/${otherLocale}`}
             className="flex items-center px-4 py-3 text-base uppercase text-muted hover:bg-black/[0.04]"
           >
-            {otherLocale}
+            {otherLocaleLabel}
           </Link>
         </div>
       </details>

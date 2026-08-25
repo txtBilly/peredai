@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 268 56" width="268" height="56" role="img" aria-label="Peredai">
+  <defs>
+    <linearGradient id="peredaiGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B4DE4"/>
+      <stop offset="1" stop-color="#5B2BFF"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#peredaiGrad)">
+    <rect x="0" y="8" width="40" height="40" rx="11"/>
+    <path d="M11 28 h16 M22 20 l8 8 -8 8" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="52" y="39" font-family="'Audiowide','Space Grotesk','Segoe UI',sans-serif" font-size="34" font-weight="700" letter-spacing="0.5" fill="url(#peredaiGrad)">Peredai</text>
+</svg>

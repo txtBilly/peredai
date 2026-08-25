@@ -1,0 +1,30 @@
+# ---- Supabase (your NEW Peredai project — NOT Ten2Ten) ----
+# Supabase dashboard → Settings → API
+NEXT_PUBLIC_SUPABASE_URL=https://fujmmiczdchvpgzjtvks.supabase.co/rest/v1/
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1am1taWN6ZGNodnBnemp0dmtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NjMyMDksImV4cCI6MjEwMzEzOTIwOX0.suXq0FN7dzN7C5I82_geP-nrqXV6KXvPSXmpIfACIbk
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1am1taWN6ZGNodnBnemp0dmtzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzU2MzIwOSwiZXhwIjoyMTAzMTM5MjA5fQ.Vr9E_Fu80xem7YnF4IFYssGqCi_2lnEj8rZ6koIddDo
+
+# ---- Identity: mock for preview (auto-verifies, no OAuth needed yet) ----
+IDENTITY_PROVIDER=mock
+MOCK_KYC_RESULT=verified
+
+# ---- Payments: YooKassa (leave as-is for now; only needed to actually buy) ----
+YOOKASSA_SHOP_ID=test-shop-id
+YOOKASSA_SECRET_KEY=test-secret-key
+CONTACT_BUNDLE_PRICE_RUB=5000
+
+# ---- App ----
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+SITE_PASSCODE=peredai-preview
+
+# ---- Optional (leave blank for preview) ----
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=hello@peredai.app
+
+# ---- Yandex ID OAuth (to use real identity: set IDENTITY_PROVIDER=yandex above) ----
+# Register an app at https://oauth.yandex.ru → Client ID + secret.
+# Permissions: "Access to email address" + "Access to date of birth" (login:birthday, for 18+).
+# Callback URI must match EXACTLY:
+IDENTITY_REDIRECT_URL=http://localhost:3000/api/identity/callback
+YANDEX_CLIENT_ID=
+YANDEX_CLIENT_SECRET=

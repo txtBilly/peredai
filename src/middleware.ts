@@ -7,11 +7,11 @@ const PROTECTED = ['/account', '/verify', '/list'];
 // Routes that redirect authenticated users away
 const AUTH_ONLY = ['/signin', '/signup', '/reset'];
 
-function pickLocale(req: NextRequest): string {
-  const header = req.headers.get('accept-language') ?? '';
-  const preferred = header.split(',').map((p) => p.split(';')[0].trim().slice(0, 2));
-  const match = preferred.find((p) => (locales as readonly string[]).includes(p));
-  return match ?? defaultLocale;
+function pickLocale(_req: NextRequest): string {
+  // Russian-market default: always land on the default locale (ru), regardless of
+  // the browser's Accept-Language. Visitors can still switch to English via the
+  // header toggle (/en/...).
+  return defaultLocale;
 }
 
 function stripLocale(pathname: string): string {

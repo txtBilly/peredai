@@ -4,15 +4,18 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { getDictionary } from '@/i18n/config';
+import { getDictionary, intlLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
-import { listingPhotoUrl, listingTypeLabel, cityFromZip } from '@/lib/listings';
+import { listingPhotoUrl, listingTypeLabel } from '@/lib/listings';
+import { formatRubles } from '@/lib/format';
 
 const LANGUAGE_NAMES: Record<string, string> = {
+  ru: 'Русский',
+  uz: 'Oʻzbekcha',
+  tg: 'Тоҷикӣ',
   en: 'English',
   es: 'Español',
   zh: '中文',
-  ru: 'Русский',
   fr: 'Français',
   pt: 'Português',
   ar: 'العربية',
@@ -24,7 +27,8 @@ type ListingDetail = {
   lister_id: string;
   neighborhood: string | null;
   cross_streets: string | null;
-  zip: string | null;
+  city: string | null;
+  full_address: string | null;
   type: string | null;
   monthly_rent: number | null;
   floor: string | null;
@@ -39,7 +43,8 @@ type ListingDetail = {
   outdoor: boolean | null;
   no_fee: boolean | null;
   walk_up: boolean | null;
-  min_credit_score: number | null;
+  allow_non_rf: boolean | null;
+  allow_children: boolean | null;
   gratitude_amount: number | null;
   status: string;
 };
@@ -69,7 +74,6 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   const [resendState, setResendState] = useState<'idle' | 'sent'>('idle');
   const [favourited, setFavourited] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
-  const [seekerCreditScore, setSeekerCreditScore] = useState<number | null>(null);
   const [seekerVerified, setSeekerVerified] = useState(false);
   const [seekerCreditBalance, setSeekerCreditBalance] = useState(0);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -108,7 +112,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       const { data: row, error: listingError } = await supabase
         .from('listings')
         .select(
-          'id, lister_id, neighborhood, cross_streets, zip, type, monthly_rent, floor, sqft, bathrooms, description, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, min_credit_score, gratitude_amount, status'
+          'id, lister_id, neighborhood, cross_streets, city, full_address, type, monthly_rent, floor, sqft, bathrooms, description, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, allow_non_rf, allow_children, gratitude_amount, status'
         )
         .eq('id', id)
         .single();
@@ -142,7 +146,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
         user
           ? supabase
               .from('profiles')
-              .select('credit_score, bg_check_completed_at, bg_check_expires_at')
+              .select('verification_status')
               .eq('id', user.id)
               .maybeSingle()
           : Promise.resolve({ data: null }),
@@ -165,17 +169,9 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       setPhotos((photosResult.data ?? []).map((p) => listingPhotoUrl(p.storage_path)));
       setLister(listerResult.data ?? null);
       setFavourited(!!favouriteResult.data);
-      const prof = profileResult.data as
-        | { credit_score: number | null; bg_check_completed_at: string | null; bg_check_expires_at: string | null }
-        | null;
-      setSeekerCreditScore(prof?.credit_score ?? null);
-      // Match the server's open_connect_chat check exactly: a valid, unexpired
-      // background check requires both timestamps present and not past.
-      setSeekerVerified(
-        !!prof?.bg_check_completed_at &&
-          !!prof?.bg_check_expires_at &&
-          new Date(prof.bg_check_expires_at) > new Date()
-      );
+      const prof = profileResult.data as { verification_status: string | null } | null;
+      // Match the server's open_connect_chat check: identity-verified (OAuth ID).
+      setSeekerVerified(prof?.verification_status === 'verified');
       const ledgerRows = (creditResult.data as { amount: number }[] | null) ?? [];
       setSeekerCreditBalance(ledgerRows.reduce((sum, r) => sum + r.amount, 0));
       setActiveChatId((chatResult.data as { id: string } | null)?.id ?? null);
@@ -234,10 +230,9 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       const data = await res.json();
       if (!res.ok) {
         const reasons: Record<string, string> = {
-          no_credits: "You don't have any contact credits.",
-          active_chat_exists: 'You already have an active conversation.',
-          below_min_score: "Your credit score is below this listing's minimum.",
-          not_verified: 'You need to complete verification first.',
+          no_credits: 'У вас нет токенов на контакты.',
+          active_chat_exists: 'У вас уже есть активный диалог.',
+          not_verified: 'Сначала нужно пройти проверку личности.',
           listing_unavailable: 'This listing is no longer available.',
           own_listing: "You can't connect to your own listing.",
           listing_not_found: 'Listing not found.',
@@ -311,7 +306,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   if (phase === 'loading') {
     return (
       <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 font-mono text-xs uppercase tracking-wide text-cobalt">ten2ten</p>
+        <p className="mb-2 font-mono text-xs uppercase tracking-wide text-cobalt">Peredai</p>
         <p className="text-sm text-muted">{dd.loading}</p>
       </main>
     );
@@ -320,7 +315,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   if (phase === 'error' || !listing) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 font-mono text-xs uppercase tracking-wide text-cobalt">ten2ten</p>
+        <p className="mb-4 font-mono text-xs uppercase tracking-wide text-cobalt">Peredai</p>
         <p role="alert" className="text-sm text-red-600">
           {error || dd.errorGeneric}
         </p>
@@ -337,8 +332,10 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   if (listing.walk_up) amenityLabels.push(l.amenityWalkUp);
   if (listing.doorman) amenityLabels.push(l.amenityDoorman);
   if (listing.outdoor) amenityLabels.push(l.amenityOutdoor);
+  if (listing.allow_non_rf) amenityLabels.push(l.amenityNonRf);
+  if (listing.allow_children) amenityLabels.push(l.amenityChildren);
 
-  const dateLocale = locale === 'es' ? 'es-ES' : 'en-US';
+  const dateLocale = intlLocale(locale);
   const availableLabel = listing.available_from
     ? new Date(`${listing.available_from}T00:00:00`).toLocaleDateString(dateLocale, {
         month: 'long',
@@ -354,26 +351,15 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
 
   const languageNames = (lister?.spoken_languages ?? []).map((code) => LANGUAGE_NAMES[code] ?? code).join(', ');
 
-  // Hard block: a verified seeker whose credit score is below this listing's
-  // minimum cannot connect to it. Listing-specific — their credits and
-  // verification stay valid for listings they do match. No credit is consumed
-  // on a blocked attempt (nothing here consumes one; checkout also refuses).
-  // Matches the server: a verified seeker with a minimum set is blocked when
-  // their score is missing or below it.
-  const blockedBelowMin =
-    seekerVerified &&
-    listing.min_credit_score != null &&
-    (seekerCreditScore == null || seekerCreditScore < listing.min_credit_score);
-
   // A lister can't connect to their own listing — show a manage affordance
-  // instead of the Connect button (and the min-score block doesn't apply).
+  // instead of the Connect button.
   const isOwner = !!userId && listing.lister_id === userId;
 
   const hasActiveChat = !!activeChatId;
-  // Eligible to open a chat right now (no checkout needed): verified, meets the
-  // minimum, holds a credit, and isn't already in an active conversation.
+  // Eligible to open a chat right now (no checkout needed): verified, holds a
+  // credit, and isn't already in an active conversation.
   const canDirectConnect =
-    !isOwner && seekerVerified && !blockedBelowMin && seekerCreditBalance >= 1 && !hasActiveChat;
+    !isOwner && seekerVerified && seekerCreditBalance >= 1 && !hasActiveChat;
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
@@ -424,9 +410,11 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           <h1 className="font-display text-3xl font-bold text-ink">{listing.neighborhood}</h1>
           <p className="text-[1.4rem] leading-snug text-ink/80">
             {listing.cross_streets}
-            {listing.zip ? ` · ${listing.zip}` : ''}
-            {cityFromZip(listing.zip) ? ` · ${cityFromZip(listing.zip)}` : ''}
+            {listing.city ? ` · ${listing.city}` : ''}
           </p>
+          {listing.full_address && (
+            <p className="mt-1 text-[1.05rem] leading-snug text-ink">{listing.full_address}</p>
+          )}
         </div>
         <button
           type="button"
@@ -456,7 +444,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
 
       <div className="mb-6 flex flex-wrap items-baseline gap-2 text-lg">
         <span className="font-display text-2xl font-bold text-ink">
-          {listing.monthly_rent != null ? `$${listing.monthly_rent.toLocaleString('en-US')}/mo` : ''}
+          {listing.monthly_rent != null ? formatRubles(listing.monthly_rent, { perMonth: true }) : ''}
         </span>
         <span className="text-ink/50">·</span>
         <span className="text-ink/80">{typeLabel}</span>
@@ -500,17 +488,13 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       )}
 
       <div className="mb-6 flex flex-col gap-2 text-xl leading-relaxed text-ink/80">
-        {(availableLabel || listing.min_credit_score != null) && (
-          <p>
-            {availableLabel && <>{l.availableFromLabel}: {availableLabel}</>}
-            {availableLabel && listing.min_credit_score != null && <span className="px-2 text-muted">·</span>}
-            {listing.min_credit_score != null && b.minCreditScore.replace('{score}', String(listing.min_credit_score))}
-          </p>
+        {availableLabel && (
+          <p>{l.availableFromLabel}: {availableLabel}</p>
         )}
         {listing.gratitude_amount != null && (
           <div>
-            <p>{l.gratitudeLabel}: ${listing.gratitude_amount.toLocaleString('en-US')}</p>
-            <p className="mt-1 text-base text-muted">{l.gratitudeHint}</p>
+            <p>{l.gratitudeLabel}: {formatRubles(listing.gratitude_amount)}</p>
+            <p className="mt-1 text-base text-muted">{l.gratitudePublicNote}</p>
           </div>
         )}
       </div>
@@ -520,7 +504,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-mono text-[11px] uppercase tracking-wide text-muted">{dd.listedBy}</span>
             <span className="font-semibold text-ink">{lister.display_first_name}</span>
-            {lister.is_verified && <span className="text-sm font-semibold text-leaf">✓ verified</span>}
+            {lister.is_verified && <span className="text-sm font-semibold text-leaf">✓ проверен</span>}
           </div>
           <p className="mt-1 text-sm text-muted">
             {ratingLabel}
@@ -607,6 +591,16 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
             </>
           )}
         </div>
+      ) : userId && !seekerVerified ? (
+        <div className="rounded-xl border border-black/10 bg-white p-4">
+          <p className="mb-2 text-sm text-muted">{dd.verifyToConnect}</p>
+          <Link
+            href={`/${locale}/verify?next=browse/${id}`}
+            className="inline-block rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+          >
+            {dd.verifyToConnectCta}
+          </Link>
+        </div>
       ) : canDirectConnect ? (
         <div>
           <button
@@ -622,21 +616,6 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
               {connectError}
             </p>
           )}
-        </div>
-      ) : blockedBelowMin ? (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
-          <p className="mb-1 font-semibold text-amber-800">{dd.blockTitle}</p>
-          <p className="mb-3 text-sm text-amber-700">
-            {dd.blockBody
-              .replace('{min}', String(listing.min_credit_score))
-              .replace('{score}', String(seekerCreditScore))}
-          </p>
-          <Link
-            href={`/${locale}/browse`}
-            className="inline-block rounded-lg border border-amber-400 px-4 py-2 text-sm text-amber-800 transition hover:bg-amber-100"
-          >
-            {dd.blockCta}
-          </Link>
         </div>
       ) : (
         <form action="/api/checkout" method="POST" onSubmit={handleConnectSubmit}>

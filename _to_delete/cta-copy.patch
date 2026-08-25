@@ -1,0 +1,26 @@
+diff --git a/src/i18n/en.json b/src/i18n/en.json
+index d61fe5e..80a9de7 100644
+--- a/src/i18n/en.json
++++ b/src/i18n/en.json
+@@ -352,7 +352,7 @@
+     "emailConfirmBody": "Please confirm your email address before connecting with a lister. Check your inbox for the confirmation link.",
+     "emailConfirmResend": "Resend confirmation email",
+     "emailConfirmSent": "Sent — check your inbox.",
+-    "connectCta": "Connect — uses 1 credit",
++    "connectCta": "Request — 1 token",
+     "connectStub": "Connect is coming in a future update.",
+     "ownerNote": "This is your listing — you can't connect to it.",
+     "ownerCta": "Manage your listings",
+diff --git a/src/i18n/ru.json b/src/i18n/ru.json
+index 3be602b..03bbd8a 100644
+--- a/src/i18n/ru.json
++++ b/src/i18n/ru.json
+@@ -352,7 +352,7 @@
+     "emailConfirmBody": "Пожалуйста, подтвердите адрес почты перед подключением к владельцу. Проверьте входящие — там ссылка для подтверждения.",
+     "emailConfirmResend": "Отправить письмо повторно",
+     "emailConfirmSent": "Отправлено — проверьте почту.",
+-    "connectCta": "Подключиться — 1 кредит",
++    "connectCta": "Запрос — 1 токен",
+     "connectStub": "Подключение появится в будущем обновлении.",
+     "ownerNote": "Это ваше объявление — вы не можете подключиться к нему.",
+     "ownerCta": "Управлять объявлениями",

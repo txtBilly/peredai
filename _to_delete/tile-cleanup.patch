@@ -1,0 +1,113 @@
+diff --git a/src/app/[locale]/browse/BrowseView.tsx b/src/app/[locale]/browse/BrowseView.tsx
+index abcb6bf..633f843 100644
+--- a/src/app/[locale]/browse/BrowseView.tsx
++++ b/src/app/[locale]/browse/BrowseView.tsx
+@@ -28,6 +28,7 @@ type ListingRow = {
+   cross_streets: string | null;
+   type: string | null;
+   monthly_rent: number | null;
++  sqft: number | null;
+   available_from: string | null;
+   pets_ok: boolean | null;
+   laundry: boolean | null;
+@@ -113,7 +114,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
+         let query = supabase
+           .from('listings')
+           .select(
+-            'id, lister_id, neighborhood, cross_streets, type, monthly_rent, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, allow_non_rf, allow_children, gratitude_amount, status'
++            'id, lister_id, neighborhood, cross_streets, type, monthly_rent, sqft, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, allow_non_rf, allow_children, gratitude_amount, status'
+           )
+           .in('status', ['active', 'negotiating'])
+           .order('created_at', { ascending: false })
+@@ -199,6 +200,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
+             crossStreets: row.cross_streets ?? '',
+             rentLabel: row.monthly_rent != null ? formatRubles(row.monthly_rent, { perMonth: true }) : '',
+             typeLabel: row.type ? typeLabels[row.type as ListingTypeValue] ?? row.type : '',
++            sqftLabel: row.sqft != null ? `${row.sqft} м²` : null,
+             negotiating: row.status === 'negotiating',
+             negotiatingLabel: b.statusNegotiating,
+             amenityLabels,
+@@ -435,7 +437,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
+                   <div className="min-w-0">
+                     <span className="block truncate text-base font-bold text-cobalt">{card.neighborhood || '—'}</span>
+                     <p className="truncate font-mono text-[13px] text-muted">
+-                      {[card.crossStreets, card.typeLabel, card.availableLabel]
++                      {[card.typeLabel, card.neighborhood, card.sqftLabel, card.crossStreets, card.availableLabel]
+                         .filter(Boolean)
+                         .join(' · ')}
+                       {card.verified && <span className="font-semibold text-leaf"> · ✓ проверен</span>}
+diff --git a/src/app/[locale]/saved/SavedView.tsx b/src/app/[locale]/saved/SavedView.tsx
+index f0a59d3..2e8bde6 100644
+--- a/src/app/[locale]/saved/SavedView.tsx
++++ b/src/app/[locale]/saved/SavedView.tsx
+@@ -17,6 +17,7 @@ type ListingRow = {
+   cross_streets: string | null;
+   type: string | null;
+   monthly_rent: number | null;
++  sqft: number | null;
+   available_from: string | null;
+   laundry: boolean | null;
+   pets_ok: boolean | null;
+@@ -76,7 +77,7 @@ export default function SavedView({ locale }: { locale: Locale }) {
+       const { data: rows, error: qErr } = await supabase
+         .from('listings')
+         .select(
+-          'id, lister_id, neighborhood, cross_streets, type, monthly_rent, available_from, laundry, pets_ok, elevator, walk_up, doorman, outdoor, no_fee, allow_non_rf, allow_children, gratitude_amount, status'
++          'id, lister_id, neighborhood, cross_streets, type, monthly_rent, sqft, available_from, laundry, pets_ok, elevator, walk_up, doorman, outdoor, no_fee, allow_non_rf, allow_children, gratitude_amount, status'
+         )
+         .in('id', ids);
+       if (cancelled) return;
+@@ -133,6 +134,7 @@ export default function SavedView({ locale }: { locale: Locale }) {
+           crossStreets: row.cross_streets ?? '',
+           rentLabel: row.monthly_rent != null ? formatRubles(row.monthly_rent, { perMonth: true }) : '',
+           typeLabel: row.type ? typeLabels[row.type as ListingTypeValue] ?? row.type : '',
++          sqftLabel: row.sqft != null ? `${row.sqft} м²` : null,
+           negotiating: row.status === 'negotiating',
+           negotiatingLabel: b.statusNegotiating,
+           amenityLabels,
+diff --git a/src/components/ListingCard.tsx b/src/components/ListingCard.tsx
+index a67c5c2..f8ddbe2 100644
+--- a/src/components/ListingCard.tsx
++++ b/src/components/ListingCard.tsx
+@@ -29,6 +29,7 @@ export type ListingCardData = {
+   crossStreets: string;
+   rentLabel: string;
+   typeLabel: string;
++  sqftLabel: string | null;
+   negotiating: boolean;
+   negotiatingLabel: string;
+   amenityLabels: string[];
+@@ -77,16 +78,27 @@ export function ListingCard({
+           {/* Price leads, StreetEasy-style */}
+           <div className="mb-0.5 font-display text-2xl font-bold leading-tight text-ink">{listing.rentLabel}</div>
+ 
+-          {/* Facts row: type */}
++          {/* Facts row: type · neighborhood · area */}
+           <div className="text-[15px] leading-snug text-ink">
+             <span className="font-semibold">{listing.typeLabel}</span>
++            {listing.neighborhood && (
++              <>
++                <span className="px-1.5 text-muted">·</span>
++                {listing.neighborhood}
++              </>
++            )}
++            {listing.sqftLabel && (
++              <>
++                <span className="px-1.5 text-muted">·</span>
++                {listing.sqftLabel}
++              </>
++            )}
+           </div>
+ 
+-          {/* Address — cross-streets always drop to their own line */}
+-          <div className="text-[15px] leading-snug text-ink">
+-            {listing.neighborhood}
+-            {listing.crossStreets && <span className="block">{listing.crossStreets}</span>}
+-          </div>
++          {/* Nearest metro / cross-streets on its own line */}
++          {listing.crossStreets && (
++            <div className="text-[15px] leading-snug text-muted">{listing.crossStreets}</div>
++          )}
+ 
+           {/* Amenity chiclets */}
+           {listing.amenityLabels.length > 0 && (

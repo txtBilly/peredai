@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-ink text-paper">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-5 py-4">
-          <span className="font-display text-lg text-gold">Ten2Ten Admin</span>
+          <span className="font-display text-lg text-gold">Peredai Admin</span>
           <nav className="flex gap-4 text-sm text-muted">
             <Link href="/admin" className="hover:text-paper">Reports</Link>
             <Link href="/admin/listings" className="hover:text-paper">Suspended</Link>

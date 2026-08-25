@@ -8,14 +8,14 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
   return (
     <LegalPage locale={params.locale as Locale} title="Terms of Service">
       <p>
-        Ten2Ten is a peer-to-peer platform where verified members pass New York City apartments directly to one
+        Peredai is a peer-to-peer platform where verified members pass New York City apartments directly to one
         another. We are not a broker and charge no broker fee; the $100 contact bundle purchases the ability to
         connect, not a rental.
       </p>
       <p>
         Listers are responsible for their listings and for the accuracy of the information they provide. Seekers are
         responsible for their own due diligence before entering any lease or making any off-platform payment. Gratitude
-        amounts are arranged directly between members off-platform; Ten2Ten does not facilitate or verify them.
+        amounts are arranged directly between members off-platform; Peredai does not facilitate or verify them.
       </p>
       <p>
         Members agree to a background/identity verification appropriate to their role, to the automatic disclosure of

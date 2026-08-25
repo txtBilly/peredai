@@ -1,0 +1,15 @@
+diff --git a/src/app/[locale]/verify/VerifyView.tsx b/src/app/[locale]/verify/VerifyView.tsx
+index 678dcb9..e164bb3 100644
+--- a/src/app/[locale]/verify/VerifyView.tsx
++++ b/src/app/[locale]/verify/VerifyView.tsx
+@@ -236,8 +236,8 @@ export default function VerifyView({
+       <h1 className="mb-6 font-display text-3xl font-bold text-ink">{v.title}</h1>
+       <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">{v.subtitle}</p>
+       <p className="mb-8 text-justify text-sm text-muted [hyphens:auto]">
+-        Подтверждение личности выполняется через Yandex ID. Ваше полное имя видно другим проверенным участникам
+-        только когда они проявляют реальный интерес к вашему объявлению.
++        Подтверждение личности выполняется через ваш банк — Сбер ID или Т-Банк. Ваше полное имя видно другим
++        проверенным участникам только когда они проявляют реальный интерес к вашему объявлению.
+       </p>
+ 
+       {error && (
