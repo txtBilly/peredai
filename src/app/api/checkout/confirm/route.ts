@@ -15,7 +15,9 @@ function paymentsAreMock(): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  // Base URL from the request so the post-payment redirect lands on the host the
+  // user is on (ten2ten.ru / localhost), not the build-time NEXT_PUBLIC_APP_URL.
+  const appUrl = req.nextUrl.origin;
   const supabase = createClient();
   const {
     data: { user },

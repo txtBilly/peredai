@@ -48,7 +48,11 @@ export async function POST(req: NextRequest) {
         ? 'en'
         : 'ru';
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  // Base URL comes from the incoming request so redirects always target the
+  // host the user is actually on (ten2ten.ru, 10210.ru, or localhost). Do NOT
+  // use NEXT_PUBLIC_APP_URL here — it's inlined at build time and was sending
+  // live users to http://localhost:3000.
+  const appUrl = req.nextUrl.origin;
 
   // A lister can't connect to their own listing — refuse before any charge.
   if (listingId) {
