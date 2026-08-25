@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { getDictionary } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 
+// Bump when Terms/Privacy/Identity Consent copy changes materially. Kept in sync
+// with CONSENT_VERSION in /api/auth/signup.
 const LANGUAGE_OPTIONS = [
   { value: 'ru', label: 'Русский' },
   { value: 'uz', label: 'Oʻzbekcha' },
@@ -107,8 +109,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-5 py-16">
-      <h1 className="mb-2 font-display text-3xl text-ink">{d.auth.signUp}</h1>
-      <p className="mb-8 text-sm text-muted">{t.subtitle}</p>
+      <h1 className="mb-8 font-display text-3xl text-ink">{d.auth.signUp}</h1>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div>

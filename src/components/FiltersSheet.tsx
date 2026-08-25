@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { EMPTY_FILTERS, type BrowseFilters } from '@/lib/listings';
+import { EMPTY_FILTERS, LANGUAGE_OPTIONS, type BrowseFilters } from '@/lib/listings';
 
 const fieldClass =
   'w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt';
@@ -32,6 +32,7 @@ export function FiltersSheet({
     outdoor: string;
     allowNonRf: string;
     allowChildren: string;
+    languages: string;
     apply: string;
     clear: string;
     close: string;
@@ -158,6 +159,40 @@ export function FiltersSheet({
                   {label}
                 </label>
               ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-sm text-muted">{labels.languages}</legend>
+            <div className="flex flex-wrap gap-2">
+              {LANGUAGE_OPTIONS.map(({ value, label }) => {
+                const active = draft.languages.includes(value);
+                return (
+                  <label
+                    key={value}
+                    className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm transition ${
+                      active
+                        ? 'border-cobalt bg-gradient-cobalt text-white'
+                        : 'border-black/15 text-muted hover:border-black/30 hover:text-ink'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={() =>
+                        setDraft((cur) => ({
+                          ...cur,
+                          languages: cur.languages.includes(value)
+                            ? cur.languages.filter((x) => x !== value)
+                            : [...cur.languages, value],
+                        }))
+                      }
+                      className="sr-only"
+                    />
+                    {label}
+                  </label>
+                );
+              })}
             </div>
           </fieldset>
         </div>

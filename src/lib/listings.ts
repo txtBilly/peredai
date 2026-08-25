@@ -174,6 +174,7 @@ export type BrowseFilters = {
   outdoor: boolean;
   allowNonRf: boolean;
   allowChildren: boolean;
+  languages: string[]; // filter to listers who speak at least one of these
 };
 
 export const EMPTY_FILTERS: BrowseFilters = {
@@ -189,10 +190,25 @@ export const EMPTY_FILTERS: BrowseFilters = {
   outdoor: false,
   allowNonRf: false,
   allowChildren: false,
+  languages: [],
 };
 
 export function hasActiveFilters(filters: BrowseFilters): boolean {
-  return Object.entries(filters).some(([key, value]) =>
-    typeof value === 'boolean' ? value : value.trim() !== ''
+  return Object.entries(filters).some(([, value]) =>
+    Array.isArray(value) ? value.length > 0 : typeof value === 'boolean' ? value : value.trim() !== ''
   );
 }
+
+// Languages offered in the "spoken languages" pickers (signup + browse filter).
+export const LANGUAGE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'uz', label: 'Oʻzbekcha' },
+  { value: 'tg', label: 'Тоҷикӣ' },
+  { value: 'en', label: 'English' },
+  { value: 'zh', label: '中文' },
+  { value: 'ar', label: 'العربية' },
+  { value: 'es', label: 'Español' },
+  { value: 'fr', label: 'Français' },
+  { value: 'pt', label: 'Português' },
+  { value: 'ko', label: '한국어' },
+];

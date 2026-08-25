@@ -11,6 +11,7 @@ import {
   DEFAULT_CITY,
   normalizeCity,
   EMPTY_FILTERS,
+  LANGUAGE_OPTIONS,
   LISTING_TYPES,
   listingPhotoUrl,
   listingTypeLabels,
@@ -138,6 +139,24 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         if (filters.outdoor) query = query.eq('outdoor', true);
         if (filters.allowNonRf) query = query.eq('allow_non_rf', true);
         if (filters.allowChildren) query = query.eq('allow_children', true);
+
+        // Language filter: restrict to listers whose spoken_languages overlap the
+        // selected set. Resolve matching lister ids first (public_profile_summary
+        // exposes spoken_languages), then constrain the listings query.
+        if (filters.languages.length > 0) {
+          const { data: langListers } = await supabase
+            .from('public_profile_summary')
+            .select('id')
+            .overlaps('spoken_languages', filters.languages);
+          if (cancelled) return;
+          const langListerIds = (langListers ?? []).map((p) => p.id as string);
+          if (langListerIds.length === 0) {
+            setCards([]);
+            setLoading(false);
+            return;
+          }
+          query = query.in('lister_id', langListerIds);
+        }
 
         const { data: rows, error: queryError } = await query;
         if (cancelled) return;
@@ -283,6 +302,14 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   amenityChips.forEach(([key, label]) => {
     if (filters[key]) activeChips.push({ key, label, remove: () => setFilters((f) => ({ ...f, [key]: false })) });
   });
+  filters.languages.forEach((lang) => {
+    const opt = LANGUAGE_OPTIONS.find((o) => o.value === lang);
+    activeChips.push({
+      key: `lang:${lang}`,
+      label: opt?.label ?? lang,
+      remove: () => setFilters((f) => ({ ...f, languages: f.languages.filter((x) => x !== lang) })),
+    });
+  });
   const resetAll = () => {
     setSearchText('');
     setTypeFilter('all');
@@ -323,11 +350,11 @@ export default function BrowseView({ locale }: { locale: Locale }) {
                 type="button"
                 onClick={() => setView(v)}
                 aria-pressed={view === v}
-                className={`rounded-lg border px-3 py-2.5 text-sm capitalize transition ${
+                className={`rounded-lg border px-3 py-2.5 text-sm transition ${
                   view === v ? 'border-cobalt bg-cobalt/10 font-semibold text-cobalt' : 'border-black/15 text-muted hover:border-black/30'
                 }`}
               >
-                {v}
+                {locale === 'en' ? (v === 'list' ? 'List' : 'Grid') : v === 'list' ? 'Список' : 'Плитка'}
               </button>
             ))}
           </div>
@@ -498,6 +525,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           outdoor: l.amenityOutdoor,
           allowNonRf: l.amenityNonRf,
           allowChildren: l.amenityChildren,
+          languages: locale === 'en' ? 'Host speaks' : 'Язык хозяина',
           apply: b.applyFiltersCta,
           clear: b.clearFiltersCta,
           close: b.closeCta,
