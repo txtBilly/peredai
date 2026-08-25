@@ -43,7 +43,7 @@ export default function PayView({
 
   return (
     <main className="mx-auto max-w-md px-5 py-12">
-      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <h1 className="mb-1 font-display text-2xl text-ink">
         {c.title.replace('{n}', String(credits))}
       </h1>

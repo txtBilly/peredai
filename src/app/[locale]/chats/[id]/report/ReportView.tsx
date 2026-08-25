@@ -64,7 +64,7 @@ export default function ReportView({
   if (phase === 'done') {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <h1 className="mb-2 font-display text-2xl text-ink">{rp.doneTitle}</h1>
         <p className="mb-8 text-sm text-muted">{rp.doneBody}</p>
         <Link href={backHref} className="text-sm text-cobalt hover:underline">
@@ -76,7 +76,7 @@ export default function ReportView({
 
   return (
     <main className="mx-auto max-w-md px-5 py-12">
-      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <h1 className="mb-2 font-display text-2xl text-ink">{rp.title}</h1>
       <p className="mb-6 text-sm text-muted">{rp.subtitle}</p>
 

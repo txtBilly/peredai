@@ -7,7 +7,7 @@ const VerifyView = dynamic(() => import('./VerifyView'), {
   ssr: false,
   loading: () => (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 text-center">
-      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <p className="text-sm text-muted">Loading…</p>
     </main>
   ),

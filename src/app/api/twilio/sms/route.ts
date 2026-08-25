@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   });
 
   const reply = looksRussian
-    ? 'Спасибо! Вы в списке Peredai. Напишем, как только найдём подходящий вариант.'
-    : "Thanks! You're on the Peredai list. We'll text you the moment we find a place that matches.";
+    ? 'Спасибо! Вы в списке Ten2Ten. Напишем, как только найдём подходящий вариант.'
+    : "Thanks! You're on the Ten2Ten list. We'll text you the moment we find a place that matches.";
   return twiml(reply);
 }

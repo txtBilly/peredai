@@ -262,7 +262,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
   if (phase === 'error' || !chat) {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <p role="alert" className="mb-6 text-sm text-red-600">
           This conversation isn’t available.
         </p>
@@ -502,7 +502,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
 
       {/* Safety message — pinned first in the thread */}
       <ul className="mb-3 list-disc space-y-1 rounded-lg border border-black/10 bg-black/[0.02] py-3 pl-8 pr-4 text-xs leading-relaxed text-muted">
-        <li>Ведите общение внутри Peredai.</li>
+        <li>Ведите общение внутри Ten2Ten.</li>
         <li>Не передавайте конфиденциальные финансовые данные и встречайтесь в безопасном общественном месте.</li>
         <li>При личной встрече попросите показать документ, удостоверяющий личность.</li>
         {role === 'seeker' ? (

@@ -18,10 +18,10 @@ export async function GET(req: NextRequest) {
   try {
     await sendEmail({
       to,
-      subject: 'Peredai — тестовое письмо',
+      subject: 'Ten2Ten — тестовое письмо',
       html:
         '<div style="font-family:sans-serif;font-size:15px;line-height:1.5">' +
-        '<p>Это тестовое письмо от <b>Peredai</b> через SMTP.bz.</p>' +
+        '<p>Это тестовое письмо от <b>Ten2Ten</b> через SMTP.bz.</p>' +
         '<p>Если вы его видите — доставка работает. 🎉</p>' +
         '</div>',
     });

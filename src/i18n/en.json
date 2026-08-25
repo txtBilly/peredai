@@ -1,6 +1,6 @@
 {
   "brand": {
-    "name": "Peredai",
+    "name": "Ten2Ten",
     "tagline": "Pass your apartment on to the next person."
   },
   "nav": {
@@ -64,10 +64,10 @@
   },
   "report": {
     "title": "Report",
-    "subtitle": "Peredai community is built on trust and safety. Tell us more. We got you.",
+    "subtitle": "Ten2Ten community is built on trust and safety. Tell us more. We got you.",
     "detailLabel": "Tell us what happened (required)",
     "detailPlaceholder": "A few details help our team review this fairly.",
-    "consent": "By submitting, you consent to sharing this conversation with the Peredai team so we can review it fairly.",
+    "consent": "By submitting, you consent to sharing this conversation with the Ten2Ten team so we can review it fairly.",
     "errorGeneric": "Something went wrong ({error}). Please try again.",
     "submit": "Submit report",
     "submitting": "Submitting…",
@@ -128,7 +128,7 @@
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
     "safety": "Safety",
-    "rights": "Peredai is not a broker and does not collect or facilitate any payment between members beyond the platform connection fee."
+    "rights": "Ten2Ten is not a broker and does not collect or facilitate any payment between members beyond the platform connection fee."
   },
   "common": {
     "back": "Back",
@@ -199,7 +199,7 @@
     "continueCta": "Continue",
     "failedTitle": "Verification unsuccessful",
     "failedBody": "We weren't able to verify your identity.",
-    "failedReasonAge": "You must be 18 or older to use Peredai.",
+    "failedReasonAge": "You must be 18 or older to use Ten2Ten.",
     "failedReasonMismatch": "The information provided didn't match our records.",
     "failedReasonDefault": "Please try again or contact support.",
     "retryCta": "Try again",
@@ -210,7 +210,7 @@
   },
   "banned": {
     "title": "Your account has been suspended",
-    "body": "This account is no longer able to use Peredai. If you think this is a mistake, contact support.",
+    "body": "This account is no longer able to use Ten2Ten. If you think this is a mistake, contact support.",
     "signOut": "Sign out"
   },
   "onboarding": {
@@ -382,7 +382,7 @@
     "cityFilterLabel": "City",
     "cityAll": "All cities",
     "lockedTitle": "Less is more, so just one conversation at a time",
-    "lockedBody": "You've already started a conversation about a place, so browsing is paused for now. Peredai is built on real, committed connections between neighbors. This prevents message fatigue and makes it hard for bots to blast listings. Please finish or close your {link} to keep looking.",
+    "lockedBody": "You've already started a conversation about a place, so browsing is paused for now. Ten2Ten is built on real, committed connections between neighbors. This prevents message fatigue and makes it hard for bots to blast listings. Please finish or close your {link} to keep looking.",
     "lockedLink": "existing chat",
     "searchPlaceholder": "District, metro, street",
     "typeAll": "All",

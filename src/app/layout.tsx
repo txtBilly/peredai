@@ -22,19 +22,19 @@ const logoFont = Audiowide({
 });
 
 export const metadata: Metadata = {
-  title: 'Peredai — Передай квартиру следующему',
+  title: 'Ten2Ten — Передай квартиру следующему',
   description:
     'Проверенное сообщество, где арендаторы передают квартиры друг другу напрямую. Без посредников. Москва и Санкт-Петербург.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   openGraph: {
-    title: 'Peredai — Передай квартиру следующему',
+    title: 'Ten2Ten — Передай квартиру следующему',
     description:
       'Проверенное сообщество, где арендаторы передают квартиры друг другу напрямую. Без посредников.',
     type: 'website',
   },
   appleWebApp: {
     capable: true,
-    title: 'Peredai',
+    title: 'Ten2Ten',
     statusBarStyle: 'black-translucent',
   },
 };

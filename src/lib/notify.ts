@@ -19,7 +19,7 @@ const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://peredai.app').repla
 
 // Build a simple, email-client-safe HTML body: the message plus a CTA button
 // and a plain fallback link to the site.
-function emailHtml(message: string, path: string, cta = 'Открыть Peredai'): string {
+function emailHtml(message: string, path: string, cta = 'Открыть Ten2Ten'): string {
   const url = `${APP_URL}${path.startsWith('/') ? path : `/${path}`}`;
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#14140f;">
@@ -50,7 +50,7 @@ async function dispatch(userId: string, event: NotifyEvent, sms: string, email?:
     .eq('user_id', userId)
     .maybeSingle();
   // Prefs gate only SMS/push. Email is intentionally NOT read from prefs — it's
-  // an always-on channel on Peredai that members can't opt out of.
+  // an always-on channel on Ten2Ten that members can't opt out of.
   const channels = prefs
     ? (((prefs as Record<string, unknown>)[event] as string[] | undefined) ?? [])
     : DEFAULT_PREFS[event];
@@ -124,7 +124,7 @@ export const notify = {
   // A verified seeker connected to a listing → tell the lister.
   bidAccepted(listerId: string, area: string, chatId?: string) {
     const msg = `Проверенный участник отправил запрос по вашему объявлению (${area}). У него есть 24 часа, чтобы начать разговор.`;
-    return dispatch(listerId, 'bid_accepted', `Peredai: ${msg}`, {
+    return dispatch(listerId, 'bid_accepted', `Ten2Ten: ${msg}`, {
       subject: 'Новый запрос по вашему объявлению',
       html: emailHtml(msg, chatId ? `/ru/chats/${chatId}` : '/ru/browse', 'Открыть чат'),
     });
@@ -132,7 +132,7 @@ export const notify = {
   // New chat message → tell the other party.
   chatMessage(recipientId: string, fromName: string, chatId?: string) {
     const msg = `Новое сообщение от ${fromName}.`;
-    return dispatch(recipientId, 'chat_message', `Peredai: ${msg} Откройте приложение, чтобы ответить.`, {
+    return dispatch(recipientId, 'chat_message', `Ten2Ten: ${msg} Откройте приложение, чтобы ответить.`, {
       subject: `Новое сообщение от ${fromName}`,
       html: emailHtml(msg, chatId ? `/ru/chats/${chatId}` : '/ru', 'Открыть чат'),
     });
@@ -140,7 +140,7 @@ export const notify = {
   // A favourited listing returned to the market → tell the favouriter.
   listingFreed(userId: string, area: string, listingId?: string) {
     const msg = `Квартира из избранного снова доступна (${area}). Кто первым отправит запрос — тому и достанется.`;
-    return dispatch(userId, 'listing_freed', `Peredai: ${msg}`, {
+    return dispatch(userId, 'listing_freed', `Ten2Ten: ${msg}`, {
       subject: 'Избранная квартира снова доступна',
       html: emailHtml(msg, listingId ? `/ru/browse/${listingId}` : '/ru/browse', 'Посмотреть объявление'),
     });
@@ -148,7 +148,7 @@ export const notify = {
   // Chat approaching a deadline → nudge the party who must act.
   expiryWarn(userId: string, hoursLeft: number, chatId?: string) {
     const msg = `Ваш чат истекает через ${hoursLeft} ч. Отправьте сообщение, чтобы сохранить его активным.`;
-    return dispatch(userId, 'expiry_warn', `Peredai: ${msg}`, {
+    return dispatch(userId, 'expiry_warn', `Ten2Ten: ${msg}`, {
       subject: 'Ваш чат скоро истечёт',
       html: emailHtml(msg, chatId ? `/ru/chats/${chatId}` : '/ru', 'Открыть чат'),
     });
@@ -156,9 +156,9 @@ export const notify = {
   // A report the member filed was reviewed (transactional — always sent).
   reportReviewed(reporterId: string, confirmed: boolean) {
     const outcome = confirmed
-      ? 'Мы рассмотрели вашу жалобу и приняли меры. Спасибо, что помогаете сохранять безопасность Peredai.'
+      ? 'Мы рассмотрели вашу жалобу и приняли меры. Спасибо, что помогаете сохранять безопасность Ten2Ten.'
       : 'Мы рассмотрели вашу жалобу и в этот раз не нашли нарушения. Спасибо, что сообщили.';
-    return sendDirect(reporterId, `Peredai: ${outcome}`, {
+    return sendDirect(reporterId, `Ten2Ten: ${outcome}`, {
       subject: 'Ваша жалоба рассмотрена',
       html: `<p>${outcome}</p>`,
     });

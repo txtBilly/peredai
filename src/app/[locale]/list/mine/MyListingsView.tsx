@@ -131,7 +131,7 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
   if (phase === 'loading') {
     return (
       <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <p className="text-sm text-muted">{m.loading}</p>
       </main>
     );
@@ -140,7 +140,7 @@ export default function MyListingsView({ locale }: { locale: Locale }) {
   if (phase === 'error') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <p role="alert" className="text-sm text-red-600">
           {error || m.errorGeneric}
         </p>

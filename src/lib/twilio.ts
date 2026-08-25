@@ -48,7 +48,7 @@ function resolveEmailProvider(): EmailProvider {
 // fallback name for the same thing.
 function fromAddress(): string {
   const email = process.env.SMTP_FROM_EMAIL ?? process.env.RESEND_FROM_EMAIL ?? 'noreply@ten2ten.ru';
-  const name = process.env.EMAIL_FROM_NAME ?? 'Peredai';
+  const name = process.env.EMAIL_FROM_NAME ?? 'Ten2Ten';
   return name ? `${name} <${email}>` : email;
 }
 
@@ -157,18 +157,18 @@ export async function sendEmail(params: {
 
 export const notifications = {
   bidAccepted(to: { phone?: string; email?: string }, listingArea: string) {
-    const msg = `Peredai: по вашему объявлению (${listingArea}) отправлен запрос. Откройте приложение, чтобы написать и договориться о просмотре. У вас есть 24 часа.`;
+    const msg = `Ten2Ten: по вашему объявлению (${listingArea}) отправлен запрос. Откройте приложение, чтобы написать и договориться о просмотре. У вас есть 24 часа.`;
     if (to.phone) return sendSms(to.phone, msg);
   },
   listingFreed(to: { phone?: string; email?: string }, listingArea: string) {
-    const msg = `Peredai: квартира из избранного (${listingArea}) снова доступна. Кто первым отправит запрос — тому и достанется.`;
+    const msg = `Ten2Ten: квартира из избранного (${listingArea}) снова доступна. Кто первым отправит запрос — тому и достанется.`;
     if (to.phone) return sendSms(to.phone, msg);
   },
   expiryWarning(to: { phone?: string }, hoursLeft: number) {
     if (to.phone)
       return sendSms(
         to.phone,
-        `Peredai: ваш чат истекает через ${hoursLeft} ч. Отправьте сообщение, чтобы сохранить его активным.`
+        `Ten2Ten: ваш чат истекает через ${hoursLeft} ч. Отправьте сообщение, чтобы сохранить его активным.`
       );
   },
 };

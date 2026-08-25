@@ -45,7 +45,7 @@ export default async function AccountPage({ params }: { params: { locale: string
     <>
       <SiteHeader locale={locale as Locale} />
       <main className="mx-auto max-w-lg px-5 py-16">
-      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
 
       {/* Profile summary */}
       <div className="mb-8 flex items-start gap-4">

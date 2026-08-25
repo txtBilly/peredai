@@ -47,7 +47,7 @@ export default function ResetConfirmPage({ params }: { params: { locale: string 
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-16">
-      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <h1 className="mb-8 font-display text-3xl text-ink">{d.auth.resetTitle}</h1>
 
       {status === 'done' ? (

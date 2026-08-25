@@ -65,7 +65,7 @@ export async function createContactPayment(params: {
       // shows a QR to scan on desktop, or a bank list on mobile.
       payment_method_data: { type: 'sbp' },
       confirmation: { type: 'redirect', return_url: params.returnUrl },
-      description: '3 токена на контакты — Peredai',
+      description: '3 токена на контакты — Ten2Ten',
       // 54-ФЗ receipt: the customer + a single service line item. YooKassa emails
       // the fiscal receipt. VAT code 1 = "без НДС" (adjust for your tax mode).
       receipt: {

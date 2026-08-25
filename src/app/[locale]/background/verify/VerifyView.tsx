@@ -113,7 +113,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
   if (phase === 'pass') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <h1 className="mb-2 font-display text-2xl text-ink">Verified</h1>
         <p className="mb-2 text-sm text-muted">
           Background check passed{creditScore != null && (
@@ -149,7 +149,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
   if (phase === 'failed') {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <h1 className="mb-2 font-display text-2xl text-ink">Check failed</h1>
         <p className="mb-6 text-sm text-red-600">{message}</p>
         <Link href={listingHref} className="text-sm text-cobalt underline-offset-4 hover:underline">
@@ -161,7 +161,7 @@ export default function VerifyView({ locale }: { locale: Locale }) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-16">
-      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <h1 className="mb-2 font-display text-2xl text-ink">Verify your identity</h1>
       <p className="mb-6 text-sm text-muted">
         This runs a one-time identity and credit-score check. Your SSN and full credit report are never shared with

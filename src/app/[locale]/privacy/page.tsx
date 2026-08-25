@@ -13,7 +13,7 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
       </p>
       <p>
         Your Social Security number and full credit report are passed to our verification vendor and are never stored
-        by Peredai. Only your verified name, a derived credit band, and background-check status are retained; on
+        by Ten2Ten. Only your verified name, a derived credit band, and background-check status are retained; on
         Connect, your name and credit band (never your SSN or full report) are disclosed to the lister.
       </p>
       <p>

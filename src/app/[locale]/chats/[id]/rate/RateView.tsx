@@ -46,7 +46,7 @@ export default function RateView({ locale, chatId }: { locale: Locale; chatId: s
   if (phase === 'done') {
     return (
       <main className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+        <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
         <h1 className="mb-2 font-display text-2xl text-ink">Thanks for the feedback</h1>
         <p className="mb-8 text-sm text-muted">Your rating helps keep the community trustworthy.</p>
         <Link href={backHref} className="text-sm text-cobalt hover:underline">
@@ -58,7 +58,7 @@ export default function RateView({ locale, chatId }: { locale: Locale; chatId: s
 
   return (
     <main className="mx-auto max-w-md px-5 py-12">
-      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Peredai</p>
+      <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <h1 className="mb-2 font-display text-2xl text-ink">How was it?</h1>
       <p className="mb-6 text-sm text-muted">Rate your experience. Two confirmed bad reports lead to removal.</p>
 
