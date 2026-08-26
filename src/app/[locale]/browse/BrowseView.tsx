@@ -622,8 +622,9 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           allowNonRf: l.amenityNonRf,
           allowChildren: l.amenityChildren,
           languages: locale === 'en' ? 'Speaks:' : 'Говорит на:',
-          apply: b.applyFiltersCta,
-          clear: b.clearFiltersCta,
+          // Short labels so the sheet's action buttons stay on one line on mobile.
+          apply: locale === 'en' ? 'Apply' : 'Применить',
+          clear: locale === 'en' ? 'Reset' : 'Сбросить',
           close: b.closeCta,
         }}
         onApply={(next) => {

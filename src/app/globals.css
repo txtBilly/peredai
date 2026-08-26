@@ -32,6 +32,9 @@ body {
   color: #14140f;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* Never let a stray wide element cause a horizontal scroll/wobble on mobile.
+     Inner scroll regions opt back in with their own overflow-x-auto. */
+  overflow-x: hidden;
 }
 
 /* Respect reduced motion */

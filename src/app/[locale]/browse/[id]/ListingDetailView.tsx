@@ -314,12 +314,34 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
 
   if (phase === 'error' || !listing) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="mb-4 font-mono text-xs uppercase tracking-wide text-cobalt">Ten2Ten</p>
-        <p role="alert" className="text-sm text-red-600">
-          {error || dd.errorGeneric}
-        </p>
-      </main>
+      <div className="min-h-screen">
+        <header className="flex items-center justify-between border-b border-black/10 px-5 py-3">
+          <Link href={`/${locale}/browse`} aria-label="Ten2Ten">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ten2ten-logo.svg?v=1" alt="Ten2Ten" className="h-[22px] w-auto" />
+          </Link>
+        </header>
+        <main className="mx-auto flex max-w-md flex-col items-center px-5 py-16 text-center">
+          <p role="alert" className="mb-6 text-sm text-red-600">
+            {error || dd.errorGeneric}
+          </p>
+          <div className="flex w-full flex-col gap-2.5">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="w-full rounded-lg border border-black/15 px-5 py-3 text-sm font-semibold text-ink transition hover:border-black/40 hover:bg-black/[0.03]"
+            >
+              <span aria-hidden="true">‹</span> {locale === 'en' ? 'Back' : 'Назад'}
+            </button>
+            <Link
+              href={`/${locale}/browse`}
+              className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+            >
+              {dd.backToBrowse}
+            </Link>
+          </div>
+        </main>
+      </div>
     );
   }
 
