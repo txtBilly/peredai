@@ -147,6 +147,9 @@ export default function SavedView({ locale }: { locale: Locale }) {
                 })
               )
             : null,
+          availableSoon: row.available_from
+            ? new Date(`${row.available_from}T00:00:00`).getTime() - Date.now() < 5 * 24 * 60 * 60 * 1000
+            : false,
           gratuityLabel: row.gratitude_amount != null ? formatRubles(row.gratitude_amount) : null,
           verified: verifiedListers.has(row.lister_id),
           favourited: true,

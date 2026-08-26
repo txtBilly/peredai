@@ -34,6 +34,7 @@ export type ListingCardData = {
   negotiatingLabel: string;
   amenityLabels: string[];
   availableLabel: string | null;
+  availableSoon: boolean; // < 5 days until available → highlight the date badge
   gratuityLabel: string | null;
   verified: boolean;
   favourited: boolean;
@@ -59,7 +60,16 @@ export function ListingCard({
             <div className="flex h-full w-full items-center justify-center text-xs text-ink/25">—</div>
           )}
           {listing.availableLabel && (
-            <span className="absolute left-2.5 top-2.5 rounded-md bg-black/70 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+            <span
+              className={`absolute left-2.5 top-2.5 rounded-md px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm ${
+                listing.availableSoon ? 'shadow-sm' : 'bg-black/70'
+              }`}
+              style={
+                listing.availableSoon
+                  ? { backgroundImage: 'linear-gradient(135deg,#1B4DE4 0%,#7C3AED 55%,#D946EF 100%)' }
+                  : undefined
+              }
+            >
               {listing.availableLabel}
             </span>
           )}

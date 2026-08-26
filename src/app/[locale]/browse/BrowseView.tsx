@@ -203,6 +203,10 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         const favouritedIds = new Set((favouritesResult.data ?? []).map((f) => f.listing_id));
 
         const dateLocale = intlLocale(locale);
+        // Highlight the availability badge when the move-in date is under 5 days
+        // out (including dates already reached — those are the most urgent).
+        const nowMs = Date.now();
+        const soonCutoffMs = 5 * 24 * 60 * 60 * 1000;
 
         const nextCards: ListingCardData[] = rows.map((row: ListingRow) => {
           const photoPath = photoByListing.get(row.id);
@@ -237,6 +241,9 @@ export default function BrowseView({ locale }: { locale: Locale }) {
                   })
                 )
               : null,
+            availableSoon: row.available_from
+              ? new Date(`${row.available_from}T00:00:00`).getTime() - nowMs < soonCutoffMs
+              : false,
             gratuityLabel:
               row.gratitude_amount != null ? formatRubles(row.gratitude_amount) : null,
             verified: verifiedListers.has(row.lister_id),

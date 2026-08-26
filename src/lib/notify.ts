@@ -153,6 +153,30 @@ export const notify = {
       html: emailHtml(msg, chatId ? `/ru/chats/${chatId}` : '/ru', 'Открыть чат'),
     });
   },
+  // Move-in date is approaching (<= 2 days) but no talks have started — nudge
+  // the lister to confirm it's still available and consider lowering the
+  // gratitude to attract seekers. Transactional (always sent), once per listing.
+  availabilityNudge(listerId: string, area: string, listingId: string, dateLabel: string) {
+    const msg =
+      `Квартира (${area}) станет доступна ${dateLabel}, но переговоры пока не начались. ` +
+      `Всё ещё сдаёте? Чтобы привлечь больше желающих, попробуйте снизить сумму благодарности.`;
+    return sendDirect(listerId, `Ten2Ten: ${msg}`, {
+      subject: 'Ваша квартира скоро станет доступна',
+      html: emailHtml(msg, `/ru/list/mine?id=${listingId}`, 'Открыть объявление'),
+    });
+  },
+  // The move-in date arrived with no talks in progress, so the listing was
+  // taken down automatically. Transactional (always sent).
+  listingTakenDown(listerId: string, area: string) {
+    const msg =
+      `Дата доступности квартиры (${area}) наступила, а переговоры так и не начались, ` +
+      `поэтому объявление снято с публикации. Оно учтено в вашем годовом лимите (3 объявления в год). ` +
+      `Вы можете опубликовать новое, когда будете готовы.`;
+    return sendDirect(listerId, `Ten2Ten: ${msg}`, {
+      subject: 'Объявление снято с публикации',
+      html: emailHtml(msg, '/ru/list', 'Разместить объявление'),
+    });
+  },
   // A report the member filed was reviewed (transactional — always sent).
   reportReviewed(reporterId: string, confirmed: boolean) {
     const outcome = confirmed
