@@ -1,13 +1,14 @@
 {
-  "name": "Peredai",
-  "short_name": "Peredai",
-  "description": "Передавайте квартиры напрямую, от арендатора к арендатору. Без посредников.",
+  "name": "Ten2Ten",
+  "short_name": "Ten2Ten",
+  "description": "Проверенное сообщество, где арендаторы передают квартиры друг другу напрямую. Без посредников.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1A1A18",
-  "theme_color": "#1A1A18",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1B4DE4",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
   ]
 }

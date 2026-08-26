@@ -26,6 +26,7 @@ export const metadata: Metadata = {
   description:
     'Проверенное сообщество, где арендаторы передают квартиры друг другу напрямую. Без посредников. Москва и Санкт-Петербург.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+  manifest: '/manifest.json',
   openGraph: {
     title: 'Ten2Ten — Передай квартиру следующему',
     description:
