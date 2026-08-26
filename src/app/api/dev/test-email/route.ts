@@ -1,38 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/twilio';
 
-// Dev-only helper to smoke-test email delivery end to end.
-// Usage:  GET /api/dev/test-email?secret=<CRON_SECRET>&to=someone@ya.ru
-// Guarded by CRON_SECRET so it can't be triggered by anyone. On the SMTP
-// path, sendEmail throws on connection/auth/relay errors — we catch and
-// return the exact message so failures are visible (incl. "domain on
-// moderation" style rejections from SMTP.bz).
-export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get('secret');
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-  const to = req.nextUrl.searchParams.get('to');
-  if (!to) return NextResponse.json({ error: 'missing ?to=<email>' }, { status: 400 });
+// TEMPORARY diagnostic route — verifies the live email provider (RuSender SMTP)
+// end to end. Guarded by EMAIL_TEST_TOKEN: returns 404 unless the ?token= query
+// matches, so it stays inert in production unless you deliberately set the env
+// var. Remove this route (and the env var) once email delivery is confirmed.
+//
+//   GET /api/dev/test-email?token=<EMAIL_TEST_TOKEN>&to=you@example.com
+//
+// Node runtime (not edge) because nodemailer needs Node's net/tls stack.
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
+export async function GET(req: NextRequest) {
+  const token = process.env.EMAIL_TEST_TOKEN;
+  const provided = req.nextUrl.searchParams.get('token');
+  // No token configured, or mismatch → behave as if the route doesn't exist.
+  if (!token || provided !== token) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  const to = req.nextUrl.searchParams.get('to');
+  if (!to) {
+    return NextResponse.json({ error: 'missing_to' }, { status: 400 });
+  }
+
+  const provider = process.env.EMAIL_PROVIDER ?? '(auto)';
   try {
     await sendEmail({
       to,
       subject: 'Ten2Ten — тестовое письмо',
       html:
-        '<div style="font-family:sans-serif;font-size:15px;line-height:1.5">' +
-        '<p>Это тестовое письмо от <b>Ten2Ten</b> через SMTP.bz.</p>' +
-        '<p>Если вы его видите — доставка работает. 🎉</p>' +
-        '</div>',
+        '<p>Это тестовое письмо от Ten2Ten через RuSender.</p>' +
+        '<p>Если вы его видите — доставка транзакционных писем работает.</p>',
     });
-    return NextResponse.json({
-      ok: true,
-      to,
-      provider: process.env.EMAIL_PROVIDER ?? 'auto',
-      from: process.env.SMTP_FROM_EMAIL ?? process.env.RESEND_FROM_EMAIL ?? null,
-    });
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json({ ok: true, to, provider });
+  } catch (e) {
+    // The SMTP path throws on connection/auth/relay errors, so surface the
+    // message to make misconfiguration obvious from the response.
+    return NextResponse.json(
+      { ok: false, to, provider, error: e instanceof Error ? e.message : String(e) },
+      { status: 500 }
+    );
   }
 }

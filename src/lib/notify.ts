@@ -15,7 +15,7 @@ type EmailContent = { subject: string; html: string };
 
 // Base URL for links in emails. NEXT_PUBLIC_APP_URL is set in the Vercel env;
 // fall back to the production domain so links are never broken.
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://peredai.app').replace(/\/+$/, '');
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://ten2ten.ru').replace(/\/+$/, '');
 
 // Build a simple, email-client-safe HTML body: the message plus a CTA button
 // and a plain fallback link to the site.
