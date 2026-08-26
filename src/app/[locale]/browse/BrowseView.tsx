@@ -19,6 +19,7 @@ import {
   type ListingTypeValue,
 } from '@/lib/listings';
 import { ListingCard, type ListingCardData } from '@/components/ListingCard';
+import { NewListingsTicker, type TickerItem } from '@/components/NewListingsTicker';
 import { FiltersSheet } from '@/components/FiltersSheet';
 import { useHideOnScroll } from '@/lib/useHideOnScroll';
 
@@ -70,6 +71,53 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   const [cards, setCards] = useState<ListingCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Newest-listings ticker — independent of the filter query. Most-recent live
+  // listings, newest first; the strip hides itself when there are none.
+  const [tickerItems, setTickerItems] = useState<TickerItem[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    createClient()
+      .from('listings')
+      .select('id, neighborhood, type, monthly_rent, available_from, created_at')
+      .in('status', ['active', 'negotiating'])
+      .order('created_at', { ascending: false })
+      .limit(15)
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const nowMs = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        const items: TickerItem[] = data.map((row) => {
+          const availMs = row.available_from
+            ? new Date(`${row.available_from as string}T00:00:00`).getTime()
+            : null;
+          const meta =
+            availMs == null
+              ? null
+              : availMs <= nowMs
+                ? locale === 'en'
+                  ? 'available now'
+                  : 'доступна сейчас'
+                : `${locale === 'en' ? 'from ' : 'с '}${new Date(
+                    `${row.available_from as string}T00:00:00`
+                  ).toLocaleDateString(intlLocale(locale), { month: 'short', day: 'numeric' })}`;
+          const typeLabel = row.type ? typeLabels[row.type as ListingTypeValue] ?? (row.type as string) : '';
+          return {
+            id: row.id as string,
+            href: `/${locale}/browse/${row.id}`,
+            primary: [typeLabel, row.neighborhood as string | null].filter(Boolean).join(', '),
+            rentLabel: row.monthly_rent != null ? formatRubles(row.monthly_rent as number, { perMonth: true }) : '',
+            metaLabel: meta,
+            fresh: row.created_at ? nowMs - new Date(row.created_at as string).getTime() < dayMs : false,
+            freshLabel: locale === 'en' ? 'just now' : 'только что',
+          };
+        });
+        setTickerItems(items);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, typeLabels]);
 
   useEffect(() => {
     createClient()
@@ -333,6 +381,15 @@ export default function BrowseView({ locale }: { locale: Locale }) {
 
   return (
     <main className="mx-auto max-w-6xl px-5 pb-16 pt-6">
+      {/* Newest-listings running line — sits between the header and the search
+          bar, spans the container edge-to-edge, and hides itself when empty. */}
+      <div className="-mx-5 -mt-6 mb-4">
+        <NewListingsTicker
+          items={tickerItems}
+          label={locale === 'en' ? 'New listings' : 'Новые объявления'}
+        />
+      </div>
+
       {/* Search + filters + view toggle — sticky just below the auto-hiding nav
           (top-[61px] = nav height) so filters stay reachable on scroll-up. */}
       <div
