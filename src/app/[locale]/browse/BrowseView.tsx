@@ -118,6 +118,9 @@ export default function BrowseView({ locale }: { locale: Locale }) {
             'id, lister_id, neighborhood, cross_streets, type, monthly_rent, sqft, available_from, pets_ok, laundry, doorman, elevator, outdoor, no_fee, walk_up, allow_non_rf, allow_children, gratitude_amount, status'
           )
           .in('status', ['active', 'negotiating'])
+          // Default sort: soonest available date first. Listings with no date go
+          // last (nullsFirst: false); ties break by newest-listed.
+          .order('available_from', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false })
           .limit(60);
 
