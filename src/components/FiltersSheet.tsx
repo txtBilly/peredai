@@ -61,7 +61,7 @@ export function FiltersSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-white/90 sm:items-center" role="dialog" aria-modal="true">
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto overflow-x-hidden rounded-t-2xl border border-black/10 bg-white p-6 sm:rounded-2xl">
+      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto overflow-x-hidden overscroll-contain rounded-t-2xl border border-black/10 bg-white p-6 sm:rounded-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-xl text-ink">{labels.title}</h2>
           <button onClick={onClose} aria-label={labels.close} className="text-muted hover:text-ink">

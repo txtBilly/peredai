@@ -27,6 +27,13 @@ html {
   font-size: 112.5%; /* 18px base */
 }
 
+html {
+  /* Disable the browser's native pull-to-refresh so it can't fire when pulling
+     inside overlays (e.g. the filters sheet). Browse uses its own custom
+     pull-to-refresh, which is JS-driven and unaffected by this. */
+  overscroll-behavior-y: contain;
+}
+
 body {
   background: #ffffff;
   color: #14140f;
@@ -35,6 +42,7 @@ body {
   /* Never let a stray wide element cause a horizontal scroll/wobble on mobile.
      Inner scroll regions opt back in with their own overflow-x-auto. */
   overflow-x: hidden;
+  overscroll-behavior-y: contain;
 }
 
 /* Respect reduced motion */
