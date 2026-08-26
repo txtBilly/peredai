@@ -403,7 +403,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   };
 
   return (
-    <PullToRefresh onRefresh={handleRefresh}>
+    <PullToRefresh onRefresh={handleRefresh} disabled={filtersOpen}>
     <main className="mx-auto max-w-6xl px-5 pb-16 pt-6">
       {/* Newest-listings running line — sits between the header and the search
           bar, spans the container edge-to-edge, and hides itself when empty. */}

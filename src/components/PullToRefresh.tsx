@@ -12,9 +12,11 @@ const RESIST = 0.5; // drag-to-pull ratio (rubber-band feel)
 
 export function PullToRefresh({
   onRefresh,
+  disabled = false,
   children,
 }: {
   onRefresh: () => Promise<void>;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,13 +24,25 @@ export function PullToRefresh({
   const [refreshing, setRefreshing] = useState(false);
   const [dragging, setDragging] = useState(false);
 
+  // Read the latest `disabled` from inside the (stable) touch handlers, and
+  // collapse any in-progress pull the moment it becomes disabled (e.g. the
+  // filters sheet opens) so the indicator never gets stuck.
+  const disabledRef = useRef(disabled);
+  useEffect(() => {
+    disabledRef.current = disabled;
+    if (disabled) {
+      setPull(0);
+      setDragging(false);
+    }
+  }, [disabled]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const s = { startY: 0, active: false, pull: 0, refreshing: false };
 
     const onStart = (e: TouchEvent) => {
-      if (s.refreshing || window.scrollY > 0) {
+      if (s.refreshing || disabledRef.current || window.scrollY > 0) {
         s.active = false;
         return;
       }
@@ -36,7 +50,7 @@ export function PullToRefresh({
       s.active = true;
     };
     const onMove = (e: TouchEvent) => {
-      if (!s.active || s.refreshing) return;
+      if (!s.active || s.refreshing || disabledRef.current) return;
       if (window.scrollY > 0) {
         s.active = false;
         s.pull = 0;
