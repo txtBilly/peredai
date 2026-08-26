@@ -195,7 +195,7 @@
     "pendingTitle": "Verification in progress",
     "pendingBody": "We're reviewing your information. This usually takes a few seconds.",
     "successTitle": "You're verified",
-    "successBody": "Your identity has been confirmed. You now have a verified badge.",
+    "successBody": "Your identity has been confirmed. You can now post listings — but no more than 3 a year, because we don't want realtors taking root in our community.",
     "continueCta": "Continue",
     "failedTitle": "Verification unsuccessful",
     "failedBody": "We weren't able to verify your identity.",
