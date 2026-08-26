@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -20,6 +20,7 @@ import {
 } from '@/lib/listings';
 import { ListingCard, type ListingCardData } from '@/components/ListingCard';
 import { NewListingsTicker, type TickerItem } from '@/components/NewListingsTicker';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { FiltersSheet } from '@/components/FiltersSheet';
 import { useHideOnScroll } from '@/lib/useHideOnScroll';
 
@@ -72,6 +73,20 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Pull-to-refresh: bumping refreshKey re-runs the listings + ticker queries.
+  // handleRefresh resolves once the listings fetch finishes (via the resolver
+  // ref, called at the fetch's exit points) so the spinner reflects real work.
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refreshResolveRef = useRef<null | (() => void)>(null);
+  const handleRefresh = useCallback(
+    () =>
+      new Promise<void>((resolve) => {
+        refreshResolveRef.current = resolve;
+        setRefreshKey((k) => k + 1);
+      }),
+    []
+  );
+
   // Newest-listings ticker — independent of the filter query. Most-recent live
   // listings, newest first; the strip hides itself when there are none.
   const [tickerItems, setTickerItems] = useState<TickerItem[]>([]);
@@ -117,7 +132,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     return () => {
       cancelled = true;
     };
-  }, [locale, typeLabels]);
+  }, [locale, typeLabels, refreshKey]);
 
   useEffect(() => {
     createClient()
@@ -312,7 +327,15 @@ export default function BrowseView({ locale }: { locale: Locale }) {
       clearTimeout(timeoutId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchText, city, typeFilter, filters, userId, locale]);
+  }, [searchText, city, typeFilter, filters, userId, locale, refreshKey]);
+
+  // Resolve a pending pull-to-refresh once the listings fetch settles.
+  useEffect(() => {
+    if (!loading && refreshResolveRef.current) {
+      refreshResolveRef.current();
+      refreshResolveRef.current = null;
+    }
+  }, [loading]);
 
   async function handleToggleFavourite(listingId: string, currentlyFavourited: boolean) {
     if (!userId) {
@@ -380,6 +403,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   };
 
   return (
+    <PullToRefresh onRefresh={handleRefresh}>
     <main className="mx-auto max-w-6xl px-5 pb-16 pt-6">
       {/* Newest-listings running line — sits between the header and the search
           bar, spans the container edge-to-edge, and hides itself when empty. */}
@@ -435,7 +459,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
       </div>
 
       {/* Scope row: city selector pill + type tabs */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-1.5 sm:gap-2">
         {/* City filter — a pill-styled select leading the type tabs */}
         <div className="relative shrink-0">
           <svg
@@ -450,7 +474,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
             value={city}
             onChange={(e) => setCity(e.target.value)}
             aria-label={b.cityFilterLabel}
-            className="appearance-none rounded-full border border-black/20 bg-white py-2 pl-9 pr-8 text-[15px] font-medium text-ink transition hover:border-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
+            className="appearance-none rounded-full border border-black/20 bg-white py-1.5 pl-8 pr-7 text-[13px] font-medium text-ink transition hover:border-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt sm:py-2 sm:pl-9 sm:pr-8 sm:text-[15px]"
           >
             <option value="">{b.cityAll}</option>
             {cityOptions.map((c) => (
@@ -472,7 +496,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
               type="button"
               onClick={() => setTypeFilter(value)}
               aria-pressed={selected}
-              className={`rounded-full px-5 py-2 text-[15px] transition ${
+              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] transition sm:px-5 sm:py-2 sm:text-[15px] ${
                 selected
                   ? 'bg-cobalt font-bold text-white shadow-sm ring-1 ring-cobalt'
                   : 'border border-black/20 bg-white font-medium text-ink hover:border-black/40'
@@ -609,5 +633,6 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         onClose={() => setFiltersOpen(false)}
       />
     </main>
+    </PullToRefresh>
   );
 }

@@ -49,16 +49,16 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
             </li>
           ))}
         </ul>
-        <div className="mt-8 flex gap-3">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
             href={`/${locale}/browse`}
-            className="whitespace-nowrap rounded-lg bg-gradient-cobalt px-4 py-3 font-semibold text-white transition hover:brightness-110 sm:px-6"
+            className="w-full whitespace-nowrap rounded-lg bg-gradient-cobalt px-4 py-3 text-center font-semibold text-white transition hover:brightness-110 sm:w-auto sm:px-6"
           >
             {w.findCta}
           </Link>
           <Link
             href={`/${locale}/list`}
-            className="whitespace-nowrap rounded-lg bg-ink px-4 py-3 font-semibold text-white transition hover:brightness-110 sm:px-6"
+            className="w-full whitespace-nowrap rounded-lg bg-ink px-4 py-3 text-center font-semibold text-white transition hover:brightness-110 sm:w-auto sm:px-6"
           >
             {w.listCta}
           </Link>
