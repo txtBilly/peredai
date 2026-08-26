@@ -52,6 +52,29 @@ function fromAddress(): string {
   return name ? `${name} <${email}>` : email;
 }
 
+// Derive a plain-text version from the HTML body so every message goes out as
+// multipart/alternative (html + text). HTML-only mail scores worse with spam
+// filters; a real text part is one of the cheapest deliverability wins. Links
+// become "label: url" so the URL survives in the text view. Callers may pass an
+// explicit `text` to override this.
+function htmlToText(html: string): string {
+  return html
+    .replace(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '$2: $1')
+    .replace(/<(?:br)\s*\/?>/gi, '\n')
+    .replace(/<\/(?:p|div|h[1-6]|li|tr)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+/g, ' ').trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // Lazily-built, memoised clients so we don't construct them at import time
 // (env may not be loaded yet) or on every send.
 let _resend: Resend | null = null;
@@ -92,9 +115,12 @@ export async function sendEmail(params: {
   to: string;
   subject: string;
   html: string;
+  text?: string;
 }): Promise<void> {
   const provider = resolveEmailProvider();
   const from = fromAddress();
+  // Always include a plain-text alternative (multipart/alternative).
+  const text = params.text ?? htmlToText(params.html);
 
   if (provider === 'stub') {
     console.warn('[email] no email provider configured — email NOT sent:', {
@@ -120,6 +146,7 @@ export async function sendEmail(params: {
       to: params.to,
       subject: params.subject,
       html: params.html,
+      text,
     });
     console.log('[email] sent via smtp', { id: info.messageId, to: params.to, subject: params.subject });
     return;
@@ -142,6 +169,7 @@ export async function sendEmail(params: {
     to: params.to,
     subject: params.subject,
     html: params.html,
+    text,
   });
   if (error) {
     console.error('[email] Resend send failed', { from, to: params.to, error });
