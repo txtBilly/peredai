@@ -37,7 +37,9 @@ function resolveEmailProvider(): EmailProvider {
   const explicit = process.env.EMAIL_PROVIDER?.toLowerCase();
   if (explicit === 'smtp' || explicit === 'resend' || explicit === 'stub') return explicit;
   if (process.env.SMTP_HOST && process.env.SMTP_USER) return 'smtp';
-  if (process.env.RESEND_API_KEY) return 'resend';
+  // 152-ФЗ: do NOT auto-fall back to Resend (US) — sending an email address
+  // through a non-RU provider is a cross-border transfer of personal data.
+  // Resend is used only when EMAIL_PROVIDER=resend is set explicitly (dev/non-RU).
   return 'stub';
 }
 

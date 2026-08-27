@@ -52,6 +52,8 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
   const [email, setEmail] = useState('');
   const [spokenLanguages, setSpokenLanguages] = useState<string[]>(['ru']);
   const [consented, setConsented] = useState(false);
+  // Separate 152-ФЗ personal-data-processing consent (its own checkbox + doc).
+  const [pdConsented, setPdConsented] = useState(false);
   const [status, setStatus] = useState<'idle' | 'submitting'>('idle');
   const [error, setError] = useState('');
 
@@ -72,6 +74,10 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
     }
     if (!consented) {
       setError(d.auth.consentRequired);
+      return;
+    }
+    if (!pdConsented) {
+      setError(d.auth.consentPdRequired);
       return;
     }
 
@@ -191,6 +197,28 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
           </span>
         </label>
 
+        <label className="flex items-start gap-3 text-sm text-muted">
+          <input
+            type="checkbox"
+            required
+            checked={pdConsented}
+            onChange={(e) => setPdConsented(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/30 bg-white accent-cobalt"
+          />
+          <span>
+            {renderTemplate(d.auth.consentPdTemplate, {
+              pd: (
+                <Link
+                  href={`/${locale}/personal-data-consent`}
+                  className="text-ink underline-offset-2 hover:underline"
+                >
+                  {d.auth.consentPdLabel}
+                </Link>
+              ),
+            })}
+          </span>
+        </label>
+
         {error && (
           <p role="alert" className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
@@ -199,7 +227,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
 
         <button
           type="submit"
-          disabled={status === 'submitting' || !consented}
+          disabled={status === 'submitting' || !consented || !pdConsented}
           className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
         >
           {status === 'submitting' ? d.auth.signingUp : t.continue}
