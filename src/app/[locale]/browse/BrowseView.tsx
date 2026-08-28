@@ -87,15 +87,18 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     []
   );
 
-  // Newest-listings ticker — independent of the filter query. Most-recent live
-  // listings, newest first; the strip hides itself when there are none.
+  // Newest-listings ticker — follows the selected city (so the strip always
+  // matches the shelf below), but is otherwise independent of the search/type
+  // filters. Most-recent live listings, newest first; hides itself when empty.
   const [tickerItems, setTickerItems] = useState<TickerItem[]>([]);
   useEffect(() => {
     let cancelled = false;
-    createClient()
+    let tickerQuery = createClient()
       .from('listings')
       .select('id, neighborhood, type, monthly_rent, available_from, created_at')
-      .in('status', ['active', 'negotiating'])
+      .in('status', ['active', 'negotiating']);
+    if (city) tickerQuery = tickerQuery.eq('city', city); // '' = all cities
+    tickerQuery
       .order('created_at', { ascending: false })
       .limit(15)
       .then(({ data }) => {
@@ -132,7 +135,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     return () => {
       cancelled = true;
     };
-  }, [locale, typeLabels, refreshKey]);
+  }, [locale, typeLabels, refreshKey, city]);
 
   useEffect(() => {
     createClient()
