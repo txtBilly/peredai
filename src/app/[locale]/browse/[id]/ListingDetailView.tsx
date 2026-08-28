@@ -57,6 +57,15 @@ type Lister = {
   spoken_languages: string[] | null;
 };
 
+// Russian noun plural for a count: 1 санузел, 2 санузла, 5 санузлов.
+function pluralRu(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+}
+
 export default function ListingDetailView({ locale, id }: { locale: Locale; id: string }) {
   const d = getDictionary(locale);
   const l = d.listing;
@@ -305,8 +314,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
 
   if (phase === 'loading') {
     return (
-      <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-5 text-center">
-        <p className="mb-2 font-mono text-xs uppercase tracking-wide text-cobalt">Ten2Ten</p>
+      <main className="mx-auto flex min-h-[50vh] max-w-3xl flex-col items-center justify-center px-5 text-center">
         <p className="text-sm text-muted">{dd.loading}</p>
       </main>
     );
@@ -314,34 +322,26 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
 
   if (phase === 'error' || !listing) {
     return (
-      <div className="min-h-screen">
-        <header className="flex items-center justify-between border-b border-black/10 px-5 py-3">
-          <Link href={`/${locale}/browse`} aria-label="Ten2Ten">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ten2ten-logo.svg?v=1" alt="Ten2Ten" className="h-[22px] w-auto" />
+      <main className="mx-auto flex max-w-md flex-col items-center px-5 py-16 text-center">
+        <p role="alert" className="mb-6 text-sm text-red-600">
+          {error || dd.errorGeneric}
+        </p>
+        <div className="flex w-full flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="w-full rounded-lg border border-black/15 px-5 py-3 text-sm font-semibold text-ink transition hover:border-black/40 hover:bg-black/[0.03]"
+          >
+            <span aria-hidden="true">‹</span> {locale === 'en' ? 'Back' : 'Назад'}
+          </button>
+          <Link
+            href={`/${locale}/browse`}
+            className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+          >
+            {dd.backToBrowse}
           </Link>
-        </header>
-        <main className="mx-auto flex max-w-md flex-col items-center px-5 py-16 text-center">
-          <p role="alert" className="mb-6 text-sm text-red-600">
-            {error || dd.errorGeneric}
-          </p>
-          <div className="flex w-full flex-col gap-2.5">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="w-full rounded-lg border border-black/15 px-5 py-3 text-sm font-semibold text-ink transition hover:border-black/40 hover:bg-black/[0.03]"
-            >
-              <span aria-hidden="true">‹</span> {locale === 'en' ? 'Back' : 'Назад'}
-            </button>
-            <Link
-              href={`/${locale}/browse`}
-              className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
-            >
-              {dd.backToBrowse}
-            </Link>
-          </div>
-        </main>
-      </div>
+        </div>
+      </main>
     );
   }
 
@@ -356,6 +356,24 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   if (listing.outdoor) amenityLabels.push(l.amenityOutdoor);
   if (listing.allow_non_rf) amenityLabels.push(l.amenityNonRf);
   if (listing.allow_children) amenityLabels.push(l.amenityChildren);
+
+  // Price split so "/мес" can render smaller/muted next to the amount.
+  const priceFull = listing.monthly_rent != null ? formatRubles(listing.monthly_rent, { perMonth: true }) : '';
+  const PER_MONTH = '/мес';
+  const hasPerMonth = priceFull.endsWith(PER_MONTH);
+  const priceAmount = hasPerMonth ? priceFull.slice(0, -PER_MONTH.length).trim() : priceFull;
+
+  // Compact headline facts (type · санузел · этаж · площадь) with correct grammar:
+  // "1 санузел" not "1 санузлы", and "48 м²" not "48 площадь, м²".
+  const bathroomsText =
+    listing.bathrooms != null
+      ? locale === 'ru'
+        ? `${listing.bathrooms} ${pluralRu(listing.bathrooms, 'санузел', 'санузла', 'санузлов')}`
+        : `${listing.bathrooms} ${l.bathroomsLabel.toLowerCase()}`
+      : null;
+  const floorText = listing.floor ? `${l.floorLabel.toLowerCase()} ${listing.floor}` : null;
+  const sqftText = listing.sqft != null ? `${listing.sqft} м²` : null;
+  const factParts = [typeLabel, bathroomsText, floorText, sqftText].filter(Boolean) as string[];
 
   const dateLocale = intlLocale(locale);
   const availableLabel = listing.available_from
@@ -427,15 +445,15 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
         </div>
       )}
 
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-ink">{listing.neighborhood}</h1>
-          <p className="text-[1.4rem] leading-snug text-ink/80">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-display text-[26px] font-bold leading-tight text-ink">{listing.neighborhood}</h1>
+          <p className="mt-1 text-[15px] leading-snug text-muted">
             {listing.cross_streets}
             {listing.city ? ` · ${listing.city}` : ''}
           </p>
           {listing.full_address && (
-            <p className="mt-1 text-[1.05rem] leading-snug text-ink">{listing.full_address}</p>
+            <p className="mt-1 text-sm leading-snug text-ink/70">{listing.full_address}</p>
           )}
         </div>
         <button
@@ -464,38 +482,29 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
         </button>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-baseline gap-2 text-lg">
-        <span className="font-display text-2xl font-bold text-ink">
-          {listing.monthly_rent != null ? formatRubles(listing.monthly_rent, { perMonth: true }) : ''}
-        </span>
-        <span className="text-ink/50">·</span>
-        <span className="text-ink/80">{typeLabel}</span>
-        {listing.bathrooms != null && (
-          <>
-            <span className="text-ink/50">·</span>
-            <span className="text-ink/80">
-              {listing.bathrooms} {l.bathroomsLabel.toLowerCase()}
-            </span>
-          </>
-        )}
-        {listing.floor && (
-          <>
-            <span className="text-ink/50">·</span>
-            <span className="text-ink/80">{l.floorLabel}: {listing.floor}</span>
-          </>
-        )}
-        {listing.sqft != null && (
-          <>
-            <span className="text-ink/50">·</span>
-            <span className="text-ink/80">{listing.sqft} {l.sqftLabel.toLowerCase()}</span>
-          </>
+      <div className="mb-6">
+        {/* Price is the anchor, on its own line; "/мес" smaller & muted. */}
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-display text-[28px] font-bold leading-none text-ink">{priceAmount}</span>
+          {hasPerMonth && <span className="text-base font-semibold text-muted">/ мес</span>}
+        </div>
+        {/* Facts below, each "· X" a nowrap segment → wraps cleanly, no dangling "·". */}
+        {factParts.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-baseline text-[15px] text-ink/70">
+            {factParts.map((part, i) => (
+              <span key={i} className="whitespace-nowrap">
+                {i > 0 && <span className="px-1.5 text-ink/30">·</span>}
+                {part}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
       {amenityLabels.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">
           {amenityLabels.map((label) => (
-            <span key={label} className="rounded-full border border-black/10 bg-white px-4 py-1.5 text-base text-ink/80">
+            <span key={label} className="rounded-full border border-black/10 bg-white px-3.5 py-1.5 text-sm text-ink/80">
               {label}
             </span>
           ))}
@@ -504,19 +513,19 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
 
       {listing.description && (
         <div className="mb-6">
-          <h2 className="mb-2 font-display text-2xl font-bold text-ink">{l.descriptionLabel}</h2>
-          <p className="whitespace-pre-wrap text-xl leading-relaxed text-ink/80">{listing.description}</p>
+          <h2 className="mb-1.5 font-display text-lg font-bold text-ink">{l.descriptionLabel}</h2>
+          <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink/80">{listing.description}</p>
         </div>
       )}
 
-      <div className="mb-6 flex flex-col gap-2 text-xl leading-relaxed text-ink/80">
+      <div className="mb-6 flex flex-col gap-2 text-[15px] leading-relaxed text-ink/80">
         {availableLabel && (
           <p>{l.availableFromLabel}: {availableLabel}</p>
         )}
         {listing.gratitude_amount != null && (
           <div>
             <p>{l.gratitudeLabel}: {formatRubles(listing.gratitude_amount)}</p>
-            <p className="mt-1 text-base text-muted">{l.gratitudePublicNote}</p>
+            <p className="mt-1 text-sm text-muted">{l.gratitudePublicNote}</p>
           </div>
         )}
       </div>
