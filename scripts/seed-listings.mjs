@@ -270,6 +270,7 @@ async function seedCity(cityLabel, folderKey, nbMap, max) {
       allow_non_rf: chance(0.5),
       allow_children: chance(0.65),
       gratitude_amount: gratuityFor(rent), // 30–50% of rent, rounded to 1 000 ₽
+      is_seed: true, // mock listing → always sorts below real ones on browse/ticker
       published_at: new Date().toISOString(),
     };
     listing.description = describe(type, neighborhood, metro, listing); // ~80% get a blurb

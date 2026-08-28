@@ -21,6 +21,32 @@ function HeartIcon({ filled }: { filled: boolean }) {
   );
 }
 
+function PinIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="-mt-px inline-block shrink-0">
+      <circle cx="12" cy="10" r="3" />
+      <path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11Z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function GiftIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="shrink-0">
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M12 8v13M5 12v9h14v-9M12 8S10.5 3 7.5 4.5 9 8 12 8Zm0 0s1.5-5 4.5-3.5S15 8 12 8Z" />
+    </svg>
+  );
+}
+
 export type ListingCardData = {
   id: string;
   href: string;
@@ -49,13 +75,25 @@ export function ListingCard({
   listing: ListingCardData;
   onToggleFavourite: (id: string, currentlyFavourited: boolean) => void;
 }) {
+  // rentLabel comes formatted as "40 000 ₽/мес"; split the suffix so it can be
+  // rendered smaller and muted next to the amount.
+  const PER_MONTH = '/мес';
+  const hasPerMonth = listing.rentLabel.endsWith(PER_MONTH);
+  const rentAmount = hasPerMonth ? listing.rentLabel.slice(0, -PER_MONTH.length).trim() : listing.rentLabel;
+
   return (
     <article className="relative overflow-hidden rounded-xl border border-black/[0.08] bg-white">
       <Link href={listing.href} className="block">
         <div className="relative aspect-[4/3] w-full bg-black/[0.04]">
           {listing.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={listing.photoUrl} alt="" className="h-full w-full object-cover" />
+            <img
+              src={listing.photoUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xs text-ink/25">—</div>
           )}
@@ -84,11 +122,14 @@ export function ListingCard({
           )}
         </div>
 
-        <div className="flex flex-col gap-2 p-5">
-          {/* Price leads, StreetEasy-style */}
-          <div className="mb-0.5 font-display text-2xl font-bold leading-tight text-ink">{listing.rentLabel}</div>
+        <div className="flex flex-col gap-2.5 p-5">
+          {/* Price leads; "/мес" split off smaller & muted */}
+          <div className="leading-none">
+            <span className="font-display text-2xl font-bold text-ink">{rentAmount}</span>
+            {hasPerMonth && <span className="ml-1 text-sm font-semibold text-muted">/ мес</span>}
+          </div>
 
-          {/* Facts row: type · neighborhood · area */}
+          {/* Facts row: type · neighborhood · area · metro — all on one line now */}
           <div className="text-[15px] leading-snug text-ink">
             <span className="font-semibold">{listing.typeLabel}</span>
             {listing.neighborhood && (
@@ -103,16 +144,19 @@ export function ListingCard({
                 {listing.sqftLabel}
               </>
             )}
+            {listing.crossStreets && (
+              <>
+                <span className="px-1.5 text-muted">·</span>
+                <span className="whitespace-nowrap text-muted">
+                  <PinIcon /> {listing.crossStreets}
+                </span>
+              </>
+            )}
           </div>
-
-          {/* Nearest metro / cross-streets on its own line */}
-          {listing.crossStreets && (
-            <div className="text-[15px] leading-snug text-muted">{listing.crossStreets}</div>
-          )}
 
           {/* Amenity chiclets */}
           {listing.amenityLabels.length > 0 && (
-            <div className="mt-0.5 flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               {listing.amenityLabels.map((label) => (
                 <span
                   key={label}
@@ -124,16 +168,25 @@ export function ListingCard({
             </div>
           )}
 
-          {/* Verified ID + Gratuity */}
+          {/* Footer: hairline, then verified (left) + gratuity plate (right) */}
           {(listing.verified || listing.gratuityLabel) && (
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-              {listing.verified && <span className="text-sm font-semibold text-leaf">✓ Личность подтверждена</span>}
-              {listing.gratuityLabel && (
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  Благодарность {listing.gratuityLabel}
-                </span>
-              )}
-            </div>
+            <>
+              <div className="mt-0.5 h-px bg-black/[0.08]" />
+              <div className="flex items-center justify-between gap-2">
+                {listing.verified ? (
+                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-leaf">
+                    <CheckIcon /> Подтверждён
+                  </span>
+                ) : (
+                  <span />
+                )}
+                {listing.gratuityLabel && (
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#7C3AED]/[0.09] px-2.5 py-1 text-xs font-semibold text-[#6D28D9]">
+                    <GiftIcon /> Благодарность {listing.gratuityLabel}
+                  </span>
+                )}
+              </div>
+            </>
           )}
         </div>
       </Link>
