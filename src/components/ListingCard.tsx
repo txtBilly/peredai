@@ -123,16 +123,23 @@ export function ListingCard({
         </div>
 
         <div className="flex flex-1 flex-col gap-2.5 p-5">
-          {/* Price leads; "/мес" split off smaller & muted */}
-          <div className="leading-none">
-            <span className="font-display text-2xl font-bold text-ink">{rentAmount}</span>
-            {hasPerMonth && <span className="ml-1 text-sm font-semibold text-muted">/ мес</span>}
+          {/* Price row: rent on the left (smaller & slimmer), metro pushed to the
+              right on the same line. Metro truncates so it never overflows. */}
+          <div className="flex items-baseline justify-between gap-2 leading-none">
+            <span className="shrink-0">
+              <span className="font-display text-[19px] font-semibold text-ink">{rentAmount}</span>
+              {hasPerMonth && <span className="ml-1 text-sm font-medium text-muted">/ мес</span>}
+            </span>
+            {listing.crossStreets && (
+              <span className="flex min-w-0 shrink items-center gap-1 text-[13px] text-muted">
+                <PinIcon />
+                <span className="truncate">{listing.crossStreets}</span>
+              </span>
+            )}
           </div>
 
-          {/* Facts row: type · neighborhood · area · metro. A wrapping flex row so
-              it can break BETWEEN segments (each segment stays nowrap and carries
-              its own "·" separator → no dangling separators, metro never splits
-              from its pin, nothing overflows the card on narrow widths). */}
+          {/* Facts row: type · neighborhood · area. Wrapping flex row; each "· X"
+              is a nowrap segment so it breaks cleanly with no dangling separators. */}
           <div className="flex flex-wrap items-baseline gap-y-0.5 text-[15px] leading-snug text-ink">
             <span className="font-semibold">{listing.typeLabel}</span>
             {listing.neighborhood && (
@@ -145,13 +152,6 @@ export function ListingCard({
               <span className="whitespace-nowrap">
                 <span className="px-1.5 text-muted">·</span>
                 {listing.sqftLabel}
-              </span>
-            )}
-            {listing.crossStreets && (
-              // Pin icon acts as the separator (no middot) so a wrapped metro line
-              // reads "📍 м. …" cleanly instead of starting with a dangling "·".
-              <span className="whitespace-nowrap pl-2 text-muted">
-                <PinIcon /> {listing.crossStreets}
               </span>
             )}
           </div>
