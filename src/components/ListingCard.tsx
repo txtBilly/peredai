@@ -129,28 +129,30 @@ export function ListingCard({
             {hasPerMonth && <span className="ml-1 text-sm font-semibold text-muted">/ мес</span>}
           </div>
 
-          {/* Facts row: type · neighborhood · area · metro — all on one line now */}
-          <div className="text-[15px] leading-snug text-ink">
+          {/* Facts row: type · neighborhood · area · metro. A wrapping flex row so
+              it can break BETWEEN segments (each segment stays nowrap and carries
+              its own "·" separator → no dangling separators, metro never splits
+              from its pin, nothing overflows the card on narrow widths). */}
+          <div className="flex flex-wrap items-baseline gap-y-0.5 text-[15px] leading-snug text-ink">
             <span className="font-semibold">{listing.typeLabel}</span>
             {listing.neighborhood && (
-              <>
+              <span className="whitespace-nowrap">
                 <span className="px-1.5 text-muted">·</span>
                 {listing.neighborhood}
-              </>
+              </span>
             )}
             {listing.sqftLabel && (
-              <>
+              <span className="whitespace-nowrap">
                 <span className="px-1.5 text-muted">·</span>
                 {listing.sqftLabel}
-              </>
+              </span>
             )}
             {listing.crossStreets && (
-              <>
-                <span className="px-1.5 text-muted">·</span>
-                <span className="whitespace-nowrap text-muted">
-                  <PinIcon /> {listing.crossStreets}
-                </span>
-              </>
+              // Pin icon acts as the separator (no middot) so a wrapped metro line
+              // reads "📍 м. …" cleanly instead of starting with a dangling "·".
+              <span className="whitespace-nowrap pl-2 text-muted">
+                <PinIcon /> {listing.crossStreets}
+              </span>
             )}
           </div>
 
@@ -168,20 +170,22 @@ export function ListingCard({
             </div>
           )}
 
-          {/* Footer: hairline, then verified (left) + gratuity plate (right) */}
+          {/* Footer: hairline, then verified (left) + gratuity plate (right).
+              flex-wrap so a narrow card drops the plate to its own line instead
+              of overflowing/clipping; shrink-0 keeps each item intact. */}
           {(listing.verified || listing.gratuityLabel) && (
             <>
               <div className="mt-0.5 h-px bg-black/[0.08]" />
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
                 {listing.verified ? (
-                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-leaf">
+                  <span className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-leaf">
                     <CheckIcon /> Подтверждён
                   </span>
                 ) : (
                   <span />
                 )}
                 {listing.gratuityLabel && (
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#7C3AED]/[0.09] px-2.5 py-1 text-xs font-semibold text-[#6D28D9]">
+                  <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-[#7C3AED]/[0.09] px-2 py-1 text-[11px] font-semibold text-[#6D28D9]">
                     <GiftIcon /> Благодарность {listing.gratuityLabel}
                   </span>
                 )}
