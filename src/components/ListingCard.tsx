@@ -82,8 +82,8 @@ export function ListingCard({
   const rentAmount = hasPerMonth ? listing.rentLabel.slice(0, -PER_MONTH.length).trim() : listing.rentLabel;
 
   return (
-    <article className="relative overflow-hidden rounded-xl border border-black/[0.08] bg-white">
-      <Link href={listing.href} className="block">
+    <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-black/[0.08] bg-white">
+      <Link href={listing.href} className="flex flex-1 flex-col">
         <div className="relative aspect-[4/3] w-full bg-black/[0.04]">
           {listing.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -122,7 +122,7 @@ export function ListingCard({
           )}
         </div>
 
-        <div className="flex flex-col gap-2.5 p-5">
+        <div className="flex flex-1 flex-col gap-2.5 p-5">
           {/* Price leads; "/мес" split off smaller & muted */}
           <div className="leading-none">
             <span className="font-display text-2xl font-bold text-ink">{rentAmount}</span>
@@ -171,12 +171,14 @@ export function ListingCard({
           )}
 
           {/* Footer: hairline, then verified (left) + gratuity plate (right).
+              mt-auto pins it to the bottom of the tile so footers line up across a
+              row (extra height sits above it, not as odd trailing space below).
               flex-wrap so a narrow card drops the plate to its own line instead
               of overflowing/clipping; shrink-0 keeps each item intact. */}
           {(listing.verified || listing.gratuityLabel) && (
-            <>
-              <div className="mt-0.5 h-px bg-black/[0.08]" />
-              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+            <div className="mt-auto">
+              <div className="h-px bg-black/[0.08]" />
+              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
                 {listing.verified ? (
                   <span className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-leaf">
                     <CheckIcon /> Подтверждён
@@ -190,7 +192,7 @@ export function ListingCard({
                   </span>
                 )}
               </div>
-            </>
+            </div>
           )}
         </div>
       </Link>
