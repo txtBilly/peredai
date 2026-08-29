@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -6,6 +7,16 @@ import type { Locale } from '@/i18n/config';
 import SiteHeader from '@/components/SiteHeader';
 import { redirectIfBanned } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
+
+export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
+  const ru = params.locale !== 'en';
+  return {
+    title: ru ? 'Поиск жилья' : 'Find a home',
+    description: ru
+      ? 'Смотрите квартиры, комнаты и студии от прежних жильцов в Москве и Санкт-Петербурге — без риелторов и комиссии.'
+      : 'Browse apartments, rooms and studios from previous tenants in Moscow and Saint Petersburg — no realtors, no commission.',
+  };
+}
 
 // Same ssr:false pattern as /list: this page's content depends on a
 // client-only first fetch (search/filters against Supabase, plus the

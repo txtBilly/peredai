@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { notFound, redirect } from 'next/navigation';
 import { isLocale } from '@/i18n/config';
@@ -5,6 +6,16 @@ import type { Locale } from '@/i18n/config';
 import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import SiteHeader from '@/components/SiteHeader';
+
+export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
+  const ru = params.locale !== 'en';
+  return {
+    title: ru ? 'Разместить объявление' : 'Post a listing',
+    description: ru
+      ? 'Разместите объявление и передайте свою квартиру следующему жильцу напрямую — без риелторов и комиссии.'
+      : 'Post a listing and hand your apartment to the next tenant directly — no realtors, no commission.',
+  };
+}
 
 // The listing form is entirely client-driven (Supabase reads, nothing
 // server-fetchable) and was hitting hydration mismatches on its loading text,

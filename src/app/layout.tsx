@@ -22,16 +22,43 @@ const logoFont = Audiowide({
 });
 
 export const metadata: Metadata = {
-  title: 'Ten2Ten — Передай квартиру следующему',
+  title: {
+    default: 'Ten2Ten — аренда квартир без риелторов и комиссии в Москве и СПб',
+    template: '%s — Ten2Ten',
+  },
   description:
-    'Проверенное сообщество, где арендаторы передают квартиры друг другу напрямую. Без посредников. Москва и Санкт-Петербург.',
+    'Ten2Ten — передача аренды напрямую между жильцами, без посредников и комиссии. Снять квартиру, комнату или студию в Москве и Санкт-Петербурге.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   manifest: '/manifest.json',
+  applicationName: 'Ten2Ten',
+  keywords: [
+    'аренда квартир',
+    'снять квартиру без посредников',
+    'аренда без риелтора',
+    'аренда без комиссии',
+    'снять комнату',
+    'снять студию',
+    'аренда квартир Москва',
+    'аренда квартир Санкт-Петербург',
+    'Ten2Ten',
+  ],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+  },
   openGraph: {
-    title: 'Ten2Ten — Передай квартиру следующему',
+    siteName: 'Ten2Ten',
+    title: 'Ten2Ten — аренда квартир без риелторов и комиссии',
     description:
-      'Проверенное сообщество, где арендаторы передают квартиры друг другу напрямую. Без посредников.',
+      'Передача аренды напрямую между жильцами, без посредников и комиссии. Москва и Санкт-Петербург.',
     type: 'website',
+    locale: 'ru_RU',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Ten2Ten — аренда квартир без риелторов и комиссии',
+    description: 'Передача аренды напрямую между жильцами, без посредников. Москва и Санкт-Петербург.',
   },
   appleWebApp: {
     capable: true,

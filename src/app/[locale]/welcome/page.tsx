@@ -1,8 +1,19 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getDictionary, isLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { notFound } from 'next/navigation';
 import SiteHeader from '@/components/SiteHeader';
+
+export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
+  const ru = params.locale !== 'en';
+  return {
+    title: ru ? 'Как это работает' : 'How it works',
+    description: ru
+      ? 'Как устроен Ten2Ten: жильцы передают аренду напрямую, без риелторов и комиссии. Проверка личности, безопасные чаты, благодарность за передачу.'
+      : 'How Ten2Ten works: tenants hand rentals over directly, with no realtors or commission. Verified identities, safe chats, a thank-you for passing it on.',
+  };
+}
 
 // Public marketing landing — the acquisition front door. Anonymous visitors land
 // on Browse by default; this lives at /welcome and is linked from the nav and

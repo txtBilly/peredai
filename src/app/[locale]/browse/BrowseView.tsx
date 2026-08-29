@@ -437,8 +437,10 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           aria-label={b.searchPlaceholder}
           className="w-full rounded-lg border border-black/15 bg-white px-4 py-3 text-base text-ink placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-cobalt sm:flex-1"
         />
-        {/* Filters + view toggle share one row (esp. on mobile). */}
-        <div className="flex shrink-0 items-center gap-2">
+        {/* Filters + view toggle share one row. On mobile the row spans full
+            width with space-between: Фильтры on the left, view toggle on the
+            right. On desktop it reverts to a compact group next to the search. */}
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
