@@ -24,6 +24,37 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { FiltersSheet } from '@/components/FiltersSheet';
 import { useHideOnScroll } from '@/lib/useHideOnScroll';
 
+// Toolbar icons (filters + view toggle). Kept local to the browse toolbar.
+function IconSliders() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <line x1="6" y1="4" x2="6" y2="20" />
+      <line x1="12" y1="4" x2="12" y2="20" />
+      <line x1="18" y1="4" x2="18" y2="20" />
+      <circle cx="6" cy="9" r="2.3" fill="white" />
+      <circle cx="12" cy="15" r="2.3" fill="white" />
+      <circle cx="18" cy="8" r="2.3" fill="white" />
+    </svg>
+  );
+}
+function IconList() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+    </svg>
+  );
+}
+function IconGrid() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="3" y="3" width="8" height="8" rx="1.6" />
+      <rect x="13" y="3" width="8" height="8" rx="1.6" />
+      <rect x="3" y="13" width="8" height="8" rx="1.6" />
+      <rect x="13" y="13" width="8" height="8" rx="1.6" />
+    </svg>
+  );
+}
+
 type ListingRow = {
   id: string;
   lister_id: string;
@@ -437,66 +468,75 @@ export default function BrowseView({ locale }: { locale: Locale }) {
           aria-label={b.searchPlaceholder}
           className="w-full rounded-lg border border-black/15 bg-white px-4 py-3 text-base text-ink placeholder:text-muted outline-none focus-visible:ring-2 focus-visible:ring-cobalt sm:flex-1"
         />
-        {/* Filters + view toggle share one row. On mobile the row spans full
-            width with space-between: Фильтры on the left, view toggle on the
-            right. On desktop it reverts to a compact group next to the search. */}
+        {/* Control row: city (first, left) + filter icon & view toggle (right).
+            Full-width with space-between on mobile; compact group on desktop. */}
         <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
-          <button
-            type="button"
-            onClick={() => setFiltersOpen(true)}
-            className="shrink-0 rounded-lg border border-black/15 bg-white px-4 py-2.5 text-sm font-medium text-ink hover:border-black/30"
-          >
-            {b.filtersCta}
-          </button>
-          <div className="flex shrink-0 gap-1">
-            {(['list', 'grid'] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                aria-pressed={view === v}
-                className={`rounded-lg border px-3 py-2.5 text-sm transition ${
-                  view === v ? 'border-cobalt bg-cobalt/10 font-semibold text-cobalt' : 'border-black/15 text-muted hover:border-black/30'
-                }`}
-              >
-                {locale === 'en' ? (v === 'list' ? 'List' : 'Grid') : v === 'list' ? 'Список' : 'Плитка'}
-              </button>
-            ))}
+          {/* City filter — pill-styled select, leads the toolbar. min-w-0 lets a
+              long city name (Санкт-Петербург) shrink+truncate on tiny screens
+              instead of overflowing the icon group. */}
+          <div className="relative min-w-0">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cobalt"
+              fill="currentColor"
+            >
+              <path d="M12 2c-3.9 0-7 3.1-7 7 0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" />
+            </svg>
+            <select
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              aria-label={b.cityFilterLabel}
+              className="w-full truncate appearance-none rounded-full border border-black/20 bg-white py-2.5 pl-9 pr-8 text-[15px] font-medium text-ink transition hover:border-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
+            >
+              <option value="">{b.cityAll}</option>
+              {cityOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted">▾</span>
+          </div>
+
+          {/* Filter icon + segmented view toggle */}
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              aria-label={b.filtersCta}
+              title={b.filtersCta}
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-black/15 bg-white text-ink transition hover:border-black/30"
+            >
+              <IconSliders />
+            </button>
+            <div className="flex rounded-xl bg-black/[0.06] p-[3px]">
+              {(['list', 'grid'] as const).map((v) => {
+                const label = locale === 'en' ? (v === 'list' ? 'List' : 'Grid') : v === 'list' ? 'Список' : 'Плитка';
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setView(v)}
+                    aria-pressed={view === v}
+                    aria-label={label}
+                    title={label}
+                    className={`flex h-[38px] w-11 items-center justify-center rounded-lg transition ${
+                      view === v ? 'bg-white text-cobalt shadow-sm' : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    {v === 'list' ? <IconList /> : <IconGrid />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
       </div>
 
-      {/* Scope row: city selector pill + type tabs */}
+      {/* Scope row: type tabs (city now lives in the toolbar above) */}
       <div className="mt-4 flex flex-wrap items-center gap-1.5 sm:gap-2">
-        {/* City filter — a pill-styled select leading the type tabs */}
-        <div className="relative shrink-0">
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cobalt"
-            fill="currentColor"
-          >
-            <path d="M12 2c-3.9 0-7 3.1-7 7 0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" />
-          </svg>
-          <select
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            aria-label={b.cityFilterLabel}
-            className="appearance-none rounded-full border border-black/20 bg-white py-1.5 pl-8 pr-7 text-[13px] font-medium text-ink transition hover:border-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt sm:py-2 sm:pl-9 sm:pr-8 sm:text-[15px]"
-          >
-            <option value="">{b.cityAll}</option>
-            {cityOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted">▾</span>
-        </div>
-
-        <span className="mx-1 hidden h-6 w-px bg-black/10 sm:block" aria-hidden="true" />
-
         {typeChips.map(({ value, label }) => {
           const selected = typeFilter === value;
           return (

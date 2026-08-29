@@ -93,10 +93,11 @@ export default async function SiteHeader({ locale }: { locale: Locale }) {
   return (
     <AutoHideHeader>
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4">
-      <Link href={`/${locale}/browse`} aria-label={dict.brand.name} className="inline-flex shrink-0 flex-col items-center">
+      <Link href={`/${locale}/browse`} aria-label={dict.brand.name} className="inline-flex shrink-0 items-center gap-2.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ten2ten-logo.svg?v=1" alt={dict.brand.name} className="h-[22px] w-auto" />
-        <span className="mt-1.5 text-center text-[12px] font-medium lowercase leading-none tracking-[0.06em] text-muted">
+        <span aria-hidden="true" className="h-7 w-px bg-black/15" />
+        <span className="max-w-[6.5rem] text-[11.5px] font-medium lowercase leading-[1.15] tracking-[0.02em] text-muted">
           {dict.brand.slogan}
         </span>
       </Link>
