@@ -391,9 +391,16 @@ export default function BrowseView({ locale }: { locale: Locale }) {
     }
   }
 
+  // Short pill labels for the room-count tabs so the whole row packs tighter
+  // (avoids "3+ комн." orphaning to a second line). Full labels stay on the
+  // cards and in the filter sheet.
+  const shortTypeLabel: Partial<Record<ListingTypeValue, string>> =
+    locale === 'en'
+      ? { '1br': '1BR', '2br': '2BR', '3br_plus': '3+' }
+      : { '1br': '1-к', '2br': '2-к', '3br_plus': '3+ к' };
   const typeChips: { value: 'all' | ListingTypeValue; label: string }[] = [
     { value: 'all', label: b.typeAll },
-    ...LISTING_TYPES.map((value) => ({ value, label: typeLabels[value] })),
+    ...LISTING_TYPES.map((value) => ({ value, label: shortTypeLabel[value] ?? typeLabels[value] })),
   ];
 
   // Active-filter chips: one per applied filter, each removable; plus Reset all.
@@ -535,8 +542,10 @@ export default function BrowseView({ locale }: { locale: Locale }) {
       </div>
       </div>
 
-      {/* Scope row: type tabs (city now lives in the toolbar above) */}
-      <div className="mt-4 flex flex-wrap items-center gap-1.5 sm:gap-2">
+      {/* Scope row: type tabs (city now lives in the toolbar above). On mobile a
+          3-column grid → two even rows of three, so nothing orphans; on desktop
+          it flows as an inline wrapping row. */}
+      <div className="mt-4 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center">
         {typeChips.map(({ value, label }) => {
           const selected = typeFilter === value;
           return (
@@ -545,7 +554,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
               type="button"
               onClick={() => setTypeFilter(value)}
               aria-pressed={selected}
-              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] transition sm:px-5 sm:py-2 sm:text-[15px] ${
+              className={`justify-self-start whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] transition sm:justify-self-auto sm:px-5 sm:py-2 sm:text-[15px] ${
                 selected
                   ? 'bg-cobalt font-bold text-white shadow-sm ring-1 ring-cobalt'
                   : 'border border-black/20 bg-white font-medium text-ink hover:border-black/40'
