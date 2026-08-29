@@ -397,7 +397,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
   const shortTypeLabel: Partial<Record<ListingTypeValue, string>> =
     locale === 'en'
       ? { '1br': '1BR', '2br': '2BR', '3br_plus': '3+' }
-      : { '1br': '1-к', '2br': '2-к', '3br_plus': '3+ к' };
+      : { '1br': '1-ком', '2br': '2-ком', '3br_plus': '3+ ком' };
   const typeChips: { value: 'all' | ListingTypeValue; label: string }[] = [
     { value: 'all', label: b.typeAll },
     ...LISTING_TYPES.map((value) => ({ value, label: shortTypeLabel[value] ?? typeLabels[value] })),
@@ -545,7 +545,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
       {/* Scope row: type tabs (city now lives in the toolbar above). On mobile a
           single horizontally-scrollable row keeps all six on one line (swipe for
           the last ones); the strip bleeds to the screen edges. Desktop wraps. */}
-      <div className="mt-4 -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+      <div className="mt-3 -mx-5 flex gap-2 overflow-x-auto px-5 py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:py-0 [&::-webkit-scrollbar]:hidden">
         {typeChips.map(({ value, label }) => {
           const selected = typeFilter === value;
           return (
