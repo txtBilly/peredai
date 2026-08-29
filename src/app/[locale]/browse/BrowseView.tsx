@@ -543,9 +543,9 @@ export default function BrowseView({ locale }: { locale: Locale }) {
       </div>
 
       {/* Scope row: type tabs (city now lives in the toolbar above). On mobile a
-          3-column grid → two even rows of three, so nothing orphans; on desktop
-          it flows as an inline wrapping row. */}
-      <div className="mt-4 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          single horizontally-scrollable row keeps all six on one line (swipe for
+          the last ones); the strip bleeds to the screen edges. Desktop wraps. */}
+      <div className="mt-4 -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {typeChips.map(({ value, label }) => {
           const selected = typeFilter === value;
           return (
@@ -554,7 +554,7 @@ export default function BrowseView({ locale }: { locale: Locale }) {
               type="button"
               onClick={() => setTypeFilter(value)}
               aria-pressed={selected}
-              className={`justify-self-start whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] transition sm:justify-self-auto sm:px-5 sm:py-2 sm:text-[15px] ${
+              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] transition sm:px-5 sm:py-2 sm:text-[15px] ${
                 selected
                   ? 'bg-cobalt font-bold text-white shadow-sm ring-1 ring-cobalt'
                   : 'border border-black/20 bg-white font-medium text-ink hover:border-black/40'
