@@ -464,19 +464,25 @@
         "body": "Browse verified apartments being passed on directly by the current renter."
       },
       {
-        "title": "Buy tokens to connect",
-        "body": "One pack is 3 contact tokens. Every member is identity-verified."
+        "title": "Buy tokens",
+        "body": "One pack of tokens is 3 contacts. You can talk to only one landlord at a time. Every member is identity-verified."
       },
       {
         "title": "Meet & take it over",
-        "body": "Chat, arrange a viewing, and take over the lease. No agent, no fee."
+        "body": "View the place, discuss, and agree on the move-in date and thank-you. Make sure the owner is ready to rent it to you at the stated price. Pay the landlord for their service (off-platform)."
       }
     ],
-    "benefits": [
-      "Skip the middleman — little to no cost",
-      "Arrange your move-in/out dates flexibly",
-      "Agree on the furniture"
-    ],
+    "value": {
+      "giveTitle": "— for the one leaving:",
+      "giveItems": [
+        "Pass your apartment on to the next tenant and receive a thank-you."
+      ],
+      "seekTitle": "— for the one looking:",
+      "seekItems": [
+        "Looking for a place? Reach the leaving tenant and get access before it lands in the hands of realtors.",
+        "No middleman — lower costs and priority viewing."
+      ]
+    },
     "reviews": [
       {
         "quote": "Found my one-bedroom in Khamovniki in a week — no agent, no fee, just messaged the person moving out. Wild that this actually works.",

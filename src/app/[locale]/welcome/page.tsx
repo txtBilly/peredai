@@ -15,6 +15,33 @@ export function generateMetadata({ params }: { params: { locale: string } }): Me
   };
 }
 
+// Value-prop icons for the hero (leaving vs. looking).
+function IconGift() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8S10.5 3 7.8 4.2 8.5 8 12 8Zm0 0s1.5-5 4.2-3.8S15.5 8 12 8Z" />
+    </svg>
+  );
+}
+function IconSearch() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.2-3.2" />
+    </svg>
+  );
+}
+function IconWallet() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+      <path d="M20 8h-5a2 2 0 0 0 0 4h5a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1Z" />
+      <path d="M16.5 10h.01" />
+    </svg>
+  );
+}
+
 // Public marketing landing — the acquisition front door. Anonymous visitors land
 // on Browse by default; this lives at /welcome and is linked from the nav and
 // used for campaigns. Copy is the current dictionary copy pending the copy sweep.
@@ -25,7 +52,6 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
 
   const w = dict.welcome;
   const steps = w.steps.map((s, i) => ({ n: String(i + 1), title: s.title, body: s.body }));
-  const benefits = w.benefits;
   const reviews = w.reviews;
 
   return (
@@ -52,14 +78,36 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
           })()}
         </h1>
         <p className="mt-5 max-w-3xl text-xl leading-relaxed text-muted">{dict.home.heroSubtitle}</p>
-        <ul className="mt-5 flex flex-col gap-2.5 text-lg text-ink/90">
-          {benefits.map((b) => (
-            <li key={b} className="flex items-start gap-2.5">
-              <span className="mt-0.5 text-xl font-bold text-leaf" aria-hidden="true">✓</span>
-              <span>{b}</span>
-            </li>
-          ))}
-        </ul>
+
+        {/* Value props, split by audience: the one handing over vs. the one looking. */}
+        <div className="mt-6 flex max-w-3xl flex-col gap-5">
+          <div>
+            <p className="mb-2.5 text-sm font-semibold text-cobalt">{w.value.giveTitle}</p>
+            <ul className="flex flex-col gap-3 text-lg text-ink/90">
+              {w.value.giveItems.map((t) => (
+                <li key={t} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cobalt/12 text-cobalt">
+                    <IconGift />
+                  </span>
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-2.5 text-sm font-semibold text-cobalt">{w.value.seekTitle}</p>
+            <ul className="flex flex-col gap-3 text-lg text-ink/90">
+              {w.value.seekItems.map((t, i) => (
+                <li key={t} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cobalt/12 text-cobalt">
+                    {i === 0 ? <IconSearch /> : <IconWallet />}
+                  </span>
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
             href={`/${locale}/browse`}
@@ -85,7 +133,7 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
               <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-cobalt/15 font-display text-lg font-bold text-cobalt">
                 {s.n}
               </div>
-              <p className="mb-1.5 text-lg font-semibold text-ink">{s.title}</p>
+              <p className="mb-1.5 text-[14.4px] font-semibold text-ink">{s.title}</p>
               <p className="text-base leading-relaxed text-muted">{s.body}</p>
             </div>
           ))}
