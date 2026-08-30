@@ -74,6 +74,8 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-5 pb-8 pt-6 sm:pt-10">
+        {/* Single column so the title, bullets and buttons share one width. */}
+        <div className="max-w-3xl">
         <h1 className="font-display text-[27px] font-bold leading-tight text-ink sm:text-[45px]">
           {(() => {
             // Break after the opening question ("Moving soon?" / "¿Te mudas pronto?")
@@ -92,7 +94,7 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
         </h1>
 
         {/* Value props for the one looking (the handover message is now the subtitle). */}
-        <div className="mt-6 max-w-3xl">
+        <div className="mt-6">
           <p className="mb-2.5 text-sm font-semibold text-cobalt">{w.value.seekTitle}</p>
           <ul className="flex flex-col gap-3 text-lg text-ink/90">
             {w.value.seekItems.map((t, i) => (
@@ -118,6 +120,7 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
           >
             {w.listCta}
           </Link>
+        </div>
         </div>
       </section>
 
