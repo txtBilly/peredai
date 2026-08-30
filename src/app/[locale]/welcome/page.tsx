@@ -73,8 +73,7 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
       <SiteHeader locale={locale} />
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-5 pb-8 pt-10 sm:pt-16">
-        <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">{dict.home.heroEyebrow}</p>
+      <section className="mx-auto max-w-6xl px-5 pb-8 pt-6 sm:pt-10">
         <h1 className="font-display text-[27px] font-bold leading-tight text-ink sm:text-[45px]">
           {(() => {
             // Break after the opening question ("Moving soon?" / "¿Te mudas pronto?")
