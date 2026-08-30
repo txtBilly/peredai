@@ -88,7 +88,7 @@
   },
   "home": {
     "heroEyebrow": "No brokers · Pass your apartment on directly",
-    "heroTitle": "Moving soon? Pass your apartment to the next person.",
+    "heroTitle": "Moving soon? Pass your apartment on to the next tenant and receive a thank-you.",
     "heroSubtitle": "Pass your apartment on to the next tenant and receive a thank-you.",
     "ctaSeeker": "Tell us what you're looking for",
     "ctaLister": "List your apartment",
@@ -476,7 +476,7 @@
       "seekTitle": "— for the one looking:",
       "seekItems": [
         "Looking for a place? Reach the leaving tenant and get access before it lands in the hands of realtors.",
-        "No middleman — lower costs and priority viewing."
+        "No middleman — get access to the apartment first, before it reaches intermediaries."
       ]
     },
     "reviews": [

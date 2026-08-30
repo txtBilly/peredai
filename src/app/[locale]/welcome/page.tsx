@@ -53,7 +53,7 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-5 pb-8 pt-10 sm:pt-16">
         <p className="mb-4 text-sm uppercase tracking-wide text-cobalt">{dict.home.heroEyebrow}</p>
-        <h1 className="font-display text-4xl font-bold leading-tight text-ink sm:text-6xl">
+        <h1 className="font-display text-[27px] font-bold leading-tight text-ink sm:text-[45px]">
           {(() => {
             // Break after the opening question ("Moving soon?" / "¿Te mudas pronto?")
             // so the second clause drops to its own line.
@@ -63,13 +63,12 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
               <>
                 {dict.home.heroTitle.slice(0, idx + 1)}
                 <br />
-                {/* Second line ~20% smaller so it fits on one line. */}
-                <span className="text-3xl sm:text-5xl">{dict.home.heroTitle.slice(idx + 2)}</span>
+                {/* Second line a step smaller. */}
+                <span className="text-[22px] sm:text-[36px]">{dict.home.heroTitle.slice(idx + 2)}</span>
               </>
             );
           })()}
         </h1>
-        <p className="mt-5 max-w-3xl text-xl leading-relaxed text-muted">{dict.home.heroSubtitle}</p>
 
         {/* Value props for the one looking (the handover message is now the subtitle). */}
         <div className="mt-6 max-w-3xl">
