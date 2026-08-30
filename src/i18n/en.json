@@ -296,6 +296,13 @@
     "checkingVerification": "Checking your verification status…",
     "loadingDraft": "Loading your draft…",
     "title": "Create your listing",
+    "createNotes": [
+      "Before posting, please make sure the owner is ready to rent the apartment at the stated price.",
+      "Describe the apartment and its details as accurately as possible. Inaccurate or outdated listings will be removed, and anyone posting fake or irrelevant listings will be permanently banned. Bad-faith seekers will be banned too.",
+      "You can post up to 3 listings per year. We work to keep the platform for real tenants.",
+      "Settlement for your involvement happens off-platform. Ten2Ten is not responsible for these transactions.",
+      "We recommend introducing the prospective tenant as your acquaintance."
+    ],
     "sectionPhotos": "Photos",
     "sectionLocation": "Location",
     "sectionApartment": "The apartment",

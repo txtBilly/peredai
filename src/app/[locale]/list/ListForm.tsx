@@ -628,6 +628,18 @@ export default function ListForm({ locale }: { locale: Locale }) {
         </p>
       </div>
 
+      {/* Guidance before posting — shown only when creating a new listing. */}
+      {!isEditingActive && (
+        <ul className="-mt-4 mb-8 flex flex-col gap-2 text-[13px] leading-relaxed text-muted">
+          {l.createNotes.map((note) => (
+            <li key={note} className="flex gap-2">
+              <span aria-hidden="true" className="text-muted/70">•</span>
+              <span>{note}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {!isEditingActive && activeCount > 0 && (
         <p role="alert" className="mb-6 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
           {l.blockActiveListing}
