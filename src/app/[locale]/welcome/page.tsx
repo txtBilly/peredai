@@ -16,11 +16,26 @@ export function generateMetadata({ params }: { params: { locale: string } }): Me
 }
 
 // Value-prop icons for the hero (for the one looking).
+function IconInfo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8h.01M11 12h1v4h1" />
+    </svg>
+  );
+}
 function IconSearch() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.2-3.2" />
+    </svg>
+  );
+}
+function IconChat() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z" />
     </svg>
   );
 }
@@ -32,6 +47,13 @@ function IconWallet() {
       <path d="M16.5 10h.01" />
     </svg>
   );
+}
+
+function SeekIcon({ i }: { i: number }) {
+  if (i === 0) return <IconInfo />;
+  if (i === 1) return <IconSearch />;
+  if (i === 2) return <IconChat />;
+  return <IconWallet />;
 }
 
 // Public marketing landing — the acquisition front door. Anonymous visitors land
@@ -77,7 +99,7 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
             {w.value.seekItems.map((t, i) => (
               <li key={t} className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cobalt/12 text-cobalt">
-                  {i === 0 ? <IconSearch /> : <IconWallet />}
+                  <SeekIcon i={i} />
                 </span>
                 <span>{t}</span>
               </li>
