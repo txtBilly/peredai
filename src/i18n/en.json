@@ -89,7 +89,7 @@
   "home": {
     "heroEyebrow": "No brokers · Pass your apartment on directly",
     "heroTitle": "Moving soon? Pass your apartment to the next person.",
-    "heroSubtitle": "A small verified community where renters hand apartments directly to one another.",
+    "heroSubtitle": "Pass your apartment on to the next tenant and receive a thank-you.",
     "ctaSeeker": "Tell us what you're looking for",
     "ctaLister": "List your apartment",
     "trustVerified": "Every member is identity-verified",
@@ -473,10 +473,6 @@
       }
     ],
     "value": {
-      "giveTitle": "— for the one leaving:",
-      "giveItems": [
-        "Pass your apartment on to the next tenant and receive a thank-you."
-      ],
       "seekTitle": "— for the one looking:",
       "seekItems": [
         "Looking for a place? Reach the leaving tenant and get access before it lands in the hands of realtors.",

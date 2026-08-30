@@ -15,15 +15,7 @@ export function generateMetadata({ params }: { params: { locale: string } }): Me
   };
 }
 
-// Value-prop icons for the hero (leaving vs. looking).
-function IconGift() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="8" width="18" height="4" rx="1" />
-      <path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8S10.5 3 7.8 4.2 8.5 8 12 8Zm0 0s1.5-5 4.2-3.8S15.5 8 12 8Z" />
-    </svg>
-  );
-}
+// Value-prop icons for the hero (for the one looking).
 function IconSearch() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -79,34 +71,19 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
         </h1>
         <p className="mt-5 max-w-3xl text-xl leading-relaxed text-muted">{dict.home.heroSubtitle}</p>
 
-        {/* Value props, split by audience: the one handing over vs. the one looking. */}
-        <div className="mt-6 flex max-w-3xl flex-col gap-5">
-          <div>
-            <p className="mb-2.5 text-sm font-semibold text-cobalt">{w.value.giveTitle}</p>
-            <ul className="flex flex-col gap-3 text-lg text-ink/90">
-              {w.value.giveItems.map((t) => (
-                <li key={t} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cobalt/12 text-cobalt">
-                    <IconGift />
-                  </span>
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="mb-2.5 text-sm font-semibold text-cobalt">{w.value.seekTitle}</p>
-            <ul className="flex flex-col gap-3 text-lg text-ink/90">
-              {w.value.seekItems.map((t, i) => (
-                <li key={t} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cobalt/12 text-cobalt">
-                    {i === 0 ? <IconSearch /> : <IconWallet />}
-                  </span>
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* Value props for the one looking (the handover message is now the subtitle). */}
+        <div className="mt-6 max-w-3xl">
+          <p className="mb-2.5 text-sm font-semibold text-cobalt">{w.value.seekTitle}</p>
+          <ul className="flex flex-col gap-3 text-lg text-ink/90">
+            {w.value.seekItems.map((t, i) => (
+              <li key={t} className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cobalt/12 text-cobalt">
+                  {i === 0 ? <IconSearch /> : <IconWallet />}
+                </span>
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
