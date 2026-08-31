@@ -112,6 +112,7 @@ export default async function AccountPage({ params }: { params: { locale: string
             { href: `/${locale}/saved`, label: a.savedPlaces, icon: '♡', danger: false },
             { href: `/${locale}/account/profile`, label: a.editProfile, icon: '✎', danger: false },
             { href: `/${locale}/account/notifications`, label: a.notifications, icon: '🔔', danger: false },
+            { href: `/${locale}/support`, label: a.contactSupport, icon: '✉', danger: false },
             { href: `/${locale}/account/delete`, label: a.deleteAccount, icon: '⊗', danger: true },
           ] as const).map(({ href, label, icon, danger }) => (
             <li key={href}>

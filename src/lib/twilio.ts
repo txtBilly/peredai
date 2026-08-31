@@ -118,6 +118,7 @@ export async function sendEmail(params: {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 }): Promise<void> {
   const provider = resolveEmailProvider();
   const from = fromAddress();
@@ -149,6 +150,7 @@ export async function sendEmail(params: {
       subject: params.subject,
       html: params.html,
       text,
+      ...(params.replyTo ? { replyTo: params.replyTo } : {}),
     });
     console.log('[email] sent via smtp', { id: info.messageId, to: params.to, subject: params.subject });
     return;

@@ -46,6 +46,7 @@ const T = {
     ],
     copyright: '© 2026 Ten2Ten · ten2ten.ru',
     verifyNote: 'Проверка через Сбер ID и Т‑Банк',
+    supportLabel: 'Поддержка',
   },
   en: {
     slogan: 'be your own realtor',
@@ -84,6 +85,7 @@ const T = {
     ],
     copyright: '© 2026 Ten2Ten · ten2ten.ru',
     verifyNote: 'Verified via Sber ID and T‑Bank',
+    supportLabel: 'Support',
   },
 } as const;
 
@@ -151,6 +153,9 @@ export default function SiteFooter({ locale }: { locale: Locale }) {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-5 py-4 text-[13px] text-[#7d8794] sm:flex-row sm:items-center sm:justify-between">
           <span>{t.copyright}</span>
+          <a href="mailto:support@ten2ten.ru" className="transition-colors hover:text-white">
+            {t.supportLabel}: support@ten2ten.ru
+          </a>
           <span>{t.verifyNote}</span>
         </div>
       </div>
