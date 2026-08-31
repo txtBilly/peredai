@@ -13,9 +13,13 @@ export type NotifyEvent = 'bid_accepted' | 'chat_message' | 'listing_freed' | 'e
 
 type EmailContent = { subject: string; html: string };
 
-// Base URL for links in emails. NEXT_PUBLIC_APP_URL is set in the Vercel env;
-// fall back to the production domain so links are never broken.
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://ten2ten.ru').replace(/\/+$/, '');
+// Base URL for links in emails. Never emit a localhost URL — recipients open
+// these from their inbox — so fall back to the production domain whenever the
+// configured URL is missing or points at localhost (e.g. running dev locally).
+const APP_URL = (() => {
+  const raw = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '');
+  return raw && !/localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(raw) ? raw : 'https://ten2ten.ru';
+})();
 
 // Build a simple, email-client-safe HTML body: the message plus a CTA button
 // and a plain fallback link to the site.

@@ -3,7 +3,13 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { sendEmail } from '@/lib/twilio';
 
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? 'support@ten2ten.ru';
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://ten2ten.ru').replace(/\/+$/, '');
+// Email links must never point at localhost — support clicks them from their
+// inbox. Use the configured URL only when it's a real host; otherwise the prod domain.
+function appUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_APP_URL ?? '').trim().replace(/\/+$/, '');
+  return raw && !/localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(raw) ? raw : 'https://ten2ten.ru';
+}
+const APP_URL = appUrl();
 
 function esc(s: string): string {
   return s
