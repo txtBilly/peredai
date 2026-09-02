@@ -17,6 +17,9 @@ const T = {
     emailPlaceholder: 'you@example.com',
     noAccountPrompt: 'Нет аккаунта?',
     signUpLink: 'Зарегистрироваться',
+    consentPd: 'согласие на обработку персональных данных',
+    consentPrivacy: 'Политику конфиденциальности',
+    consentRequired: 'Отметьте согласие на обработку персональных данных, чтобы продолжить.',
   },
   en: {
     subtitle: 'Sign in with your bank — Sber ID or T-Bank. No password needed.',
@@ -29,6 +32,9 @@ const T = {
     emailPlaceholder: 'you@example.com',
     noAccountPrompt: 'No account?',
     signUpLink: 'Sign up',
+    consentPd: 'processing of my personal data',
+    consentPrivacy: 'Privacy Policy',
+    consentRequired: 'Please tick the personal-data consent to continue.',
   },
 } as const;
 
@@ -39,6 +45,7 @@ export default function SignInView({ params }: { params: { locale: string } }) {
   const t = T[locale] ?? T.ru;
 
   const [email, setEmail] = useState('');
+  const [consented, setConsented] = useState(false);
   const [status, setStatus] = useState<'idle' | 'submitting'>('idle');
   const [error, setError] = useState('');
 
@@ -59,6 +66,10 @@ export default function SignInView({ params }: { params: { locale: string } }) {
     p === 'sber' ? v.providerSber : p === 'tid' ? v.providerTid : v.providerMock;
 
   async function loginBank(provider: string) {
+    if (!consented) {
+      setError(t.consentRequired);
+      return;
+    }
     setError('');
     setStatus('submitting');
     try {
@@ -117,13 +128,36 @@ export default function SignInView({ params }: { params: { locale: string } }) {
         </p>
       )}
 
+      {bankProviders.length > 0 && (
+        <label className="mb-4 flex items-start gap-3 text-sm text-muted">
+          <input
+            type="checkbox"
+            required
+            checked={consented}
+            onChange={(e) => setConsented(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/30 bg-white accent-cobalt"
+          />
+          <span>
+            {locale === 'en' ? 'I consent to the ' : 'Я даю '}
+            <Link href={`/${locale}/personal-data-consent`} className="text-ink underline-offset-2 hover:underline">
+              {t.consentPd}
+            </Link>
+            {locale === 'en' ? ' and accept the ' : ' и принимаю '}
+            <Link href={`/${locale}/privacy`} className="text-ink underline-offset-2 hover:underline">
+              {t.consentPrivacy}
+            </Link>
+            .
+          </span>
+        </label>
+      )}
+
       <div className="flex flex-col gap-2.5">
         {bankProviders.map((p) => (
           <button
             key={p}
             type="button"
             onClick={() => loginBank(p)}
-            disabled={status === 'submitting'}
+            disabled={status === 'submitting' || !consented}
             className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
           >
             {status === 'submitting' ? t.starting : providerLabel(p)}
