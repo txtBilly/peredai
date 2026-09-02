@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { locales, defaultLocale } from '@/i18n/config';
+import { CURRENT_CONSENT_VERSION } from '@/lib/consent';
 
 // Routes that require authentication
 const PROTECTED = ['/account', '/verify', '/list'];
@@ -82,6 +83,19 @@ export async function middleware(req: NextRequest) {
   const VERIFY_EXEMPT = ['/gate', '/signin', '/signup', '/reset', '/verify', '/banned'];
   const isVerifyExempt = VERIFY_EXEMPT.some((p) => bare === p || bare.startsWith(p + '/'));
 
+  // Pages a signed-in member with an outdated consent version may still reach
+  // without being bounced to the re-consent prompt: the prompt itself, the auth
+  // screens, and the legal documents (so they can actually read what changed).
+  const RECONSENT_EXEMPT = [
+    ...VERIFY_EXEMPT,
+    '/reconsent',
+    '/privacy',
+    '/terms',
+    '/personal-data-consent',
+    '/identity-consent',
+  ];
+  const isReconsentExempt = RECONSENT_EXEMPT.some((p) => bare === p || bare.startsWith(p + '/'));
+
   // A Supabase auth cookie signals a possible session — used to decide whether the
   // mandatory-verify gate needs to run (so anonymous visitors skip the getUser call).
   const hasSessionCookie = req.cookies.getAll().some((c) => c.name.includes('auth-token'));
@@ -161,6 +175,20 @@ export async function middleware(req: NextRequest) {
     url.pathname = `/${locale}/verify`;
     url.search = '';
     return NextResponse.redirect(url);
+  }
+
+  // Re-consent gate: when the legal documents have been updated, a verified member
+  // whose stored consent_version is stale is routed to /reconsent to accept the new
+  // revision before continuing. Fresh signups already carry the current version, so
+  // this only catches accounts created against an earlier revision.
+  if (user && verified && !isReconsentExempt) {
+    const consentVersion = (user.user_metadata as { consent_version?: string } | undefined)?.consent_version;
+    if (consentVersion !== CURRENT_CONSENT_VERSION) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/${locale}/reconsent`;
+      url.search = `?next=${encodeURIComponent(pathname)}`;
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
