@@ -2,6 +2,11 @@ node_modules
 .next
 .env
 .env.local
+# Never commit private keys / identity certificates (Sber ID, T-ID mTLS bundles)
+*.p12
+*.pfx
+*.pem
+*.key
 .DS_Store
 *.log
 .vercel

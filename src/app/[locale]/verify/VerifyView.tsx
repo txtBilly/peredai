@@ -257,11 +257,7 @@ export default function VerifyView({
         знать, кому мы открываем свои двери.
       </p>
       <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">
-        Единоразовое подтверждение личности через Ваш банк займёт менее минуты.
-      </p>
-      <p className="mb-3 text-justify text-sm text-muted [hyphens:auto]">
-        Ваше полное имя будет видно только проверенному участнику, заинтересованному именно
-        в Вашем объявлении.
+        Единоразовое подтверждение личности через Сбербанк займёт менее минуты.
       </p>
       <p className="mb-8 text-sm text-muted">Регистрация полностью бесплатная.</p>
 
