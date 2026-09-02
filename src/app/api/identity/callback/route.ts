@@ -23,6 +23,13 @@ export async function GET(req: NextRequest) {
   const appUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000');
   const baseUrl = host ? `${proto}://${host}` : undefined;
 
+  // Diagnostic: confirm the callback is reached and what the bank returned.
+  console.log('[identity] callback hit', {
+    hasCode: !!code,
+    hasState: !!state,
+    oauthError: oauthError ?? null,
+  });
+
   const admin = createAdminClient();
 
   // ---- LOGIN branch --------------------------------------------------------
@@ -86,13 +93,25 @@ export async function GET(req: NextRequest) {
     NextResponse.redirect(`${appUrl}/${locale}/verify?return=1${params}`, 303);
 
   if (oauthError || !code || !state || !userId || !provider) {
-    if (userId && (oauthError || !code)) {
+    const reason =
+      oauthError || (!code ? 'no_code' : !state ? 'no_state' : !userId ? 'state_unresolved' : 'no_provider');
+    console.error('[identity] verify callback could not proceed', {
+      hasCode: !!code,
+      hasState: !!state,
+      resolvedUserId: userId ?? null,
+      provider: provider ?? null,
+      oauthError: oauthError ?? null,
+      reason,
+    });
+    // Record the failure when we know whose attempt it was, so the profile
+    // doesn't stay stuck at 'pending' (which would spin the verify screen).
+    if (userId) {
       await applyVerificationResult(admin, userId, state ?? 'unknown', {
         status: 'failed',
-        failureReason: oauthError ?? 'no_code',
+        failureReason: reason,
       });
     }
-    return backTo(oauthError ? `&error=${encodeURIComponent(oauthError)}` : '');
+    return backTo(`&error=${encodeURIComponent(reason)}`);
   }
 
   // CSRF defense-in-depth: a present session must match the state's user.

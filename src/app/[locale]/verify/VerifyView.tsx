@@ -19,7 +19,7 @@ export default function VerifyView({
   searchParams,
 }: {
   params: { locale: string };
-  searchParams: { next?: string; return?: string };
+  searchParams: { next?: string; return?: string; error?: string };
 }) {
   const locale = params.locale as Locale;
   const d = getDictionary(locale);
@@ -27,6 +27,27 @@ export default function VerifyView({
   const router = useRouter();
   const nextPath = `/${locale}/${searchParams?.next?.replace(/^\/+/, '') || 'account'}`;
   const returned = searchParams?.return === '1';
+  const errorParam = searchParams?.error ?? '';
+
+  // Human-readable text for an error code the callback may append on return.
+  const reasonText = (code: string): string => {
+    switch (code) {
+      case 'provider_error':
+        return 'Не удалось связаться с банком при подтверждении. Попробуйте ещё раз.';
+      case 'state_unresolved':
+        return 'Сессия подтверждения не найдена. Начните подтверждение заново.';
+      case 'session_mismatch':
+        return 'Несовпадение сессии. Войдите заново и повторите подтверждение.';
+      case 'no_code':
+      case 'no_state':
+      case 'no_provider':
+        return 'Банк не вернул нужные данные. Попробуйте ещё раз.';
+      case 'access_denied':
+        return 'Подтверждение было отменено.';
+      default:
+        return v.errorGeneric;
+    }
+  };
 
   const [phase, setPhase] = useState<Phase>('loading');
   const [starting, setStarting] = useState(false);
@@ -58,10 +79,24 @@ export default function VerifyView({
         /* non-fatal */
       }
       setPhase('verified');
-    } else if (status === 'failed') setPhase('failed');
-    else if (status === 'pending' || returned) setPhase('pending');
+      return;
+    }
+    if (status === 'failed') {
+      if (errorParam) setError(`${reasonText(errorParam)} (${errorParam})`);
+      setPhase('failed');
+      return;
+    }
+    // Returned from the bank but not verified/failed: if the callback flagged an
+    // error, surface it and let the user retry instead of spinning forever.
+    if (errorParam) {
+      setError(`${reasonText(errorParam)} (${errorParam})`);
+      setPhase('unverified');
+      return;
+    }
+    if (status === 'pending' || returned) setPhase('pending');
     else setPhase('unverified');
-  }, [locale, router, returned]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, router, returned, errorParam]);
 
   useEffect(() => {
     refresh();
