@@ -26,12 +26,16 @@ import type { IdentityProvider, StartVerification, VerificationResult } from './
 import { resolveRedirectUri } from './index';
 
 const DEFAULTS = {
-  authorize: 'https://online.sberbank.ru/CSAFront/oidc/authorize.do',
-  token: 'https://api.sberbank.ru/ru/prod/tokens/v3/oidc',
-  userinfo: 'https://api.sberbank.ru/ru/prod/sberbankid/v2.1/userInfo',
+  authorize: 'https://id.sber.ru/CSAFront/oidc/sberbank_id/authorize.do',
+  token: 'https://oauth.sber.ru/ru/prod/tokens/v2/oidc',
+  userinfo: 'https://oauth.sber.ru/ru/prod/sberbankid/v2.1/userinfo',
 };
 
 const SCOPE = process.env.SBER_SCOPE ?? 'openid name';
+// Sber ID requires client_type on the authorize request: PRIVATE = individual
+// (physical person). Missing it makes Sber reject the app with
+// "Этот сервис не настроен для работы со Сбер ID". Overridable just in case.
+const CLIENT_TYPE = process.env.SBER_CLIENT_TYPE ?? 'PRIVATE';
 
 // Sber ID's backend endpoints (token exchange + userInfo) require mutual TLS: the
 // server presents a client certificate issued to the application. We load it from
@@ -161,6 +165,7 @@ export class SberIdentityProvider implements IdentityProvider {
     const nonce = randomBytes(16).toString('hex');
     const url = new URL(endpoints().authorize);
     url.searchParams.set('response_type', 'code');
+    url.searchParams.set('client_type', CLIENT_TYPE);
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', resolveRedirectUri(baseUrl));
     url.searchParams.set('scope', SCOPE);
