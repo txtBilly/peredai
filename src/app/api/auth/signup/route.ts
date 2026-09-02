@@ -3,9 +3,11 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { mintSessionForEmail } from '@/lib/auth-session';
 import { isLocale, defaultLocale } from '@/i18n/config';
 
-// Bumped when the consent structure changes materially. '-pd' marks the split
-// into a separate 152-ФЗ personal-data-processing consent (Sept-2025 rule).
-const CONSENT_VERSION = '2026-01-ru-pd';
+// Bumped when the consent structure or the linked legal copy changes materially.
+// '-pd' marks the split into a separate 152-ФЗ personal-data-processing consent
+// (Sept-2025 rule). 2026-09: Privacy Policy, Terms and consent docs rewritten with
+// operator реквизиты (ООО «Тен2Тен») and the employees/applicants data section.
+const CONSENT_VERSION = '2026-09-ru-pd';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // New RU signup — the ONLY typed fields are email, spoken language(s), and the
