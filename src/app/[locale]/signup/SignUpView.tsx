@@ -179,17 +179,17 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
           <span>
             {renderTemplate(d.auth.consentTemplate, {
               terms: (
-                <Link href={`/${locale}/terms`} className="text-ink underline-offset-2 hover:underline">
+                <Link href={`/${locale}/terms`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
                   {d.auth.consentTermsLabel}
                 </Link>
               ),
               privacy: (
-                <Link href={`/${locale}/privacy`} className="text-ink underline-offset-2 hover:underline">
+                <Link href={`/${locale}/privacy`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
                   {d.auth.consentPrivacyLabel}
                 </Link>
               ),
               identity: (
-                <Link href={`/${locale}/identity-consent`} className="text-ink underline-offset-2 hover:underline">
+                <Link href={`/${locale}/identity-consent`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
                   {d.auth.consentIdentityLabel}
                 </Link>
               ),
@@ -210,7 +210,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
               pd: (
                 <Link
                   href={`/${locale}/personal-data-consent`}
-                  className="text-ink underline-offset-2 hover:underline"
+                  className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80"
                 >
                   {d.auth.consentPdLabel}
                 </Link>
@@ -236,7 +236,7 @@ export default function SignUpView({ params }: { params: { locale: string } }) {
 
       <p className="mt-6 text-center text-sm text-muted">
         {d.auth.haveAccount}{' '}
-        <Link href={`/${locale}/signin`} className="text-ink underline-offset-2 hover:underline">
+        <Link href={`/${locale}/signin`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
           {d.auth.signInLink}
         </Link>
       </p>

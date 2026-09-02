@@ -101,17 +101,17 @@ export default function ReconsentView({ params }: { params: { locale: string } }
           <span>
             {renderTemplate(d.auth.consentTemplate, {
               terms: (
-                <Link href={`/${locale}/terms`} className="text-ink underline-offset-2 hover:underline">
+                <Link href={`/${locale}/terms`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
                   {d.auth.consentTermsLabel}
                 </Link>
               ),
               privacy: (
-                <Link href={`/${locale}/privacy`} className="text-ink underline-offset-2 hover:underline">
+                <Link href={`/${locale}/privacy`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
                   {d.auth.consentPrivacyLabel}
                 </Link>
               ),
               identity: (
-                <Link href={`/${locale}/identity-consent`} className="text-ink underline-offset-2 hover:underline">
+                <Link href={`/${locale}/identity-consent`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
                   {d.auth.consentIdentityLabel}
                 </Link>
               ),
@@ -130,7 +130,7 @@ export default function ReconsentView({ params }: { params: { locale: string } }
           <span>
             {renderTemplate(d.auth.consentPdTemplate, {
               pd: (
-                <Link href={`/${locale}/personal-data-consent`} className="text-ink underline-offset-2 hover:underline">
+                <Link href={`/${locale}/personal-data-consent`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
                   {d.auth.consentPdLabel}
                 </Link>
               ),
