@@ -131,9 +131,12 @@ export async function GET(req: NextRequest) {
     await applyVerificationResult(admin, userId, state, result, identityKey);
   } catch (e) {
     console.error(`[identity] ${provider} callback failed`, e);
+    // Save the concrete error (Sber HTTP status + body) into the audit row's
+    // failure_reason so it can be read without server logs. Truncated for safety.
+    const detail = (e instanceof Error ? e.message : String(e)).slice(0, 800);
     await applyVerificationResult(admin, userId, state, {
       status: 'failed',
-      failureReason: 'provider_error',
+      failureReason: detail || 'provider_error',
     });
     return backTo('&error=provider_error');
   }
