@@ -144,19 +144,19 @@ export async function completeSberCallback(code: string, baseUrl?: string): Prom
   const ep = endpoints();
   const redirectUri = resolveRedirectUri(baseUrl);
 
-  // Sber's token endpoint expects client credentials IN THE BODY (client_id +
-  // client_secret), not as a Basic auth header, and no `scope` on the
-  // authorization_code exchange. Sending Basic auth or an extra scope param yields
-  // 400 invalid_request.
+  // Sber's token endpoint authenticates the client via HTTP Basic auth
+  // (client_secret_basic), NOT credentials in the body. It also rejects a `scope`
+  // param on the authorization_code exchange. Body carries grant_type/code/
+  // redirect_uri (+ client_id, which Sber's docs include).
   const tokenBody = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
     client_id: clientId,
-    client_secret: clientSecret,
     redirect_uri: redirectUri,
   }).toString();
   const tokenRes = await httpsRequest(ep.token, 'POST', {
     'Content-Type': 'application/x-www-form-urlencoded',
+    Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
     RqUID: randomUUID().replace(/-/g, ''),
   }, tokenBody);
   if (!tokenRes.ok) {
