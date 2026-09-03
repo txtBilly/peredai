@@ -161,8 +161,10 @@ export async function completeSberCallback(code: string, baseUrl?: string): Prom
 export class SberIdentityProvider implements IdentityProvider {
   async startVerification(_userId: string, baseUrl?: string): Promise<StartVerification> {
     const { clientId } = requireCreds();
+    // Sber ID rejects state/nonce longer than 64 chars. Keep both well under it:
+    // state = 48 hex chars (matches Sber's own working example), nonce = 16.
     const state = randomBytes(24).toString('hex');
-    const nonce = randomBytes(16).toString('hex');
+    const nonce = randomBytes(8).toString('hex');
     const url = new URL(endpoints().authorize);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('client_type', CLIENT_TYPE);
