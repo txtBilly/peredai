@@ -144,18 +144,18 @@ export async function completeSberCallback(code: string, baseUrl?: string): Prom
   const ep = endpoints();
   const redirectUri = resolveRedirectUri(baseUrl);
 
-  // Sber's token endpoint uses client_secret_post: client_id + client_secret in
-  // the body (Basic auth yields 400 invalid_request; a `scope` param is rejected).
-  // A 401 invalid_client here means the client_secret value is wrong.
+  // Sber's mTLS token request: HTTP Basic auth (client_id:client_secret) carried
+  // in the Authorization header ALONGSIDE the client cert, with a MINIMAL body
+  // (grant_type/code/redirect_uri only — putting client_id in the body too yields
+  // 400 invalid_request, and client_secret in the body yields 401 invalid_client).
   const tokenBody = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
-    client_id: clientId,
-    client_secret: clientSecret,
     redirect_uri: redirectUri,
   }).toString();
   const tokenRes = await httpsRequest(ep.token, 'POST', {
     'Content-Type': 'application/x-www-form-urlencoded',
+    Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
     RqUID: randomUUID().replace(/-/g, ''),
   }, tokenBody);
   if (!tokenRes.ok) {
