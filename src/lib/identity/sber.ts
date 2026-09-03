@@ -144,19 +144,18 @@ export async function completeSberCallback(code: string, baseUrl?: string): Prom
   const ep = endpoints();
   const redirectUri = resolveRedirectUri(baseUrl);
 
-  // Sber's token endpoint authenticates the client via HTTP Basic auth
-  // (client_secret_basic), NOT credentials in the body. It also rejects a `scope`
-  // param on the authorization_code exchange. Body carries grant_type/code/
-  // redirect_uri (+ client_id, which Sber's docs include).
+  // Sber's token endpoint uses client_secret_post: client_id + client_secret in
+  // the body (Basic auth yields 400 invalid_request; a `scope` param is rejected).
+  // A 401 invalid_client here means the client_secret value is wrong.
   const tokenBody = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
     client_id: clientId,
+    client_secret: clientSecret,
     redirect_uri: redirectUri,
   }).toString();
   const tokenRes = await httpsRequest(ep.token, 'POST', {
     'Content-Type': 'application/x-www-form-urlencoded',
-    Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
     RqUID: randomUUID().replace(/-/g, ''),
   }, tokenBody);
   if (!tokenRes.ok) {
