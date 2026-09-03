@@ -159,7 +159,11 @@ export async function completeSberCallback(code: string, baseUrl?: string): Prom
     RqUID: randomUUID().replace(/-/g, ''),
   }, tokenBody);
   if (!tokenRes.ok) {
-    throw new Error(`Sber token exchange failed: ${tokenRes.status} ${tokenRes.body}`);
+    // Length-only diagnostics (no secret values) to spot a broken/truncated
+    // Vercel env var behind invalid_client: the .p12 is 5460 bytes, the client
+    // secret is 36 chars, the client_id is 36 chars.
+    const diag = `pfxBytes=${sberPfx()?.length ?? 0} secretLen=${clientSecret.length} clientIdLen=${clientId.length}`;
+    throw new Error(`Sber token exchange failed: ${tokenRes.status} ${tokenRes.body} [${diag}]`);
   }
   const token = JSON.parse(tokenRes.body) as { access_token?: string };
   if (!token.access_token) throw new Error('Sber token response had no access_token');
