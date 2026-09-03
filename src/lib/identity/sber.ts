@@ -22,8 +22,10 @@
 
 import { randomBytes, randomUUID } from 'crypto';
 import https from 'node:https';
+import tls from 'node:tls';
 import type { IdentityProvider, StartVerification, VerificationResult } from './index';
 import { resolveRedirectUri } from './index';
+import { SBER_SANDBOX_CA_PEM } from './sber-sandbox-ca';
 
 const DEFAULTS = {
   authorize: 'https://id.sber.ru/CSAFront/oidc/sberbank_id/authorize.do',
@@ -52,6 +54,23 @@ function sberPfx(): Buffer | undefined {
   return cachedPfx ?? undefined;
 }
 
+// Sber's stand serves TLS certs issued by a CA (the sandbox "Sandbox RootCA", or
+// the Russian Trusted / Минцифры roots in prod) that isn't in Node's default trust
+// store — so verifying Sber's SERVER cert fails with "unable to verify the first
+// certificate". SBER_CA_BASE64 is the base64 of a PEM bundle of those CA cert(s);
+// we add them to Node's defaults so the server cert verifies while keeping full
+// verification on. (The sandbox CA chain is bundled inside the .p12 itself.)
+let cachedCa: string[] | undefined;
+function sberCa(): string[] {
+  if (cachedCa) return cachedCa;
+  // Env override (e.g. production Russian Trusted CA) wins; otherwise trust the
+  // bundled sandbox CA. Always alongside Node's defaults so nothing else breaks.
+  const b64 = process.env.SBER_CA_BASE64;
+  const extra = b64 ? Buffer.from(b64, 'base64').toString('utf8') : SBER_SANDBOX_CA_PEM;
+  cachedCa = [...tls.rootCertificates, extra];
+  return cachedCa;
+}
+
 type HttpResult = { ok: boolean; status: number; body: string };
 
 // Minimal HTTPS request with optional client certificate (mTLS). Used for the two
@@ -66,6 +85,7 @@ function httpsRequest(
   const u = new URL(urlStr);
   const pfx = sberPfx();
   const passphrase = process.env.SBER_CERT_PASSWORD;
+  const ca = sberCa();
   const options: https.RequestOptions = {
     method,
     hostname: u.hostname,
@@ -73,6 +93,10 @@ function httpsRequest(
     path: `${u.pathname}${u.search}`,
     headers,
     ...(pfx ? { pfx, ...(passphrase ? { passphrase } : {}) } : {}),
+    ...(ca ? { ca } : {}),
+    // Escape hatch for the sandbox only, if the CA bundle can't be sorted out:
+    // set SBER_TLS_INSECURE=1 to skip server-cert verification. NEVER in production.
+    ...(process.env.SBER_TLS_INSECURE === '1' ? { rejectUnauthorized: false } : {}),
   };
   return new Promise((resolve, reject) => {
     const request = https.request(options, (res) => {
