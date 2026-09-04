@@ -169,9 +169,11 @@ export async function completeSberCallback(code: string, baseUrl?: string): Prom
   const token = JSON.parse(tokenRes.body) as { access_token?: string };
   if (!token.access_token) throw new Error('Sber token response had no access_token');
 
+  // userInfo requires the header `x-introspect-rquid` (32 hex chars) — NOT `RqUID`
+  // like the token call. Sending RqUID here makes Sber's userInfo return 500.
   const infoRes = await httpsRequest(ep.userinfo, 'GET', {
     Authorization: `Bearer ${token.access_token}`,
-    RqUID: randomUUID().replace(/-/g, ''),
+    'x-introspect-rquid': randomUUID().replace(/-/g, ''),
   });
   if (!infoRes.ok) {
     throw new Error(`Sber userinfo failed: ${infoRes.status} ${infoRes.body}`);
