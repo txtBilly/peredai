@@ -199,6 +199,21 @@ export default function VerifyView({
     </div>
   );
 
+  // Escape hatch: a member who can't (or doesn't want to) complete verification
+  // is otherwise trapped — the middleware bounces every route back to /verify.
+  // Signing out clears the session so they can leave, browse anonymously, or
+  // sign in with a different account. (A plain POST form, like the banned page.)
+  const signOutBar = (
+    <form action="/api/auth/signout" method="POST" className="mt-4 w-full">
+      <button
+        type="submit"
+        className="w-full text-center text-sm text-muted underline-offset-2 transition hover:text-ink hover:underline"
+      >
+        {v.signOut}
+      </button>
+    </form>
+  );
+
   if (phase === 'loading') {
     return (
       <main className="mx-auto flex min-h-[40vh] max-w-md items-center justify-center px-5">
@@ -249,6 +264,7 @@ export default function VerifyView({
             {error}
           </p>
         )}
+        {signOutBar}
         </div>
       </main>
     );
@@ -265,6 +281,7 @@ export default function VerifyView({
           <h1 className="mb-2 font-display text-2xl font-bold text-ink">{v.failedTitle}</h1>
           <p className="mb-8 text-sm text-muted">{v.failedBody}</p>
           {providerButtons}
+          {signOutBar}
         </div>
       </main>
     );
@@ -303,6 +320,7 @@ export default function VerifyView({
       )}
 
       {providerButtons}
+      {signOutBar}
       </div>
     </main>
   );

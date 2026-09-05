@@ -208,7 +208,8 @@
     "refreshCta": "Check status",
     "checkingCta": "Checking…",
     "startOverCta": "Start over",
-    "errorGeneric": "Something went wrong. Please try again."
+    "errorGeneric": "Something went wrong. Please try again.",
+    "signOut": "Sign out"
   },
   "banned": {
     "title": "Your account has been suspended",

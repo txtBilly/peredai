@@ -8,10 +8,10 @@ export async function POST(req: Request) {
   // on all their other devices too.
   await supabase.auth.signOut({ scope: 'local' });
 
-  // Redirect to home with locale from referrer, falling back to /en
+  // Redirect to home with locale from referrer, falling back to /ru (RU market)
   const referer = req.headers.get('referer') ?? '';
-  const localeMatch = referer.match(/\/(en|es)\//);
-  const locale = localeMatch ? localeMatch[1] : 'en';
+  const localeMatch = referer.match(/\/(ru|en)(?:\/|$)/);
+  const locale = localeMatch ? localeMatch[1] : 'ru';
 
   return NextResponse.redirect(new URL(`/${locale}`, req.url), { status: 302 });
 }
