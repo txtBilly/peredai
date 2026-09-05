@@ -8,7 +8,8 @@ import type { Locale } from '@/i18n/config';
 const T = {
   ru: {
     heading: 'Добро пожаловать',
-    subtitle: 'Регистрация и вход — через Сбер ID или Т-Банк. Пароль не нужен.',
+    subtitle: 'Регистрация и вход — через Сбер ID или Т-Банк.',
+    noPassword: 'Пароль не нужен.',
     registerCta: 'Зарегистрироваться со Сбер ID',
     mockLabel: 'Тестовый вход (по email)',
     mockCta: 'Войти',
@@ -19,7 +20,8 @@ const T = {
   },
   en: {
     heading: 'Welcome',
-    subtitle: 'Sign up or sign in — with Sber ID or T-Bank. No password needed.',
+    subtitle: 'Sign up or sign in — with Sber ID or T-Bank.',
+    noPassword: 'No password needed.',
     registerCta: 'Sign up with Sber ID',
     mockLabel: 'Test sign-in (by email)',
     mockCta: 'Sign in',
@@ -117,7 +119,11 @@ export default function SignInView({ params }: { params: { locale: string } }) {
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-5 py-12">
       <h1 className="mb-2 text-center font-display text-3xl font-bold text-ink">{t.heading}</h1>
-      <p className="mb-8 text-center text-sm text-muted">{t.subtitle}</p>
+      <p className="mb-8 text-center text-sm text-muted">
+        {t.subtitle}
+        <br />
+        {t.noPassword}
+      </p>
 
       {error && (
         <p role="alert" className="mb-4 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-600">
