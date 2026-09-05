@@ -8,9 +8,10 @@ import type { Locale } from '@/i18n/config';
 const T = {
   ru: {
     heading: 'Добро пожаловать',
-    subtitle: 'Регистрация и вход — через Сбер ID или Т-Банк.',
+    subtitle: 'Регистрация и вход — через Сбер ID.',
     noPassword: 'Пароль не нужен.',
     registerCta: 'Зарегистрироваться со Сбер ID',
+    haveAccount: 'Уже есть аккаунт Ten2Ten?',
     mockLabel: 'Тестовый вход (по email)',
     mockCta: 'Войти',
     starting: 'Открываем…',
@@ -20,9 +21,10 @@ const T = {
   },
   en: {
     heading: 'Welcome',
-    subtitle: 'Sign up or sign in — with Sber ID or T-Bank.',
+    subtitle: 'Sign up or sign in — with Sber ID.',
     noPassword: 'No password needed.',
     registerCta: 'Sign up with Sber ID',
+    haveAccount: 'Already have a Ten2Ten account?',
     mockLabel: 'Test sign-in (by email)',
     mockCta: 'Sign in',
     starting: 'Opening…',
@@ -55,7 +57,7 @@ export default function SignInView({ params }: { params: { locale: string } }) {
   }, [t]);
 
   // New visitors register by default; returning users on the same device are
-  // remembered by their bank (Sber ID / T-Bank), so signing in is a quick tap
+  // remembered by their bank (Sber ID), so signing in is a quick tap
   // from the secondary option below. That's why "Зарегистрироваться" leads here.
   const signUpHref = `/${locale}/signup${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''}`;
 
@@ -143,7 +145,7 @@ export default function SignInView({ params }: { params: { locale: string } }) {
       {/* Secondary path: existing users sign in with their bank. */}
       {bankProviders.length > 0 && (
         <div className="mt-6 flex flex-col gap-2.5">
-          <p className="text-center text-sm text-muted">{d.auth.haveAccount}</p>
+          <p className="text-center text-sm text-muted">{t.haveAccount}</p>
           {bankProviders.map((p) => (
             <button
               key={p}

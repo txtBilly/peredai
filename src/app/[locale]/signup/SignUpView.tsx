@@ -25,13 +25,13 @@ const LANGUAGE_OPTIONS = [
 const T = {
   ru: {
     subtitle:
-      'Укажите email — на следующем шаге вы подтвердите личность через Сбер ID или Т-Банк, и ваше имя подставится автоматически. Пароль не нужен: вход всегда через банк.',
+      'Укажите email — на следующем шаге вы подтвердите личность через Сбер ID, и ваше имя подставится автоматически. Пароль не нужен: вход всегда через банк.',
     continue: 'Продолжить',
     invalidEmail: 'Введите корректный email.',
   },
   en: {
     subtitle:
-      'Enter your email — next you’ll confirm your identity with Sber ID or T-Bank, and your name fills in automatically. No password: you always sign in with your bank.',
+      'Enter your email — next you’ll confirm your identity with Sber ID, and your name fills in automatically. No password: you always sign in with your bank.',
     continue: 'Continue',
     invalidEmail: 'Enter a valid email.',
   },
