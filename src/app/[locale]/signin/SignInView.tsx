@@ -7,28 +7,26 @@ import type { Locale } from '@/i18n/config';
 
 const T = {
   ru: {
-    subtitle: 'Вход через ваш банк — Сбер ID или Т-Банк. Пароль не нужен.',
-    loginWith: 'Войти через',
+    heading: 'Добро пожаловать',
+    subtitle: 'Регистрация и вход — через Сбер ID или Т-Банк. Пароль не нужен.',
+    registerCta: 'Зарегистрироваться',
     mockLabel: 'Тестовый вход (по email)',
     mockCta: 'Войти',
     starting: 'Открываем…',
     noAccount: 'Аккаунт с этой личностью не найден. Сначала зарегистрируйтесь.',
     error: 'Не удалось войти. Попробуйте ещё раз.',
     emailPlaceholder: 'you@example.com',
-    noAccountPrompt: 'Нет аккаунта?',
-    signUpLink: 'Зарегистрироваться',
   },
   en: {
-    subtitle: 'Sign in with your bank — Sber ID or T-Bank. No password needed.',
-    loginWith: 'Sign in with',
+    heading: 'Welcome',
+    subtitle: 'Sign up or sign in — with Sber ID or T-Bank. No password needed.',
+    registerCta: 'Sign up',
     mockLabel: 'Test sign-in (by email)',
     mockCta: 'Sign in',
     starting: 'Opening…',
     noAccount: 'No account found for this identity. Please sign up first.',
     error: 'Sign-in failed. Please try again.',
     emailPlaceholder: 'you@example.com',
-    noAccountPrompt: 'No account?',
-    signUpLink: 'Sign up',
   },
 } as const;
 
@@ -41,13 +39,23 @@ export default function SignInView({ params }: { params: { locale: string } }) {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'submitting'>('idle');
   const [error, setError] = useState('');
+  const [nextPath, setNextPath] = useState('');
 
-  // Surface an error passed back from the OAuth callback (?error=...).
+  // Surface an error passed back from the OAuth callback (?error=...), and carry
+  // any ?next=... through to the sign-up link so registration returns the user
+  // to what they were doing.
   useEffect(() => {
-    const e = new URLSearchParams(window.location.search).get('error');
+    const params = new URLSearchParams(window.location.search);
+    const e = params.get('error');
     if (e === 'no_account') setError(t.noAccount);
     else if (e) setError(t.error);
+    setNextPath(params.get('next') ?? '');
   }, [t]);
+
+  // New visitors register by default; returning users on the same device are
+  // remembered by their bank (Sber ID / T-Bank), so signing in is a quick tap
+  // from the secondary option below. That's why "Зарегистрироваться" leads here.
+  const signUpHref = `/${locale}/signup${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''}`;
 
   const providers = (process.env.NEXT_PUBLIC_IDENTITY_PROVIDERS ?? 'mock')
     .split(',')
@@ -108,7 +116,7 @@ export default function SignInView({ params }: { params: { locale: string } }) {
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-5 py-12">
-      <h1 className="mb-2 font-display text-3xl font-bold text-ink">{d.auth.signIn}</h1>
+      <h1 className="mb-2 font-display text-3xl font-bold text-ink">{t.heading}</h1>
       <p className="mb-8 text-sm text-muted">{t.subtitle}</p>
 
       {error && (
@@ -117,19 +125,32 @@ export default function SignInView({ params }: { params: { locale: string } }) {
         </p>
       )}
 
-      <div className="flex flex-col gap-2.5">
-        {bankProviders.map((p) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => loginBank(p)}
-            disabled={status === 'submitting'}
-            className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
-          >
-            {status === 'submitting' ? t.starting : providerLabel(p)}
-          </button>
-        ))}
-      </div>
+      {/* Primary path: register. Most people reaching this screen are new; the
+          bank sign-in for returning users sits below as the secondary option. */}
+      <Link
+        href={signUpHref}
+        className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 text-center font-medium text-white transition hover:brightness-110"
+      >
+        {t.registerCta}
+      </Link>
+
+      {/* Secondary path: existing users sign in with their bank. */}
+      {bankProviders.length > 0 && (
+        <div className="mt-6 flex flex-col gap-2.5">
+          <p className="text-center text-sm text-muted">{d.auth.haveAccount}</p>
+          {bankProviders.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => loginBank(p)}
+              disabled={status === 'submitting'}
+              className="w-full rounded-lg border border-black/15 px-5 py-3 font-medium text-ink transition hover:border-black/40 hover:bg-black/[0.03] disabled:opacity-50"
+            >
+              {status === 'submitting' ? t.starting : providerLabel(p)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {mockEnabled && (
         <form onSubmit={loginMock} className="mt-5 flex flex-col gap-2">
@@ -154,13 +175,6 @@ export default function SignInView({ params }: { params: { locale: string } }) {
           </button>
         </form>
       )}
-
-      <p className="mt-6 text-center text-sm text-muted">
-        {t.noAccountPrompt}{' '}
-        <Link href={`/${locale}/signup`} className="text-ink underline-offset-2 hover:underline">
-          {t.signUpLink}
-        </Link>
-      </p>
     </main>
   );
 }
