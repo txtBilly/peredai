@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 export async function GET() {
   const supabase = createClient();
@@ -9,6 +9,10 @@ export async function GET() {
   }
 
   const id = user.id;
+  // intake_requests has RLS enabled with no client policy (service-role-only), so
+  // the session client would read back nothing. Use the admin client for that one
+  // table, scoped to this authenticated user, so the data export stays complete.
+  const admin = createAdminClient();
 
   const [
     { data: profile },
@@ -31,7 +35,7 @@ export async function GET() {
     supabase.from('messages').select('*').eq('sender_id', id).order('created_at'),
     supabase.from('ratings').select('*').eq('rater_id', id).order('created_at'),
     supabase.from('ratings').select('*').eq('ratee_id', id).order('created_at'),
-    supabase.from('intake_requests').select('*').eq('profile_id', id).order('created_at'),
+    admin.from('intake_requests').select('*').eq('profile_id', id).order('created_at'),
   ]);
 
   const payload = {
