@@ -77,17 +77,25 @@ export async function middleware(req: NextRequest) {
   const isProtected = PROTECTED.some((p) => bare === p || bare.startsWith(p + '/'));
   const isAuthOnly = AUTH_ONLY.some((p) => bare === p || bare.startsWith(p + '/'));
 
-  // Pages a logged-in-but-unverified user is still allowed to reach. Everything
-  // else redirects them into the mandatory Sber/T-ID step. `/verify` MUST be here
-  // or the gate would loop.
-  const VERIFY_EXEMPT = ['/gate', '/signin', '/signup', '/reset', '/verify', '/banned'];
-  const isVerifyExempt = VERIFY_EXEMPT.some((p) => bare === p || bare.startsWith(p + '/'));
+  // Routes that require a VERIFIED identity (Sber ID / T-ID), not just a login.
+  // Unverified members can browse the rest of the app freely; hitting one of these
+  // action/areas prompts verification. These are the points where identity matters:
+  // the account area, posting/managing listings, paying for credits, and chats.
+  // Everything else (browse, welcome, listing detail, safety, legal, support, saved)
+  // is open to an unverified member. /verify is deliberately NOT here (would loop).
+  const VERIFY_REQUIRED = ['/account', '/list', '/pay', '/chats'];
+  const isVerifyRequired = VERIFY_REQUIRED.some((p) => bare === p || bare.startsWith(p + '/'));
 
   // Pages a signed-in member with an outdated consent version may still reach
   // without being bounced to the re-consent prompt: the prompt itself, the auth
   // screens, and the legal documents (so they can actually read what changed).
   const RECONSENT_EXEMPT = [
-    ...VERIFY_EXEMPT,
+    '/gate',
+    '/signin',
+    '/signup',
+    '/reset',
+    '/verify',
+    '/banned',
     '/reconsent',
     '/privacy',
     '/terms',
@@ -100,9 +108,10 @@ export async function middleware(req: NextRequest) {
   // mandatory-verify gate needs to run (so anonymous visitors skip the getUser call).
   const hasSessionCookie = req.cookies.getAll().some((c) => c.name.includes('auth-token'));
 
-  // Hit Supabase only when we need to check auth: protected/auth-only routes, or a
-  // logged-in user on a non-exempt route (to enforce the verification gate).
-  if (!isProtected && !isAuthOnly && !(hasSessionCookie && !isVerifyExempt)) {
+  // Hit Supabase only when we need to check auth: protected/auth-only routes, or
+  // any logged-in user (to enforce the verify-required + re-consent gates below).
+  // Anonymous visitors on public routes skip the getUser call entirely.
+  if (!isProtected && !isAuthOnly && !hasSessionCookie) {
     return NextResponse.next();
   }
 
@@ -160,20 +169,22 @@ export async function middleware(req: NextRequest) {
   }
 
   // Logged-in users don't belong on the sign-in / sign-up screens: send verified
-  // members to their account, and anyone mid-onboarding to the verify step.
+  // members to their account, and unverified members into the browsable app (they
+  // can verify later when they hit a gated action).
   if (isAuthOnly && user) {
     const url = req.nextUrl.clone();
-    url.pathname = verified ? `/${locale}/account` : `/${locale}/verify`;
+    url.pathname = verified ? `/${locale}/account` : `/${locale}/browse`;
     url.search = '';
     return NextResponse.redirect(url);
   }
 
-  // Mandatory verification: a signed-in but unverified member is held at /verify
-  // until they complete Sber ID / T-ID. (Exempt paths handled above.)
-  if (user && !verified && !isVerifyExempt) {
+  // Verification gate: only the verify-required routes (account, list, pay, chats)
+  // send an unverified member to /verify — with a return path so they come back to
+  // what they were doing once verified. Everything else stays browsable.
+  if (user && !verified && isVerifyRequired) {
     const url = req.nextUrl.clone();
     url.pathname = `/${locale}/verify`;
-    url.search = '';
+    url.search = `?next=${encodeURIComponent(bare.replace(/^\//, ''))}`;
     return NextResponse.redirect(url);
   }
 
