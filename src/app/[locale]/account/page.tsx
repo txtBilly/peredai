@@ -18,7 +18,7 @@ export default async function AccountPage({ params }: { params: { locale: string
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'display_first_name, full_name, email, verification_status, bg_check_completed_at, bg_check_expires_at, rating_avg, rating_count, created_at'
+      'display_first_name, full_name, email, verification_status, rating_avg, rating_count, created_at'
     )
     .eq('id', user.id)
     .single();

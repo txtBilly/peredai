@@ -42,7 +42,7 @@ export default function EditProfilePage({ params }: { params: { locale: string }
       if (!user) { router.push(`/${locale}/signin`); return; }
       supabase
         .from('profiles')
-        .select('full_name, display_first_name, phone, spoken_languages, preferred_locale, bg_check_completed_at, bg_check_expires_at, identity_verified_at')
+        .select('full_name, display_first_name, phone, spoken_languages, preferred_locale, identity_verified_at')
         .eq('id', user.id)
         .single()
         .then(({ data }) => {
@@ -52,12 +52,10 @@ export default function EditProfilePage({ params }: { params: { locale: string }
             setPhone(data.phone ?? '');
             setSpokenLanguages(data.spoken_languages ?? ['en']);
             setPreferredLocale((data.preferred_locale as 'en' | 'ru') ?? locale);
-            // Legal name locks once identity has *ever* been verified — by the
-            // background check (seekers) OR the Stripe Identity ID check
-            // (listers) — and stays locked even after the 60-day check expires.
-            // Matches the lock_verified_full_name DB trigger, which now keys off
-            // both bg_check_completed_at and identity_verified_at.
-            setNameLocked(!!data.bg_check_completed_at || !!data.identity_verified_at);
+            // Legal name locks once identity has been verified via the bank ID
+            // flow (Sber ID / T-ID). Matches the lock_verified_full_name DB
+            // trigger, which keys off identity_verified_at.
+            setNameLocked(!!data.identity_verified_at);
           }
           setLoading(false);
         });

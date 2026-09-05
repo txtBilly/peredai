@@ -8,8 +8,6 @@ type Profile = {
   id: string;
   full_name: string | null;
   verification_status: string | null;
-  bg_check_completed_at: string | null;
-  bg_check_expires_at: string | null;
   is_shadow_banned: boolean;
   is_banned: boolean;
   is_suppressed: boolean;
@@ -85,7 +83,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
           admin
             .from('profiles')
             .select(
-              'id, full_name, verification_status, bg_check_completed_at, bg_check_expires_at, is_shadow_banned, is_banned, is_suppressed, rating_avg, rating_count, id_type, id_last4, identity_verified_at, duplicate_review, duplicate_reason, duplicate_matched_id'
+              'id, full_name, verification_status, is_shadow_banned, is_banned, is_suppressed, rating_avg, rating_count, id_type, id_last4, identity_verified_at, duplicate_review, duplicate_reason, duplicate_matched_id'
             )
             .in('id', ids),
           admin.from('credit_ledger').select('seeker_id, amount').in('seeker_id', ids),
@@ -209,9 +207,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
       <div className="flex flex-col gap-3">
         {results.map((r) => {
           const p = r.profile;
-          const verified =
-            p?.verification_status === 'verified' ||
-            (!!p?.bg_check_completed_at && (!p.bg_check_expires_at || new Date(p.bg_check_expires_at) > new Date()));
+          const verified = p?.verification_status === 'verified';
           return (
             <div key={r.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
               <div className="flex flex-wrap items-center gap-2">
