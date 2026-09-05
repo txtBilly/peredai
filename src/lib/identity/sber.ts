@@ -26,6 +26,7 @@ import tls from 'node:tls';
 import type { IdentityProvider, StartVerification, VerificationResult } from './index';
 import { resolveRedirectUri } from './index';
 import { SBER_SANDBOX_CA_PEM } from './sber-sandbox-ca';
+import { RUSSIAN_TRUSTED_CA_PEM } from './russian-trusted-ca';
 
 const DEFAULTS = {
   authorize: 'https://id.sber.ru/CSAFront/oidc/sberbank_id/authorize.do',
@@ -54,20 +55,23 @@ function sberPfx(): Buffer | undefined {
   return cachedPfx ?? undefined;
 }
 
-// Sber's stand serves TLS certs issued by a CA (the sandbox "Sandbox RootCA", or
-// the Russian Trusted / Минцифры roots in prod) that isn't in Node's default trust
-// store — so verifying Sber's SERVER cert fails with "unable to verify the first
-// certificate". SBER_CA_BASE64 is the base64 of a PEM bundle of those CA cert(s);
-// we add them to Node's defaults so the server cert verifies while keeping full
-// verification on. (The sandbox CA chain is bundled inside the .p12 itself.)
+// Sber's stand serves a TLS SERVER cert that chains to the Russian Trusted CA
+// (НУЦ Минцифры: "Russian Trusted Sub CA" → "Russian Trusted Root CA"), which is
+// in neither Node's default trust store nor Mozilla's — so verifying it fails with
+// "unable to verify the first certificate" / SELF_SIGNED_CERT_IN_CHAIN. We add the
+// Russian Trusted Root+Sub CA (bundled in ./russian-trusted-ca) to Node's default
+// trust anchors so the server cert verifies with full verification ON — no need for
+// SBER_TLS_INSECURE. The bundled sandbox CA (from the client .p12) is kept too; it
+// covers the older sandbox stand in case an endpoint still serves that chain.
+// SBER_CA_BASE64 (base64 of a PEM bundle) is an optional override/addition — used
+// if Sber rotates the Sub CA (expires 2027-03) before this file is refreshed.
 let cachedCa: string[] | undefined;
 function sberCa(): string[] {
   if (cachedCa) return cachedCa;
-  // Env override (e.g. production Russian Trusted CA) wins; otherwise trust the
-  // bundled sandbox CA. Always alongside Node's defaults so nothing else breaks.
+  const anchors = [...tls.rootCertificates, RUSSIAN_TRUSTED_CA_PEM, SBER_SANDBOX_CA_PEM];
   const b64 = process.env.SBER_CA_BASE64;
-  const extra = b64 ? Buffer.from(b64, 'base64').toString('utf8') : SBER_SANDBOX_CA_PEM;
-  cachedCa = [...tls.rootCertificates, extra];
+  if (b64) anchors.push(Buffer.from(b64, 'base64').toString('utf8'));
+  cachedCa = anchors;
   return cachedCa;
 }
 
