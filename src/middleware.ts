@@ -77,13 +77,11 @@ export async function middleware(req: NextRequest) {
   const isProtected = PROTECTED.some((p) => bare === p || bare.startsWith(p + '/'));
   const isAuthOnly = AUTH_ONLY.some((p) => bare === p || bare.startsWith(p + '/'));
 
-  // Routes that require a VERIFIED identity (Sber ID / T-ID), not just a login.
-  // Unverified members can browse the rest of the app freely; hitting one of these
-  // action/areas prompts verification. These are the points where identity matters:
-  // the account area, posting/managing listings, paying for credits, and chats.
-  // Everything else (browse, welcome, listing detail, safety, legal, support, saved)
-  // is open to an unverified member. /verify is deliberately NOT here (would loop).
-  const VERIFY_REQUIRED = ['/account', '/list', '/pay', '/chats'];
+  // Routes that require a VERIFIED identity (Sber ID). Model A: verification is
+  // for LISTERS only — the sole gate is posting/managing a listing (/list).
+  // Seekers pay for tokens and chat without Sber ID, so /pay, /chats and /account
+  // are open to any signed-in member. /verify is deliberately NOT here (would loop).
+  const VERIFY_REQUIRED = ['/list'];
   const isVerifyRequired = VERIFY_REQUIRED.some((p) => bare === p || bare.startsWith(p + '/'));
 
   // Pages a signed-in member with an outdated consent version may still reach

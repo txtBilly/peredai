@@ -16,41 +16,40 @@ export async function POST(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  if (!user.email) return NextResponse.json({ error: 'no_email' }, { status: 400 });
 
   const form = await req.formData().catch(() => null);
   const requestedLocale = form?.get('locale');
   const listingIdRaw = form?.get('listing_id');
   const listingId = typeof listingIdRaw === 'string' && listingIdRaw ? listingIdRaw : null;
 
-  const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('preferred_locale')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  const locale: 'ru' | 'en' =
-    requestedLocale === 'en' || requestedLocale === 'ru'
-      ? requestedLocale
-      : profile?.preferred_locale === 'en'
-        ? 'en'
-        : 'ru';
-
-  // Base URL from the incoming request so redirects target the host the user is
-  // on (ten2ten.ru / localhost), never the build-time NEXT_PUBLIC_APP_URL.
   const appUrl = req.nextUrl.origin;
+  const admin = createAdminClient();
 
-  // A lister can't connect to their own listing — refuse before the pay screen.
-  if (listingId) {
-    const { data: listingRow } = await admin
-      .from('listings')
-      .select('lister_id')
-      .eq('id', listingId)
+  // Model A: anonymous seekers can start the funnel — the /pay screen collects
+  // email + consent and creates the account at payment. Only look up a profile /
+  // guard own-listing when we actually have a signed-in user.
+  let locale: 'ru' | 'en' =
+    requestedLocale === 'en' || requestedLocale === 'ru' ? requestedLocale : 'ru';
+
+  if (user) {
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('preferred_locale')
+      .eq('id', user.id)
       .maybeSingle();
-    if (listingRow && listingRow.lister_id === user.id) {
-      return NextResponse.redirect(`${appUrl}/${locale}/browse/${listingId}?blocked=own_listing`, 303);
+    if (requestedLocale !== 'en' && requestedLocale !== 'ru' && profile?.preferred_locale === 'en') {
+      locale = 'en';
+    }
+    // A lister can't connect to their own listing — refuse before the pay screen.
+    if (listingId) {
+      const { data: listingRow } = await admin
+        .from('listings')
+        .select('lister_id')
+        .eq('id', listingId)
+        .maybeSingle();
+      if (listingRow && listingRow.lister_id === user.id) {
+        return NextResponse.redirect(`${appUrl}/${locale}/browse/${listingId}?blocked=own_listing`, 303);
+      }
     }
   }
 

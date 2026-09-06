@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'session_failed' }, { status: 500 });
   }
 
-  // Signed in (unverified). Client routes them straight into mandatory verification.
-  return NextResponse.json({ ok: true, next: `/${locale}/verify?next=browse` });
+  // Signed in. Model A: no forced identity step — seekers never need Sber ID, and
+  // listers are prompted to verify only when they go to post a listing (/list).
+  return NextResponse.json({ ok: true, next: `/${locale}/browse` });
 }

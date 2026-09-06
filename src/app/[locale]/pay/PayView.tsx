@@ -26,6 +26,18 @@ const COPY = {
     removeCoupon: 'Убрать',
     total: 'Итого',
     tokensWord: 'токена',
+    emailLabel: 'Электронная почта',
+    emailPlaceholder: 'you@example.com',
+    consentPrefix: 'Я принимаю ',
+    consentTerms: 'условия использования',
+    consentMid: ' и ',
+    consentPrivacy: 'политику конфиденциальности',
+    consentSuffix: '.',
+    formErrors: {
+      invalid_email: 'Введите корректный email.',
+      consent_required: 'Необходимо принять условия и политику.',
+      signup_failed: 'Не удалось создать аккаунт. Попробуйте ещё раз.',
+    } as Record<string, string>,
     couponErrors: {
       not_found: 'Промокод не найден.',
       inactive: 'Промокод неактивен.',
@@ -55,6 +67,18 @@ const COPY = {
     removeCoupon: 'Remove',
     total: 'Total',
     tokensWord: 'tokens',
+    emailLabel: 'Email address',
+    emailPlaceholder: 'you@example.com',
+    consentPrefix: 'I accept the ',
+    consentTerms: 'Terms',
+    consentMid: ' and ',
+    consentPrivacy: 'Privacy Policy',
+    consentSuffix: '.',
+    formErrors: {
+      invalid_email: 'Enter a valid email.',
+      consent_required: 'You must accept the terms and policy.',
+      signup_failed: 'Couldn’t create your account. Please try again.',
+    } as Record<string, string>,
     couponErrors: {
       not_found: 'Promo code not found.',
       inactive: 'This promo code is inactive.',
@@ -82,12 +106,14 @@ export default function PayView({
   priceRub,
   credits,
   mock,
+  loggedIn,
 }: {
   locale: Locale;
   listingId: string | null;
   priceRub: number;
   credits: number;
   mock: boolean;
+  loggedIn: boolean;
 }) {
   const c = COPY[locale] ?? COPY.ru;
   const nf = locale === 'en' ? 'en-US' : 'ru-RU';
@@ -97,11 +123,15 @@ export default function PayView({
   const [applied, setApplied] = useState<Applied | null>(null);
   const [applying, setApplying] = useState(false);
   const [couponError, setCouponError] = useState('');
+  const [formError, setFormError] = useState('');
 
-  // Surface a coupon error passed back from the commit route (?coupon_error=...).
+  // Surface errors passed back from the commit route (?coupon_error / ?form_error).
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('coupon_error');
-    if (code) setCouponError(c.couponErrors[code] ?? c.couponErrors.generic);
+    const params = new URLSearchParams(window.location.search);
+    const cErr = params.get('coupon_error');
+    if (cErr) setCouponError(c.couponErrors[cErr] ?? c.couponErrors.generic);
+    const fErr = params.get('form_error');
+    if (fErr) setFormError(c.formErrors[fErr] ?? c.formErrors.signup_failed);
   }, [c]);
 
   const price = applied ? applied.finalPriceRub : priceRub;
@@ -249,6 +279,52 @@ export default function PayView({
         <input type="hidden" name="locale" value={locale} />
         {listingId && <input type="hidden" name="listing_id" value={listingId} />}
         {applied && <input type="hidden" name="coupon" value={applied.code} />}
+
+        {/* Anonymous seeker: capture email + consent right here (account is created
+            at payment). Signed-in users skip this. */}
+        {!loggedIn && (
+          <div className="mb-4 flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="pay-email" className="text-sm text-muted">
+                {c.emailLabel}
+              </label>
+              <input
+                id="pay-email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                placeholder={c.emailPlaceholder}
+                className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
+              />
+            </div>
+            <label className="flex items-start gap-2.5 text-sm text-muted">
+              <input
+                type="checkbox"
+                name="consent"
+                required
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-black/30 bg-white accent-cobalt"
+              />
+              <span>
+                {c.consentPrefix}
+                <Link href={`/${locale}/terms`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
+                  {c.consentTerms}
+                </Link>
+                {c.consentMid}
+                <Link href={`/${locale}/privacy`} className="font-medium text-cobalt underline underline-offset-2 hover:opacity-80">
+                  {c.consentPrivacy}
+                </Link>
+                {c.consentSuffix}
+              </span>
+            </label>
+            {formError && (
+              <p role="alert" className="text-sm text-red-600">
+                {formError}
+              </p>
+            )}
+          </div>
+        )}
+
         <button
           type="submit"
           className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-semibold text-white transition hover:brightness-110"

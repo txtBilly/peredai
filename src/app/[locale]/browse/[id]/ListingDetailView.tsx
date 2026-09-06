@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -83,8 +83,11 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   const [resendState, setResendState] = useState<'idle' | 'sent'>('idle');
   const [favourited, setFavourited] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
-  const [seekerVerified, setSeekerVerified] = useState(false);
+  const [hasName, setHasName] = useState(false);
   const [seekerCreditBalance, setSeekerCreditBalance] = useState(0);
+  const [namePrompt, setNamePrompt] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [savingName, setSavingName] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [listingChatId, setListingChatId] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
@@ -155,7 +158,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
         user
           ? supabase
               .from('profiles')
-              .select('verification_status')
+              .select('verification_status, full_name')
               .eq('id', user.id)
               .maybeSingle()
           : Promise.resolve({ data: null }),
@@ -178,9 +181,9 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       setPhotos((photosResult.data ?? []).map((p) => listingPhotoUrl(p.storage_path)));
       setLister(listerResult.data ?? null);
       setFavourited(!!favouriteResult.data);
-      const prof = profileResult.data as { verification_status: string | null } | null;
-      // Match the server's open_connect_chat check: identity-verified (OAuth ID).
-      setSeekerVerified(prof?.verification_status === 'verified');
+      const prof = profileResult.data as { verification_status: string | null; full_name: string | null } | null;
+      // Model A: Sber verification matters only for LISTING; seekers connect without it.
+      setHasName(!!prof?.full_name && prof.full_name.trim().length > 0);
       const ledgerRows = (creditResult.data as { amount: number }[] | null) ?? [];
       setSeekerCreditBalance(ledgerRows.reduce((sum, r) => sum + r.amount, 0));
       setActiveChatId((chatResult.data as { id: string } | null)?.id ?? null);
@@ -201,6 +204,51 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, locale]);
 
+  // After payment (?purchase=success) the seeker returns here with a fresh token.
+  // Model A captures the name AFTER payment: prompt «Укажите Ваше имя» if we don't
+  // have one yet, then open the chat automatically.
+  const autoTriedRef = useRef(false);
+  useEffect(() => {
+    if (phase !== 'ready' || autoTriedRef.current) return;
+    if (new URLSearchParams(window.location.search).get('purchase') !== 'success') return;
+    const isOwnerNow = !!userId && !!listing && listing.lister_id === userId;
+    if (isOwnerNow || activeChatId || seekerCreditBalance < 1) return;
+    autoTriedRef.current = true;
+    if (hasName) {
+      handleConnect();
+    } else {
+      setNamePrompt(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, hasName, userId, listing, activeChatId, seekerCreditBalance]);
+
+  async function handleSaveName(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const name = nameInput.trim();
+    if (!name || savingName) return;
+    setSavingName(true);
+    setConnectError('');
+    try {
+      const res = await fetch('/api/profile/name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) {
+        setSavingName(false);
+        setConnectError(dd.connectErrorGeneric);
+        return;
+      }
+      setHasName(true);
+      setNamePrompt(false);
+      setSavingName(false);
+      handleConnect();
+    } catch {
+      setSavingName(false);
+      setConnectError(dd.connectErrorGeneric);
+    }
+  }
+
   async function handleToggleFavourite() {
     if (!userId) {
       router.push(`/${locale}/signin`);
@@ -215,15 +263,10 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
     if (toggleError) setFavourited(!next);
   }
 
-  // Checkout path: a seeker who still needs verification or credits is sent to
-  // buy the contact-credit bundle (first purchase includes the $35 check).
-  function handleConnectSubmit(e: FormEvent<HTMLFormElement>) {
-    if (!userId) {
-      e.preventDefault();
-      router.push(`/${locale}/signin`);
-    }
-    // else: let the form POST to /api/checkout and follow the redirect to Stripe.
-  }
+  // Checkout path: a seeker without a token buys the bundle. Model A allows an
+  // ANONYMOUS seeker to start here — /api/checkout routes them to /pay, which
+  // collects email + consent and creates the account at payment. So we let the
+  // form POST for everyone (no sign-in gate).
 
   // Direct connect: a verified seeker who has a credit and meets the minimum
   // opens the chat atomically (server consumes the credit + locks the listing).
@@ -241,7 +284,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
         const reasons: Record<string, string> = {
           no_credits: 'У вас нет токенов на контакты.',
           active_chat_exists: 'У вас уже есть активный диалог.',
-          not_verified: 'Сначала нужно пройти проверку личности.',
+          name_required: 'Сначала укажите Ваше имя.',
           listing_unavailable: 'This listing is no longer available.',
           own_listing: "You can't connect to your own listing.",
           listing_not_found: 'Listing not found.',
@@ -398,8 +441,8 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
   const hasActiveChat = !!activeChatId;
   // Eligible to open a chat right now (no checkout needed): verified, holds a
   // credit, and isn't already in an active conversation.
-  const canDirectConnect =
-    !isOwner && seekerVerified && seekerCreditBalance >= 1 && !hasActiveChat;
+  // Model A: seekers don't need Sber ID — a token + a name is enough.
+  const canDirectConnect = !isOwner && seekerCreditBalance >= 1 && !hasActiveChat;
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
@@ -622,16 +665,6 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
             </>
           )}
         </div>
-      ) : userId && !seekerVerified ? (
-        <div className="rounded-xl border border-black/10 bg-white p-4">
-          <p className="mb-2 text-sm text-muted">{dd.verifyToConnect}</p>
-          <Link
-            href={`/${locale}/verify?next=browse/${id}`}
-            className="inline-block rounded-lg bg-gradient-cobalt px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
-          >
-            {dd.verifyToConnectCta}
-          </Link>
-        </div>
       ) : canDirectConnect ? (
         <div>
           <button
@@ -649,7 +682,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           )}
         </div>
       ) : (
-        <form action="/api/checkout" method="POST" onSubmit={handleConnectSubmit}>
+        <form action="/api/checkout" method="POST">
           <input type="hidden" name="locale" value={locale} />
           {/* Carry the listing through the Stripe round-trip so the post-verify
               screen can send the seeker back to it (and, later, open the chat). */}
@@ -661,6 +694,52 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
             {dd.connectCta}
           </button>
         </form>
+      )}
+
+      {/* Post-payment: capture the seeker's name, then open the chat. */}
+      {namePrompt && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="name-prompt-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+          <form
+            onSubmit={handleSaveName}
+            className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-6 shadow-2xl"
+          >
+            <h2 id="name-prompt-title" className="mb-1 font-display text-xl text-ink">
+              {locale === 'en' ? 'Your name' : 'Укажите Ваше имя'}
+            </h2>
+            <p className="mb-4 text-sm text-muted">
+              {locale === 'en'
+                ? 'The landlord will see this name in the chat.'
+                : 'Это имя увидит арендодатель в чате.'}
+            </p>
+            <input
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              required
+              autoFocus
+              autoComplete="name"
+              placeholder={locale === 'en' ? 'e.g. Ivan P.' : 'например, Иван П.'}
+              className="mb-4 w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
+            />
+            <button
+              type="submit"
+              disabled={savingName || !nameInput.trim()}
+              className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+            >
+              {savingName
+                ? locale === 'en'
+                  ? 'Saving…'
+                  : 'Сохраняем…'
+                : locale === 'en'
+                  ? 'Continue'
+                  : 'Продолжить'}
+            </button>
+          </form>
+        </div>
       )}
     </main>
   );

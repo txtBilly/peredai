@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { mintSessionForEmail } from '@/lib/auth-session';
+import { CURRENT_CONSENT_VERSION } from '@/lib/consent';
 import { grantPurchaseCredits, CREDITS_PER_PURCHASE } from '@/lib/credits';
 import { CONTACT_BUNDLE_PRICE_RUB, createContactPayment } from '@/lib/yookassa';
 import { paymentsAreMock } from '@/lib/payments';
 import { validateCoupon, priceForCoupon, recordRedemption, normalizeCouponCode } from '@/lib/coupons';
 
-// Commit the purchase from the /pay review screen (both modes):
-//   - mock:      grant tokens immediately (no processor), record any coupon.
-//   - free coupon (any mode): grant directly, no payment.
-//   - real:      create a YooKassa payment for the discounted amount and redirect
-//                to its QR; tokens + coupon redemption land in the webhook.
-// The price and token count are recomputed here server-side — the client's
-// preview is never trusted.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Commit the purchase from the /pay review screen.
+//
+// Model A: a seeker can arrive ANONYMOUS. In that case the pay screen also
+// collects email + consent; here we create the account from that email (a
+// brand-new email → create + sign in, same trust model as signup), grant tokens,
+// and open the funnel. An email that ALREADY has an account is sent to sign-in
+// rather than silently logged in (that would be account takeover).
+//
+// Price/tokens are always recomputed server-side; the client preview is never trusted.
 export async function POST(req: NextRequest) {
   const appUrl = req.nextUrl.origin;
   const supabase = createClient();
-  const {
+  let {
     data: { user },
   } = await supabase.auth.getUser();
 
@@ -27,8 +33,10 @@ export async function POST(req: NextRequest) {
   const couponCode = normalizeCouponCode(
     typeof form?.get('coupon') === 'string' ? (form?.get('coupon') as string) : ''
   );
-
-  if (!user) return NextResponse.redirect(`${appUrl}/${locale}/signin`, 303);
+  const emailInput = (typeof form?.get('email') === 'string' ? (form?.get('email') as string) : '')
+    .trim()
+    .toLowerCase();
+  const consent = form?.get('consent') === 'on' || form?.get('consent') === 'true';
 
   const payUrl = listingId
     ? `${appUrl}/${locale}/pay?listing_id=${encodeURIComponent(listingId)}`
@@ -36,19 +44,54 @@ export async function POST(req: NextRequest) {
   const successUrl = listingId
     ? `${appUrl}/${locale}/browse/${listingId}?purchase=success`
     : `${appUrl}/${locale}/account?purchase=success`;
+  const backWith = (param: string) =>
+    NextResponse.redirect(`${payUrl}${payUrl.includes('?') ? '&' : '?'}${param}`, 303);
 
-  // Resolve price + tokens, applying a coupon if one was entered. A coupon that
-  // fails validation at commit sends the user back to the pay screen with an error.
+  // --- Anonymous seeker: create the account from email + consent ---
+  if (!user) {
+    if (!EMAIL_RE.test(emailInput)) return backWith('form_error=invalid_email');
+    if (!consent) return backWith('form_error=consent_required');
+
+    const admin = createAdminClient();
+    const { data: created, error: createErr } = await admin.auth.admin.createUser({
+      email: emailInput,
+      email_confirm: true, // passwordless; receipt + magic-link sign-in prove ownership
+      user_metadata: {
+        preferred_locale: locale,
+        consent_version: CURRENT_CONSENT_VERSION,
+        consented_at: new Date().toISOString(),
+      },
+    });
+    if (createErr || !created?.user) {
+      const m = (createErr?.message ?? '').toLowerCase();
+      // Existing email → do NOT mint a session (that would be takeover). Send them
+      // to sign in first.
+      if (m.includes('already') || m.includes('registered') || m.includes('exist')) {
+        return NextResponse.redirect(`${appUrl}/${locale}/signin?email_exists=1`, 303);
+      }
+      console.error('[checkout/confirm] createUser failed', createErr);
+      return backWith('form_error=signup_failed');
+    }
+    const minted = await mintSessionForEmail(emailInput);
+    if (!minted.ok) {
+      console.error('[checkout/confirm] session mint failed', minted.error);
+      return backWith('form_error=signup_failed');
+    }
+    user = created.user;
+  }
+
+  const seekerId = user.id;
+  const seekerEmail = user.email ?? emailInput;
+
+  // Resolve price + tokens, applying a coupon if one was entered.
   let priceRub = CONTACT_BUNDLE_PRICE_RUB;
   let credits = CREDITS_PER_PURCHASE;
   let discountRub = 0;
   let couponId: string | null = null;
   let resolvedCode: string | null = null;
   if (couponCode) {
-    const v = await validateCoupon(couponCode, user.id);
-    if (!v.ok) {
-      return NextResponse.redirect(`${payUrl}${payUrl.includes('?') ? '&' : '?'}coupon_error=${v.reason}`, 303);
-    }
+    const v = await validateCoupon(couponCode, seekerId);
+    if (!v.ok) return backWith(`coupon_error=${v.reason}`);
     const pricing = priceForCoupon(v.coupon);
     priceRub = pricing.finalPriceRub;
     credits = pricing.totalCredits;
@@ -62,25 +105,20 @@ export async function POST(req: NextRequest) {
 
   // Direct-grant path: mock mode, or a free (100%-off) coupon in any mode.
   if (mock || isFree) {
-    const ref = `${mock ? 'mocksbp' : 'freecoupon'}_${user.id}_${Date.now()}`;
-    // For a coupon, record the redemption FIRST — the unique (coupon,user)
-    // constraint is the atomic guard against a double redemption; only grant if
-    // it took.
+    const ref = `${mock ? 'mocksbp' : 'freecoupon'}_${seekerId}_${Date.now()}`;
     if (couponId) {
       const ok = await recordRedemption({
         couponId,
-        userId: user.id,
+        userId: seekerId,
         amountDiscounted: discountRub,
         creditsGranted: credits,
         paymentRef: ref,
       });
-      if (!ok) {
-        return NextResponse.redirect(`${payUrl}${payUrl.includes('?') ? '&' : '?'}coupon_error=already_used`, 303);
-      }
+      if (!ok) return backWith('coupon_error=already_used');
     }
     try {
       await grantPurchaseCredits({
-        seekerId: user.id,
+        seekerId,
         stripePaymentIntent: ref,
         amount: credits,
         note: resolvedCode ? `Purchase (coupon ${resolvedCode}): ${credits} tokens` : undefined,
@@ -94,11 +132,11 @@ export async function POST(req: NextRequest) {
 
   // Real, non-free: create a YooKassa payment for the discounted amount. Tokens
   // and the coupon redemption are applied by the webhook on payment.succeeded.
-  if (!user.email) return NextResponse.json({ error: 'no_email' }, { status: 400 });
+  if (!seekerEmail) return NextResponse.json({ error: 'no_email' }, { status: 400 });
   try {
     const { confirmationUrl } = await createContactPayment({
-      seekerId: user.id,
-      email: user.email,
+      seekerId,
+      email: seekerEmail,
       returnUrl: successUrl,
       priceRub,
       credits,
