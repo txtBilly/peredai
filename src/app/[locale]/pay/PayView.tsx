@@ -11,9 +11,8 @@ const COPY = {
   ru: {
     tag: 'Оплата через СБП',
     title: 'Доступ к откликам',
-    // {price} = price per single token (formatted by the caller).
     explainer:
-      'Каждый токен открывает один отклик на объявление — {price} ₽ за токен. Выберите, сколько токенов купить.',
+      'Каждый токен позволяет начать эксклюзивный чат с автором объявления. На время вашего общения автор объявления не сможет получать другие сообщения.',
     quantityLabel: 'Количество токенов',
     decrease: 'Меньше',
     increase: 'Больше',
@@ -30,6 +29,8 @@ const COPY = {
     applying: 'Проверяем…',
     removeCoupon: 'Убрать',
     total: 'Итого',
+    nameLabel: 'Как вас представить арендодателю',
+    namePlaceholder: 'Например, Иван П.',
     emailLabel: 'Электронная почта',
     emailPlaceholder: 'you@example.com',
     consentPrefix: 'Я принимаю ',
@@ -41,6 +42,7 @@ const COPY = {
     consentPdLabel: 'согласие на обработку персональных данных',
     consentPdSuffix: '.',
     formErrors: {
+      invalid_name: 'Укажите ваше имя (от 2 до 80 символов).',
       invalid_email: 'Введите корректный email.',
       consent_required: 'Необходимо принять условия и политику.',
       consent_pd_required: 'Необходимо согласие на обработку персональных данных.',
@@ -60,7 +62,7 @@ const COPY = {
     tag: 'Pay via SBP',
     title: 'Access to listings',
     explainer:
-      'Each token opens one response to a listing — {price} ₽ per token. Choose how many tokens to buy.',
+      'Each token lets you start an exclusive chat with the person who posted the listing. While you’re talking, they can’t receive messages from anyone else.',
     quantityLabel: 'Number of tokens',
     decrease: 'Decrease',
     increase: 'Increase',
@@ -77,6 +79,8 @@ const COPY = {
     applying: 'Checking…',
     removeCoupon: 'Remove',
     total: 'Total',
+    nameLabel: 'How should we introduce you to the landlord?',
+    namePlaceholder: 'e.g. Ivan P.',
     emailLabel: 'Email address',
     emailPlaceholder: 'you@example.com',
     consentPrefix: 'I accept the ',
@@ -88,6 +92,7 @@ const COPY = {
     consentPdLabel: 'consent to the processing of personal data',
     consentPdSuffix: '.',
     formErrors: {
+      invalid_name: 'Enter your name (2–80 characters).',
       invalid_email: 'Enter a valid email.',
       consent_required: 'You must accept the terms and policy.',
       consent_pd_required: 'Consent to personal-data processing is required.',
@@ -150,6 +155,7 @@ export default function PayView({
   const [formError, setFormError] = useState('');
 
   // Controlled so the mock QR can be revealed only once they're filled in.
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [consentTerms, setConsentTerms] = useState(false);
   const [consentPd, setConsentPd] = useState(false);
@@ -210,7 +216,8 @@ export default function PayView({
   const qrPayload = `https://qr.nspk.ru/MOCKPEREDAI?sum=${price * 100}&cur=RUB&crc=MOCK`;
   // Reveal the (mock) QR only after email + all consents are provided — mirroring
   // production, where YooKassa issues the real QR only after the email is captured.
-  const formReady = loggedIn || (EMAIL_RE.test(email) && consentTerms && consentPd);
+  const formReady =
+    loggedIn || (name.trim().length >= 2 && EMAIL_RE.test(email) && consentTerms && consentPd);
   const showQr = mock && !free && formReady;
 
   async function applyCoupon() {
@@ -263,9 +270,7 @@ export default function PayView({
       <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
       <h1 className="mb-1 font-display text-2xl text-ink">{c.title}</h1>
       <p className="mb-4 text-sm text-muted">{c.tag}</p>
-      <p className="mb-6 text-sm text-ink">
-        {c.explainer.replace('{price}', unitPriceRub.toLocaleString(nf))}
-      </p>
+      <p className="mb-6 text-sm text-ink">{c.explainer}</p>
 
       {/* Quantity */}
       <div className="mb-4">
@@ -375,6 +380,24 @@ export default function PayView({
             at payment). Signed-in users skip this. */}
         {!loggedIn && (
           <div className="mb-4 flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="pay-name" className="text-sm text-muted">
+                {c.nameLabel}
+              </label>
+              <input
+                id="pay-name"
+                name="name"
+                type="text"
+                required
+                minLength={2}
+                maxLength={80}
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={c.namePlaceholder}
+                className="w-full rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
+              />
+            </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="pay-email" className="text-sm text-muted">
                 {c.emailLabel}

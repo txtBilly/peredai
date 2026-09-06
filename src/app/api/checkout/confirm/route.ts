@@ -46,6 +46,9 @@ export async function POST(req: NextRequest) {
   const consent = form?.get('consent') === 'on' || form?.get('consent') === 'true';
   const consentPd = form?.get('consent_pd') === 'on' || form?.get('consent_pd') === 'true';
   const quantity = parseQuantity(form?.get('quantity'));
+  const nameInput = (typeof form?.get('name') === 'string' ? (form?.get('name') as string) : '')
+    .trim()
+    .replace(/\s+/g, ' ');
 
   const payUrl = listingId
     ? `${appUrl}/${locale}/pay?listing_id=${encodeURIComponent(listingId)}`
@@ -58,6 +61,7 @@ export async function POST(req: NextRequest) {
 
   // --- Anonymous seeker: create the account from email + consent ---
   if (!user) {
+    if (nameInput.length < 2 || nameInput.length > 80) return backWith('form_error=invalid_name');
     if (!EMAIL_RE.test(emailInput)) return backWith('form_error=invalid_email');
     if (!consent) return backWith('form_error=consent_required');
     if (!consentPd) return backWith('form_error=consent_pd_required');
@@ -67,6 +71,11 @@ export async function POST(req: NextRequest) {
       email: emailInput,
       email_confirm: true, // passwordless; receipt + magic-link sign-in prove ownership
       user_metadata: {
+        // handle_new_user seeds the profile from this metadata. Passing the name
+        // here (both the disclosed full_name and the display_first_name) means the
+        // lister sees the seeker's real name, not the email prefix.
+        full_name: nameInput,
+        display_first_name: nameInput.split(' ')[0],
         preferred_locale: locale,
         consent_version: CURRENT_CONSENT_VERSION,
         consented_at: new Date().toISOString(),

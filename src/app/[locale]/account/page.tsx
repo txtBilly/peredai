@@ -81,7 +81,7 @@ export default async function AccountPage({ params }: { params: { locale: string
           ? 'border-red-300 bg-red-50 text-red-600'
           : 'border-black/10 bg-black/[0.03] text-muted'
       }`}>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <span>
             {isVerified && (<><span aria-hidden="true">✓ </span>{a.verifiedBadge}</>)}
             {!isVerified && verificationStatus === 'pending' && (<><span aria-hidden="true">⏳ </span>{a.pending}</>)}
@@ -91,7 +91,7 @@ export default async function AccountPage({ params }: { params: { locale: string
           {!isVerified && (
             <Link
               href={`/${locale}/verify`}
-              className="ml-4 rounded-lg bg-gradient-cobalt px-3 py-1 text-xs font-medium text-white hover:brightness-110"
+              className="shrink-0 whitespace-nowrap rounded-lg bg-gradient-cobalt px-4 py-2 text-center text-xs font-medium text-white hover:brightness-110 sm:ml-4 sm:py-1"
             >
               {a.verifyNow}
             </Link>

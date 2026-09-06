@@ -61,7 +61,7 @@ export default function DeletePage({ params }: { params: { locale: string } }) {
 
   async function handleDelete(e: FormEvent) {
     e.preventDefault();
-    if (confirm !== 'DELETE') return;
+    if (confirm.trim() !== del.confirmPlaceholder) return;
     setError('');
     setStatus('deleting');
 
@@ -82,7 +82,7 @@ export default function DeletePage({ params }: { params: { locale: string } }) {
     router.push(`/${locale}`);
   }
 
-  const canDelete = confirm === 'DELETE' && !guard && status === 'idle';
+  const canDelete = confirm.trim() === del.confirmPlaceholder && !guard && status === 'idle';
 
   return (
     <main className="mx-auto max-w-lg px-5 py-16">

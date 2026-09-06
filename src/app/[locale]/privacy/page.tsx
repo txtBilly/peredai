@@ -44,11 +44,7 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
       <h1 className="mb-2 mt-4 font-display text-3xl font-bold text-ink">
         Политика в отношении обработки персональных данных
       </h1>
-      <p className="mb-1 text-sm text-muted">Редакция {CURRENT_CONSENT_VERSION} (сентябрь 2026 г.)</p>
-      <p className="mb-8 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-        Черновик. Документ подлежит проверке юристом до публичного запуска. Подготовлен как шаблон в соответствии с
-        Федеральным законом № 152-ФЗ «О персональных данных».
-      </p>
+      <p className="mb-8 text-sm text-muted">Редакция {CURRENT_CONSENT_VERSION} (сентябрь 2026 г.)</p>
 
       <H>1. Общие положения</H>
       <P>
