@@ -2,7 +2,8 @@ import { createAdminClient } from './supabase/server';
 
 // ============================================================================
 // Contact credit rules (locked):
-//   - One purchase => +3 credits (1 base token + 2 bonus).
+//   - Per-token purchase => seeker buys N tokens (default 1) at TOKEN_PRICE_RUB
+//     each; grants exactly N credits. Coupons may add bonus_credits on top.
 //   - Opening a chat => -1 (consume). Only 1 active chat per seeker at a time.
 //   - "Didn't work out" close => credit stays consumed (NOT refunded).
 //   - Confirmed report against the lister => +1 (refund_report).
@@ -10,7 +11,8 @@ import { createAdminClient } from './supabase/server';
 // All writes go through the service-role client (RLS-bypassing, server-only).
 // ============================================================================
 
-export const CREDITS_PER_PURCHASE = 3;
+// Default token quantity for a single purchase (the seeker can choose more).
+export const CREDITS_PER_PURCHASE = 1;
 
 export async function getBalance(seekerId: string): Promise<number> {
   const admin = createAdminClient();

@@ -2,8 +2,7 @@ import { notFound } from 'next/navigation';
 import { isLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { createClient } from '@/lib/supabase/server';
-import { CONTACT_BUNDLE_PRICE_RUB } from '@/lib/yookassa';
-import { CREDITS_PER_PURCHASE } from '@/lib/credits';
+import { TOKEN_PRICE_RUB, MAX_TOKENS_PER_PURCHASE } from '@/lib/yookassa';
 import { paymentsAreMock } from '@/lib/payments';
 import PayView from './PayView';
 
@@ -35,8 +34,8 @@ export default async function PayPage({
     <PayView
       locale={locale}
       listingId={listingId}
-      priceRub={CONTACT_BUNDLE_PRICE_RUB}
-      credits={CREDITS_PER_PURCHASE}
+      unitPriceRub={TOKEN_PRICE_RUB}
+      maxQuantity={MAX_TOKENS_PER_PURCHASE}
       mock={paymentsAreMock()}
       loggedIn={!!user}
     />

@@ -44,10 +44,13 @@ export function normalizeCouponCode(input: string | null | undefined): string {
   return (input ?? '').trim().toUpperCase();
 }
 
-// Load a coupon by code and check it's usable by this user right now.
+// Load a coupon by code and check it's usable by this user right now. Pass
+// userId=null for an anonymous PREVIEW (Model A seekers reach /pay before their
+// account exists): the general checks still run, but the one-per-account check is
+// skipped — it re-runs authoritatively at commit once the account is created.
 export async function validateCoupon(
   rawCode: string,
-  userId: string
+  userId: string | null
 ): Promise<{ ok: true; coupon: Coupon } | { ok: false; reason: CouponReason }> {
   const code = normalizeCouponCode(rawCode);
   if (!code) return { ok: false, reason: 'not_found' };
@@ -73,14 +76,16 @@ export async function validateCoupon(
     return { ok: false, reason: 'max_reached' };
   }
 
-  // One redemption per account.
-  const { data: prior } = await admin
-    .from('coupon_redemptions')
-    .select('id')
-    .eq('coupon_id', coupon.id)
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (prior) return { ok: false, reason: 'already_used' };
+  // One redemption per account (skipped for anonymous previews; enforced at commit).
+  if (userId) {
+    const { data: prior } = await admin
+      .from('coupon_redemptions')
+      .select('id')
+      .eq('coupon_id', coupon.id)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (prior) return { ok: false, reason: 'already_used' };
+  }
 
   return { ok: true, coupon };
 }

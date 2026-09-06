@@ -11,16 +11,22 @@
 // Env:
 //   YOOKASSA_SHOP_ID       — shop identifier from the YooKassa dashboard
 //   YOOKASSA_SECRET_KEY    — secret key (server-only)
-//   CONTACT_BUNDLE_PRICE_RUB — price in whole rubles for 3 contact credits
+//   TOKEN_PRICE_RUB — price in whole rubles per contact token (default 1499)
 
 import { randomUUID } from 'crypto';
 import { CREDITS_PER_PURCHASE } from './credits';
 
 const API_BASE = 'https://api.yookassa.ru/v3';
 
-export const CONTACT_BUNDLE_PRICE_RUB = Number(
-  process.env.CONTACT_BUNDLE_PRICE_RUB ?? 1490
-); // ₽1490 => 3 contact credits
+// Per-token pricing. A seeker chooses how many tokens to buy (default 1); the
+// price is TOKEN_PRICE_RUB × quantity and they receive that many tokens. Each
+// token opens one chat / responds to one listing.
+export const TOKEN_PRICE_RUB = Number(process.env.TOKEN_PRICE_RUB ?? 1499); // ₽ per token
+export const MAX_TOKENS_PER_PURCHASE = Number(process.env.MAX_TOKENS_PER_PURCHASE ?? 10);
+
+// Legacy alias — the old "bundle" price. Kept so any remaining references (and
+// the coupon default base) resolve to a single token's price.
+export const CONTACT_BUNDLE_PRICE_RUB = TOKEN_PRICE_RUB;
 
 export type YooKassaPayment = {
   id: string;
@@ -66,7 +72,7 @@ export async function createContactPayment(params: {
     throw new Error('createContactPayment called with a non-positive amount');
   }
   const credits = params.credits ?? CREDITS_PER_PURCHASE;
-  const label = `${credits} токена на контакты`;
+  const label = `Токены на отклики (${credits} шт.)`;
   const res = await fetch(`${API_BASE}/payments`, {
     method: 'POST',
     headers: {

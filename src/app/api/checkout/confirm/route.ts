@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { mintSessionForEmail } from '@/lib/auth-session';
 import { CURRENT_CONSENT_VERSION } from '@/lib/consent';
-import { grantPurchaseCredits, CREDITS_PER_PURCHASE } from '@/lib/credits';
-import { CONTACT_BUNDLE_PRICE_RUB, createContactPayment } from '@/lib/yookassa';
+import { grantPurchaseCredits } from '@/lib/credits';
+import { TOKEN_PRICE_RUB, MAX_TOKENS_PER_PURCHASE, createContactPayment } from '@/lib/yookassa';
 import { paymentsAreMock } from '@/lib/payments';
 import { validateCoupon, priceForCoupon, recordRedemption, normalizeCouponCode } from '@/lib/coupons';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Clamp the requested token quantity to a whole number within [1, MAX].
+function parseQuantity(raw: FormDataEntryValue | null | undefined): number {
+  const n = Math.floor(Number(typeof raw === 'string' ? raw : 1));
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(n, MAX_TOKENS_PER_PURCHASE);
+}
 
 // Commit the purchase from the /pay review screen.
 //
@@ -37,6 +44,8 @@ export async function POST(req: NextRequest) {
     .trim()
     .toLowerCase();
   const consent = form?.get('consent') === 'on' || form?.get('consent') === 'true';
+  const consentPd = form?.get('consent_pd') === 'on' || form?.get('consent_pd') === 'true';
+  const quantity = parseQuantity(form?.get('quantity'));
 
   const payUrl = listingId
     ? `${appUrl}/${locale}/pay?listing_id=${encodeURIComponent(listingId)}`
@@ -51,6 +60,7 @@ export async function POST(req: NextRequest) {
   if (!user) {
     if (!EMAIL_RE.test(emailInput)) return backWith('form_error=invalid_email');
     if (!consent) return backWith('form_error=consent_required');
+    if (!consentPd) return backWith('form_error=consent_pd_required');
 
     const admin = createAdminClient();
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
@@ -83,16 +93,18 @@ export async function POST(req: NextRequest) {
   const seekerId = user.id;
   const seekerEmail = user.email ?? emailInput;
 
-  // Resolve price + tokens, applying a coupon if one was entered.
-  let priceRub = CONTACT_BUNDLE_PRICE_RUB;
-  let credits = CREDITS_PER_PURCHASE;
+  // Resolve price + tokens from the chosen quantity, applying a coupon if one
+  // was entered. Base = unit price × quantity; base tokens = quantity.
+  const baseTotalRub = TOKEN_PRICE_RUB * quantity;
+  let priceRub = baseTotalRub;
+  let credits = quantity;
   let discountRub = 0;
   let couponId: string | null = null;
   let resolvedCode: string | null = null;
   if (couponCode) {
     const v = await validateCoupon(couponCode, seekerId);
     if (!v.ok) return backWith(`coupon_error=${v.reason}`);
-    const pricing = priceForCoupon(v.coupon);
+    const pricing = priceForCoupon(v.coupon, baseTotalRub, quantity);
     priceRub = pricing.finalPriceRub;
     credits = pricing.totalCredits;
     discountRub = pricing.discountRub;
