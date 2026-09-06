@@ -8,6 +8,47 @@ import { getDictionary, intlLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { formatRubles } from '@/lib/format';
 
+// Ten2Ten app-icon tile (the favicon creative): cobalt→fuchsia squircle with the
+// roof mark and "T2T". Used as the diagonal cover mark in the conversation header
+// and, small, as the badge on the platform "Памятка" card.
+function BrandTile({
+  size = 32,
+  className = '',
+  style,
+}: {
+  size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden="true" className={className} style={style}>
+      <defs>
+        <linearGradient id="t2tGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#1B4DE4" />
+          <stop offset="0.38" stopColor="#2A44E1" />
+          <stop offset="0.66" stopColor="#7C3AED" />
+          <stop offset="1" stopColor="#D946EF" />
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="112" fill="url(#t2tGrad)" />
+      <polygon points="100,214 256,106 412,214" fill="#fff" />
+      <text
+        x="256"
+        y="348"
+        fontFamily="'Helvetica Neue', Arial, sans-serif"
+        fontWeight="700"
+        fontSize="168"
+        fill="#fff"
+        textAnchor="middle"
+        dominantBaseline="central"
+        letterSpacing="-6"
+      >
+        T2T
+      </text>
+    </svg>
+  );
+}
+
 // Copy here is functional, not final (part of the batched copy sweep).
 
 type Chat = {
@@ -296,16 +337,12 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
     listing?.gratitude_amount != null && listing.gratitude_amount > 0
       ? formatRubles(listing.gratitude_amount)
       : null;
-  // Split unit/rent from the gratuity so they can be sized independently.
-  const unitRentLine = listing
-    ? [
-        listing.type ? listingTypeLabel(listing.type, l) : null,
-        listing.monthly_rent != null ? formatRubles(listing.monthly_rent, { perMonth: true }) : null,
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    : '';
   const gratuityLine = gratuityLabel ? `${gratuityLabel} ${c.gratuitySuffix}` : null;
+  // Listing card lines: "Neighborhood · type" on top, "rent · gratuity" beneath.
+  const typeLabel = listing?.type ? listingTypeLabel(listing.type, l) : null;
+  const topLine = [listing?.neighborhood, typeLabel].filter(Boolean).join(' · ');
+  const rentStr = listing?.monthly_rent != null ? formatRubles(listing.monthly_rent, { perMonth: true }) : null;
+  const metaLine = [rentStr, gratuityLine].filter(Boolean).join(' · ');
   const availableLabel = listing?.available_from
     ? new Date(listing.available_from).toLocaleDateString(intlLocale(locale), {
         month: 'short',
@@ -320,82 +357,119 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
         ? c.closedDidntWork
         : c.closed;
 
+  // Other party's verification: the lister is always verified (posting requires it);
+  // the seeker's status is disclosed to the lister when they've passed identity.
+  const otherVerified = role === 'seeker' ? true : chat.disclosed_bg_status === 'verified';
+  const initials =
+    otherName && otherName !== '—'
+      ? otherName
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((w) => w.charAt(0).toUpperCase())
+          .join('')
+      : '—';
+  const fmtTime = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleTimeString(intlLocale(locale), { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  };
+  // The platform's opening reminder — role-aware, shown once at the top of the thread.
+  const reminderBullets =
+    role === 'seeker'
+      ? [
+          'Ведите общение внутри Ten2Ten.',
+          'Не передавайте конфиденциальные финансовые данные и встречайтесь в безопасном общественном месте.',
+          'При личной встрече попросите показать документ, удостоверяющий личность.',
+          'Уточните, обсуждается ли размер благодарности.',
+          'Не платите заранее и просите расписку за любые переданные деньги.',
+        ]
+      : [
+          'Ведите общение внутри Ten2Ten.',
+          'Не передавайте конфиденциальные финансовые данные и встречайтесь в безопасном общественном месте.',
+          'При личной встрече попросите показать документ, удостоверяющий личность.',
+          'Согласуйте с собственником, что кандидат соответствует требованиям.',
+          'Не берите предоплату, пока не убедитесь, что арендатор подходит, и до обсуждения важных деталей.',
+          'Честно и по возможности полно раскрывайте важные детали о квартире.',
+        ];
+
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col px-5 py-8">
-      {/* Header: actions row on top (left-aligned), identity card beneath */}
-      <div className="mb-4 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          {isActive && role === 'seeker' && !successReported && (
-            <button
-              type="button"
-              onClick={() => setCloseOpen((v) => !v)}
-              className="rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:border-red-400 hover:bg-red-100"
-            >
-              {c.terminate}
-            </button>
-          )}
-          <Link
-            href={`/${locale}/chats/${id}/report`}
-            className="rounded-lg border border-black/15 px-3 py-1.5 text-sm text-muted transition hover:border-black/30 hover:text-ink"
-          >
-            {c.report}
-          </Link>
+    <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col px-5 py-6">
+      {/* Conversation header — branded cover tile with the app icon bleeding across */}
+      <div
+        className="relative mb-3 flex items-center gap-3 overflow-hidden rounded-2xl border border-black/10 px-4 py-3.5"
+        style={{ background: 'linear-gradient(115deg, rgba(27,77,228,.12), rgba(91,43,255,.08) 62%, rgba(255,255,255,.35))' }}
+      >
+        <BrandTile
+          size={120}
+          className="pointer-events-none absolute right-3 top-1/2"
+          style={{ transform: 'translateY(-50%) rotate(-20deg)', opacity: 0.6, filter: 'drop-shadow(0 10px 20px rgba(27,40,120,.22))' }}
+        />
+        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-cobalt text-sm font-bold text-white">
+          {initials}
         </div>
-        <div className="rounded-xl border border-black/10 bg-white p-3 text-sm">
-          {role === 'seeker' ? (
-            <div className="space-y-3">
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="whitespace-nowrap text-[1.23rem] font-bold text-ink">{otherName}</span>
-                <span className="whitespace-nowrap font-semibold text-leaf">✓ {c.verifiedId}</span>
-              </p>
-              {listing?.full_address && (
-                <p className="text-[1.26rem] text-ink">
-                  <span className="text-ink">{c.addressLabel}</span> {listing.full_address}
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-muted">
-              <span className="text-ink">{c.seekerLabel}</span> {chat.disclosed_seeker_name ?? '—'} ·{' '}
-              {chat.disclosed_bg_status === 'verified' ? c.verifiedId : '—'}
-            </p>
+        <div className="relative min-w-0">
+          <div className="truncate text-[1.05rem] font-bold text-ink">{otherName}</div>
+          {otherVerified && (
+            <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-bold text-leaf">
+              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
+                <circle cx="8" cy="8" r="7" fill="#0A9D57" />
+                <path d="M5 8.2l2 2 4-4.4" stroke="#fff" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {c.verifiedId}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Listing summary */}
-      <div className="mb-4">
-        {listing?.neighborhood && (
-          <h1 className="font-display text-[1.05rem]">
-            <Link
-              href={`/${locale}/browse/${chat.listing_id}`}
-              className="line-clamp-2 break-words text-cobalt underline decoration-cobalt/40 underline-offset-4 hover:decoration-cobalt"
-            >
-              {listing.neighborhood}
-            </Link>
-          </h1>
+      {/* Actions — full-width row */}
+      <div className="mb-3 flex items-stretch gap-2">
+        {isActive && role === 'seeker' && !successReported && (
+          <button
+            type="button"
+            onClick={() => setCloseOpen((v) => !v)}
+            className="flex-1 rounded-lg border border-red-300 bg-red-50 px-3 py-2.5 text-center text-sm font-semibold text-red-600 transition hover:border-red-400 hover:bg-red-100"
+          >
+            {c.terminate}
+          </button>
         )}
-        {(unitRentLine || gratuityLine) && (
-          <p className="mt-1.5 text-ink">
-            {unitRentLine && <span className="text-[0.88rem]">{unitRentLine}</span>}
-            {unitRentLine && gratuityLine && <span className="text-[0.88rem]"> · </span>}
-            {gratuityLine && <span className="text-[0.88rem]">{gratuityLine}</span>}
-          </p>
-        )}
-        {availableLabel && (
-          <p className="mt-1.5 text-[0.88rem] text-ink">{c.available} {availableLabel}</p>
-        )}
+        <Link
+          href={`/${locale}/chats/${id}/report`}
+          className="flex-1 rounded-lg border border-black/15 px-3 py-2.5 text-center text-sm font-semibold text-muted transition hover:border-black/30 hover:text-ink"
+        >
+          {c.report}
+        </Link>
       </div>
+
+      {/* Listing card */}
+      {(topLine || metaLine) && (
+        <Link
+          href={`/${locale}/browse/${chat.listing_id}`}
+          className="mb-3 block rounded-2xl border border-black/10 px-3.5 py-3 transition hover:border-black/20"
+        >
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 break-words font-bold text-cobalt">{topLine || '—'}</span>
+            <span aria-hidden="true" className="text-muted">›</span>
+          </div>
+          {role === 'seeker' && listing?.full_address && (
+            <div className="mt-1 text-[0.85rem] text-ink">{listing.full_address}</div>
+          )}
+          {metaLine && <div className="mt-1 text-[0.85rem] text-ink">{metaLine}</div>}
+          {availableLabel && <div className="mt-1 text-[0.8rem] text-muted">{c.available} {availableLabel}</div>}
+        </Link>
+      )}
 
       {/* Pending success — seeker reported "got the place", awaiting the lister */}
       {isActive && successReported && role === 'seeker' && (
-        <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
+        <div className="mb-3 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
           <p className="mb-1 font-medium text-ink">{c.seekerReportedTitle}</p>
           <p className="text-xs text-muted">{c.seekerReportedBody}</p>
         </div>
       )}
       {isActive && successReported && role === 'lister' && (
-        <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
+        <div className="mb-3 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
           <p className="mb-1 font-medium text-ink">{c.listerReportedTitle.replace('{name}', otherName)}</p>
           <p className="mb-3 text-xs text-muted">{c.listerReportedBody}</p>
           <div className="flex flex-wrap gap-2">
@@ -421,7 +495,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
 
       {/* Lister close-request / seeker confirm */}
       {isActive && closeRequested && role === 'seeker' && (
-        <div className="mb-4 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
+        <div className="mb-3 rounded-xl border border-cobalt/30 bg-cobalt/5 p-4">
           <p className="mb-1 font-medium text-ink">{c.listerAskedClose}</p>
           <p className="mb-3 text-xs text-muted">{c.seekerConfirmCloseBody}</p>
           <button
@@ -435,12 +509,12 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
         </div>
       )}
       {isActive && closeRequested && role === 'lister' && (
-        <div className="mb-4 rounded-xl border border-black/10 bg-white p-3 text-sm text-muted">
+        <div className="mb-3 rounded-xl border border-black/10 bg-white p-3 text-sm text-muted">
           {c.closeRequestedLister}
         </div>
       )}
       {listerCanRequest && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-white p-3">
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-white p-3">
           <p className="text-sm text-muted">{c.seekerIdle}</p>
           <button
             type="button"
@@ -500,28 +574,27 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
         </div>
       )}
 
-      {/* Safety message — pinned first in the thread */}
-      <ul className="mb-3 list-disc space-y-1 rounded-lg border border-black/10 bg-black/[0.02] py-3 pl-8 pr-4 text-xs leading-relaxed text-muted">
-        <li>Ведите общение внутри Ten2Ten.</li>
-        <li>Не передавайте конфиденциальные финансовые данные и встречайтесь в безопасном общественном месте.</li>
-        <li>При личной встрече попросите показать документ, удостоверяющий личность.</li>
-        {role === 'seeker' ? (
-          <>
-            <li>Уточните, обсуждается ли размер благодарности.</li>
-            <li>Не платите заранее.</li>
-            <li>Просите расписку за любые переданные деньги.</li>
-          </>
-        ) : (
-          <>
-            <li>Согласуйте с собственником, что кандидат соответствует требованиям.</li>
-            <li>
-              Не берите предоплату, пока не убедитесь, что арендатор подходит, и до обсуждения важных деталей, таких
-              как дата заезда.
+      {/* Opening reminder — the platform's message, styled distinctly from people's */}
+      <div
+        className="mb-3 rounded-2xl border p-3"
+        style={{
+          background: 'linear-gradient(135deg, rgba(27,77,228,.09), rgba(91,43,255,.07))',
+          borderColor: 'rgba(27,77,228,.26)',
+        }}
+      >
+        <div className="mb-2 flex items-center gap-2">
+          <BrandTile size={16} className="rounded" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-cobalt">{c.reminderTitle}</span>
+        </div>
+        <ul className="flex flex-col gap-1.5">
+          {reminderBullets.map((b, i) => (
+            <li key={i} className="relative pl-4 text-xs leading-relaxed text-ink/80">
+              <span aria-hidden="true" className="absolute left-0 top-[7px] h-1.5 w-1.5 rounded-full bg-cobalt" />
+              {b}
             </li>
-            <li>Честно и по возможности полно раскрывайте важные детали о квартире.</li>
-          </>
-        )}
-      </ul>
+          ))}
+        </ul>
+      </div>
 
       {/* Thread */}
       <div className="flex-1 space-y-3 overflow-y-auto py-2">
@@ -533,15 +606,15 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
             return (
               <div key={m.id} className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
                 <div
-                  className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
+                  className={`max-w-[80%] px-3.5 py-2 text-sm ${
                     mine
-                      ? 'bg-gradient-cobalt text-white'
-                      : 'bg-gradient-to-br from-fuchsia-600 to-pink-500 text-white'
+                      ? 'rounded-[16px_16px_5px_16px] bg-gradient-cobalt text-white'
+                      : 'rounded-[16px_16px_16px_5px] border border-black/10 bg-paper text-ink'
                   }`}
                 >
                   {m.body}
                 </div>
-                <span className="mt-0.5 text-[10px] text-muted">{mine ? c.you : otherName}</span>
+                <span className="mt-0.5 text-[10px] text-muted">{fmtTime(m.created_at)}</span>
               </div>
             );
           })
@@ -557,19 +630,22 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
 
       {/* Composer */}
       {isActive ? (
-        <form onSubmit={handleSend} className="mt-2 flex gap-2">
+        <form onSubmit={handleSend} className="mt-2 flex items-center gap-2">
           <input
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={c.inputPlaceholder}
-            className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2.5 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
+            className="flex-1 rounded-full border border-black/15 bg-paper px-4 py-3 text-ink placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
           />
           <button
             type="submit"
+            aria-label={c.send}
             disabled={sending || !body.trim()}
-            className="rounded-lg bg-gradient-cobalt px-5 py-2.5 font-medium text-white transition hover:brightness-110 disabled:opacity-50"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-cobalt text-white transition hover:brightness-110 disabled:opacity-50"
           >
-            {c.send}
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+              <path d="M12 20V5M6 11l6-6 6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </form>
       ) : (
