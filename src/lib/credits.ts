@@ -30,15 +30,19 @@ export async function getBalance(seekerId: string): Promise<number> {
 export async function grantPurchaseCredits(params: {
   seekerId: string;
   stripePaymentIntent: string;
+  // Total tokens to grant (base + any coupon bonus). Defaults to the bundle size.
+  amount?: number;
+  note?: string;
 }): Promise<void> {
   const admin = createAdminClient();
+  const amount = params.amount ?? CREDITS_PER_PURCHASE;
 
   const { error } = await admin.from('credit_ledger').insert({
     seeker_id: params.seekerId,
     event: 'purchase',
-    amount: CREDITS_PER_PURCHASE,
+    amount,
     stripe_payment_intent: params.stripePaymentIntent,
-    note: `Purchased ${CREDITS_PER_PURCHASE} contact credits`,
+    note: params.note ?? `Purchased ${amount} contact credits`,
   });
   if (error && error.code !== '23505') throw error;
 }

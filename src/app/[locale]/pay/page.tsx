@@ -4,6 +4,7 @@ import type { Locale } from '@/i18n/config';
 import { requireUser } from '@/lib/auth';
 import { CONTACT_BUNDLE_PRICE_RUB } from '@/lib/yookassa';
 import { CREDITS_PER_PURCHASE } from '@/lib/credits';
+import { paymentsAreMock } from '@/lib/payments';
 import PayView from './PayView';
 
 // Mock SBP-QR checkout page. In preview/dev the /api/checkout route redirects
@@ -31,6 +32,7 @@ export default async function PayPage({
       listingId={listingId}
       priceRub={CONTACT_BUNDLE_PRICE_RUB}
       credits={CREDITS_PER_PURCHASE}
+      mock={paymentsAreMock()}
     />
   );
 }

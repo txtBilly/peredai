@@ -18,9 +18,6 @@ import { CREDITS_PER_PURCHASE } from './credits';
 
 const API_BASE = 'https://api.yookassa.ru/v3';
 
-// Receipt/description label for the bundle, e.g. "3 токена на контакты".
-const BUNDLE_LABEL = `${CREDITS_PER_PURCHASE} токена на контакты`;
-
 export const CONTACT_BUNDLE_PRICE_RUB = Number(
   process.env.CONTACT_BUNDLE_PRICE_RUB ?? 1490
 ); // ₽1490 => 3 contact credits
@@ -54,7 +51,22 @@ export async function createContactPayment(params: {
   seekerId: string;
   email: string;
   returnUrl: string;
+  // Discounted price + token count (from an applied coupon). Default to the
+  // full bundle. The webhook reads `credits`/`coupon_*` from metadata to grant
+  // the right number of tokens and record the redemption.
+  priceRub?: number;
+  credits?: number;
+  couponId?: string;
+  couponCode?: string;
+  discountRub?: number;
 }): Promise<{ id: string; confirmationUrl: string }> {
+  const priceRub = params.priceRub ?? CONTACT_BUNDLE_PRICE_RUB;
+  if (priceRub <= 0) {
+    // Free coupons never create a YooKassa payment — they're granted directly.
+    throw new Error('createContactPayment called with a non-positive amount');
+  }
+  const credits = params.credits ?? CREDITS_PER_PURCHASE;
+  const label = `${credits} токена на контакты`;
   const res = await fetch(`${API_BASE}/payments`, {
     method: 'POST',
     headers: {
@@ -63,29 +75,36 @@ export async function createContactPayment(params: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      amount: { value: rubValue(CONTACT_BUNDLE_PRICE_RUB), currency: 'RUB' },
+      amount: { value: rubValue(priceRub), currency: 'RUB' },
       capture: true,
       // Restrict to СБП (Faster Payments) only. YooKassa's confirmation page then
       // shows a QR to scan on desktop, or a bank list on mobile.
       payment_method_data: { type: 'sbp' },
       confirmation: { type: 'redirect', return_url: params.returnUrl },
-      description: `${BUNDLE_LABEL} — Ten2Ten`,
+      description: `${label} — Ten2Ten`,
       // 54-ФЗ receipt: the customer + a single service line item. YooKassa emails
       // the fiscal receipt. VAT code 1 = "без НДС" (adjust for your tax mode).
       receipt: {
         customer: { email: params.email },
         items: [
           {
-            description: BUNDLE_LABEL,
+            description: label,
             quantity: '1.00',
-            amount: { value: rubValue(CONTACT_BUNDLE_PRICE_RUB), currency: 'RUB' },
+            amount: { value: rubValue(priceRub), currency: 'RUB' },
             vat_code: 1,
             payment_mode: 'full_payment',
             payment_subject: 'service',
           },
         ],
       },
-      metadata: { seeker_id: params.seekerId, kind: 'contact_bundle' },
+      metadata: {
+        seeker_id: params.seekerId,
+        kind: 'contact_bundle',
+        credits: String(credits),
+        ...(params.couponId ? { coupon_id: params.couponId } : {}),
+        ...(params.couponCode ? { coupon_code: params.couponCode } : {}),
+        ...(params.discountRub ? { discount_rub: String(params.discountRub) } : {}),
+      },
     }),
   });
 

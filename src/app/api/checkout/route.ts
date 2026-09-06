@@ -1,26 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { createContactPayment } from '@/lib/yookassa';
 
-// Mock payments (preview/dev): no real processor is configured, so the purchase
-// completes instantly and tokens are granted here (there's no webhook). Active
-// when PAYMENTS_PROVIDER=mock, or when YooKassa credentials are absent/placeholder.
-function paymentsAreMock(): boolean {
-  return (
-    process.env.PAYMENTS_PROVIDER === 'mock' ||
-    !process.env.YOOKASSA_SHOP_ID ||
-    process.env.YOOKASSA_SHOP_ID === 'test-shop-id'
-  );
-}
-
-// Creates a YooKassa payment for the contact-credit bundle and redirects the
-// seeker to its hosted confirmation page. Submit as a plain form POST:
+// Entry point for "buy tokens" / Connect-without-credits. Sends the seeker to the
+// /pay review screen, where they see the price, can apply a coupon, and then
+// commit. The actual charge/grant happens at /api/checkout/confirm — for both
+// mock and real (YooKassa) modes — so a coupon is always applied before any
+// payment is created. Submit as a plain form POST:
 //   <form action="/api/checkout" method="POST">
 //     <input type="hidden" name="locale" value="ru" />
 //     <input type="hidden" name="listing_id" value="…" />
-//     <button>Купить 3 кредита</button>
+//     <button>Купить токены</button>
 //   </form>
-// Credits are granted by the YooKassa webhook on payment.succeeded — never here.
 export async function POST(req: NextRequest) {
   const supabase = createClient();
   const {
@@ -48,13 +38,11 @@ export async function POST(req: NextRequest) {
         ? 'en'
         : 'ru';
 
-  // Base URL comes from the incoming request so redirects always target the
-  // host the user is actually on (ten2ten.ru, 10210.ru, or localhost). Do NOT
-  // use NEXT_PUBLIC_APP_URL here — it's inlined at build time and was sending
-  // live users to http://localhost:3000.
+  // Base URL from the incoming request so redirects target the host the user is
+  // on (ten2ten.ru / localhost), never the build-time NEXT_PUBLIC_APP_URL.
   const appUrl = req.nextUrl.origin;
 
-  // A lister can't connect to their own listing — refuse before any charge.
+  // A lister can't connect to their own listing — refuse before the pay screen.
   if (listingId) {
     const { data: listingRow } = await admin
       .from('listings')
@@ -66,32 +54,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // After paying, YooKassa sends the seeker to return_url. Point them back at the
-  // listing they came from (so they can Connect once credits land), else account.
-  const returnUrl = listingId
-    ? `${appUrl}/${locale}/browse/${listingId}?purchase=success`
-    : `${appUrl}/${locale}/account?purchase=success`;
-
-  // Preview/dev: no real processor. Instead of granting silently, send the
-  // seeker to the mock SBP-QR page; credits are granted only when they confirm
-  // there (POST /api/checkout/confirm), mirroring the real flow where credits
-  // land after payment — never on the click.
-  if (paymentsAreMock()) {
-    const payUrl = listingId
-      ? `${appUrl}/${locale}/pay?listing_id=${encodeURIComponent(listingId)}`
-      : `${appUrl}/${locale}/pay`;
-    return NextResponse.redirect(payUrl, 303);
-  }
-
-  try {
-    const { confirmationUrl } = await createContactPayment({
-      seekerId: user.id,
-      email: user.email,
-      returnUrl,
-    });
-    return NextResponse.redirect(confirmationUrl, 303);
-  } catch (e) {
-    console.error('[checkout] failed to create YooKassa payment', e);
-    return NextResponse.json({ error: 'checkout_failed' }, { status: 500 });
-  }
+  const payUrl = listingId
+    ? `${appUrl}/${locale}/pay?listing_id=${encodeURIComponent(listingId)}`
+    : `${appUrl}/${locale}/pay`;
+  return NextResponse.redirect(payUrl, 303);
 }
