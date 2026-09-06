@@ -7,7 +7,7 @@ import { listingTypeLabel } from '@/lib/listings';
 import { getDictionary, intlLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { formatRubles } from '@/lib/format';
-import { chatReminderBullets } from '@/lib/chatCopy';
+import { chatReminderBullets, chatReminderIntro } from '@/lib/chatCopy';
 
 // Ten2Ten app-icon tile (the favicon creative): cobalt→fuchsia squircle with the
 // roof mark and "T2T". Used as the diagonal cover mark in the conversation header
@@ -571,6 +571,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
           <BrandTile size={16} className="rounded" />
           <span className="text-[11px] font-bold uppercase tracking-wider text-cobalt">{c.reminderTitle}</span>
         </div>
+        <p className="mb-2 text-xs text-ink/80">{chatReminderIntro}</p>
         <ul className="flex flex-col gap-1.5">
           {reminderBullets.map((b, i) => (
             <li key={i} className="relative pl-4 text-xs leading-relaxed text-ink/80">
