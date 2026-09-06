@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { notify } from '@/lib/notify';
+import { seekerGreeting, chatListingLabel } from '@/lib/chatCopy';
 
 // Atomic Connect: opens a chat by calling the open_connect_chat DB function,
 // which consumes a credit, locks the listing, and snapshots the disclosed
@@ -50,21 +51,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: code }, { status });
   }
 
+  const chatId = data as string;
+
+  // Seed the fresh chat with an automatic opening message from the seeker so the
+  // lister never lands on an empty conversation. A successful open_connect_chat
+  // means a NEW chat (a pre-existing active one raises 'active_chat_exists'), so
+  // this only runs once per chat. Best-effort: a failure here must not fail the
+  // connect — the seeker can always type the first message themselves.
+  let neighborhood: string | null = null;
+  let listerId: string | null = null;
+  try {
+    const admin = createAdminClient();
+    const [{ data: listing }, { data: chatRow }] = await Promise.all([
+      admin.from('listings').select('lister_id, neighborhood, type').eq('id', listingId).maybeSingle(),
+      admin.from('chats').select('disclosed_seeker_name').eq('id', chatId).maybeSingle(),
+    ]);
+    neighborhood = listing?.neighborhood ?? null;
+    listerId = listing?.lister_id ?? null;
+    const greeting = seekerGreeting(
+      chatRow?.disclosed_seeker_name,
+      chatListingLabel(listing?.neighborhood, listing?.type)
+    );
+    // Insert with the seeker's own auth context so it's attributed to them and
+    // passes the same RLS policy as any message they send from the chat screen.
+    const { error: msgErr } = await supabase
+      .from('messages')
+      .insert({ chat_id: chatId, sender_id: user.id, body: greeting });
+    if (msgErr) console.error('[connect] greeting insert failed', msgErr);
+  } catch (e) {
+    console.error('[connect] greeting failed', e);
+  }
+
   // Notify the lister that a verified seeker connected (fire-and-forget — a
   // notification failure must not fail the connect).
   try {
-    const admin = createAdminClient();
-    const { data: listing } = await admin
-      .from('listings')
-      .select('lister_id, neighborhood')
-      .eq('id', listingId)
-      .maybeSingle();
-    if (listing?.lister_id) {
-      await notify.bidAccepted(listing.lister_id, listing.neighborhood ?? 'your area', data as string);
+    if (listerId) {
+      await notify.bidAccepted(listerId, neighborhood ?? 'your area', chatId);
     }
   } catch (e) {
     console.error('[connect] notify failed', e);
   }
 
-  return NextResponse.json({ chatId: data });
+  return NextResponse.json({ chatId });
 }

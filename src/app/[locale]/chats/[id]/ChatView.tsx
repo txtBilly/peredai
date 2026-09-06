@@ -7,6 +7,7 @@ import { listingTypeLabel } from '@/lib/listings';
 import { getDictionary, intlLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import { formatRubles } from '@/lib/format';
+import { chatReminderBullets } from '@/lib/chatCopy';
 
 // Ten2Ten app-icon tile (the favicon creative): cobalt→fuchsia squircle with the
 // roof mark and "T2T". Used as the diagonal cover mark in the conversation header
@@ -377,23 +378,7 @@ export default function ChatView({ locale, id }: { locale: Locale; id: string })
     }
   };
   // The platform's opening reminder — role-aware, shown once at the top of the thread.
-  const reminderBullets =
-    role === 'seeker'
-      ? [
-          'Ведите общение внутри Ten2Ten.',
-          'Не передавайте конфиденциальные финансовые данные и встречайтесь в безопасном общественном месте.',
-          'При личной встрече попросите показать документ, удостоверяющий личность.',
-          'Уточните, обсуждается ли размер благодарности.',
-          'Не платите заранее и просите расписку за любые переданные деньги.',
-        ]
-      : [
-          'Ведите общение внутри Ten2Ten.',
-          'Не передавайте конфиденциальные финансовые данные и встречайтесь в безопасном общественном месте.',
-          'При личной встрече попросите показать документ, удостоверяющий личность.',
-          'Согласуйте с собственником, что кандидат соответствует требованиям.',
-          'Не берите предоплату, пока не убедитесь, что арендатор подходит, и до обсуждения важных деталей.',
-          'Честно и по возможности полно раскрывайте важные детали о квартире.',
-        ];
+  const reminderBullets = chatReminderBullets(role === 'lister' ? 'lister' : 'seeker');
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col px-5 py-6">
