@@ -18,7 +18,13 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const { error } = await admin.from('profiles').update({ full_name: name }).eq('id', user.id);
+  // Set both the disclosed full_name (shown to the lister in chat) and the
+  // display_first_name (shown on the account screen), so neither falls back to
+  // the email prefix the signup trigger seeds.
+  const { error } = await admin
+    .from('profiles')
+    .update({ full_name: name, display_first_name: name.split(' ')[0] })
+    .eq('id', user.id);
   if (error) {
     console.error('[profile/name] update failed', error);
     return NextResponse.json({ error: 'update_failed' }, { status: 500 });

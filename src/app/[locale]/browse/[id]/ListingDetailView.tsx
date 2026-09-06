@@ -183,7 +183,12 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
       setFavourited(!!favouriteResult.data);
       const prof = profileResult.data as { verification_status: string | null; full_name: string | null } | null;
       // Model A: Sber verification matters only for LISTING; seekers connect without it.
-      setHasName(!!prof?.full_name && prof.full_name.trim().length > 0);
+      // The DB trigger seeds full_name from the email prefix when no real name was
+      // provided; treat that placeholder as "no name" so we prompt for a real one
+      // (otherwise the lister would see the seeker's email prefix as their name).
+      const fn = prof?.full_name?.trim() ?? '';
+      const emailLocal = (user?.email ?? '').split('@')[0].trim().toLowerCase();
+      setHasName(fn.length > 0 && fn.toLowerCase() !== emailLocal);
       const ledgerRows = (creditResult.data as { amount: number }[] | null) ?? [];
       setSeekerCreditBalance(ledgerRows.reduce((sum, r) => sum + r.amount, 0));
       setActiveChatId((chatResult.data as { id: string } | null)?.id ?? null);
@@ -294,6 +299,14 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
           account_restricted: 'We couldn’t complete that right now. Please try again later.',
         };
         if (data?.error === 'email_unconfirmed') setEmailConfirmed(false);
+        // Server-side backstop: if the seeker still has no real name, open the
+        // name prompt instead of showing a dead-end error.
+        if (data?.error === 'name_required') {
+          setHasName(false);
+          setNamePrompt(true);
+          setConnecting(false);
+          return;
+        }
         setConnectError(reasons[data?.error] ?? `${dd.connectErrorGeneric} (${data?.error ?? 'error'})`);
         setConnecting(false);
         return;
@@ -669,7 +682,7 @@ export default function ListingDetailView({ locale, id }: { locale: Locale; id: 
         <div>
           <button
             type="button"
-            onClick={handleConnect}
+            onClick={() => (hasName ? handleConnect() : setNamePrompt(true))}
             disabled={connecting}
             className="w-full rounded-lg bg-gradient-cobalt px-5 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
           >
