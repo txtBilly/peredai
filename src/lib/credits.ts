@@ -2,7 +2,7 @@ import { createAdminClient } from './supabase/server';
 
 // ============================================================================
 // Contact credit rules (locked):
-//   - $100 purchase => +3 credits
+//   - One purchase => +3 credits (1 base token + 2 bonus).
 //   - Opening a chat => -1 (consume). Only 1 active chat per seeker at a time.
 //   - "Didn't work out" close => credit stays consumed (NOT refunded).
 //   - Confirmed report against the lister => +1 (refund_report).

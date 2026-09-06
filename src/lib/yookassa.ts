@@ -14,8 +14,12 @@
 //   CONTACT_BUNDLE_PRICE_RUB — price in whole rubles for 3 contact credits
 
 import { randomUUID } from 'crypto';
+import { CREDITS_PER_PURCHASE } from './credits';
 
 const API_BASE = 'https://api.yookassa.ru/v3';
+
+// Receipt/description label for the bundle, e.g. "3 токена на контакты".
+const BUNDLE_LABEL = `${CREDITS_PER_PURCHASE} токена на контакты`;
 
 export const CONTACT_BUNDLE_PRICE_RUB = Number(
   process.env.CONTACT_BUNDLE_PRICE_RUB ?? 1490
@@ -65,14 +69,14 @@ export async function createContactPayment(params: {
       // shows a QR to scan on desktop, or a bank list on mobile.
       payment_method_data: { type: 'sbp' },
       confirmation: { type: 'redirect', return_url: params.returnUrl },
-      description: '3 токена на контакты — Ten2Ten',
+      description: `${BUNDLE_LABEL} — Ten2Ten`,
       // 54-ФЗ receipt: the customer + a single service line item. YooKassa emails
       // the fiscal receipt. VAT code 1 = "без НДС" (adjust for your tax mode).
       receipt: {
         customer: { email: params.email },
         items: [
           {
-            description: '3 токена на контакты',
+            description: BUNDLE_LABEL,
             quantity: '1.00',
             amount: { value: rubValue(CONTACT_BUNDLE_PRICE_RUB), currency: 'RUB' },
             vat_code: 1,

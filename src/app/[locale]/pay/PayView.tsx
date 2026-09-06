@@ -7,7 +7,10 @@ import type { Locale } from '@/i18n/config';
 const COPY = {
   ru: {
     tag: 'Оплата через СБП',
-    title: 'Оплатите {n} контакта',
+    title: 'Доступ к откликам',
+    // {n} = bonus tokens (total − 1); always matches what's actually granted.
+    explainer:
+      'Вы получаете один токен плюс {n} бонусных токена, каждый токен позволит откликаться на 1 объявление.',
     scan: 'Отсканируйте QR-код в приложении вашего банка и подтвердите оплату по Системе быстрых платежей.',
     mock: 'Тестовый режим — реальная оплата не производится. Нажмите «Я оплатил», чтобы продолжить.',
     paid: 'Я оплатил',
@@ -16,7 +19,9 @@ const COPY = {
   },
   en: {
     tag: 'Pay via SBP',
-    title: 'Pay for {n} contacts',
+    title: 'Access to listings',
+    explainer:
+      'You get one token plus {n} bonus tokens — each token lets you respond to one listing.',
     scan: 'Scan the QR code in your bank app and confirm the payment via the Faster Payments System (SBP).',
     mock: 'Test mode — no real payment is taken. Tap “I’ve paid” to continue.',
     paid: "I've paid",
@@ -37,6 +42,9 @@ export default function PayView({
   credits: number;
 }) {
   const c = COPY[locale] ?? COPY.ru;
+  // Bonus tokens = everything beyond the first (base) token, so the sentence
+  // always matches CREDITS_PER_PURCHASE without a separate constant to keep in sync.
+  const bonus = Math.max(0, credits - 1);
   // Mock NSPK-style SBP payload — just to render a realistic-looking QR.
   const qrPayload = `https://qr.nspk.ru/MOCKPEREDAI?sum=${priceRub * 100}&cur=RUB&crc=MOCK`;
   const nf = locale === 'en' ? 'en-US' : 'ru-RU';
@@ -44,10 +52,9 @@ export default function PayView({
   return (
     <main className="mx-auto max-w-md px-5 py-12">
       <p className="mb-2 text-sm uppercase tracking-wide text-cobalt">Ten2Ten</p>
-      <h1 className="mb-1 font-display text-2xl text-ink">
-        {c.title.replace('{n}', String(credits))}
-      </h1>
-      <p className="mb-6 text-sm text-muted">{c.tag}</p>
+      <h1 className="mb-1 font-display text-2xl text-ink">{c.title}</h1>
+      <p className="mb-4 text-sm text-muted">{c.tag}</p>
+      <p className="mb-6 text-sm text-ink">{c.explainer.replace('{n}', String(bonus))}</p>
 
       <div className="flex flex-col items-center rounded-xl border border-black/10 bg-white p-6">
         <div className="rounded-lg bg-white p-3 ring-1 ring-black/10">
