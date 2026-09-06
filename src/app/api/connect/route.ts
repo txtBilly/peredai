@@ -10,6 +10,7 @@ import { seekerGreeting, chatListingLabel } from '@/lib/chatCopy';
 const KNOWN_ERRORS = new Set([
   'not_authenticated',
   'not_verified',
+  'name_required',
   'listing_not_found',
   'listing_unavailable',
   'own_listing',
