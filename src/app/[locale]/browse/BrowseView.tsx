@@ -661,6 +661,27 @@ export default function BrowseView({ locale }: { locale: Locale }) {
         )}
       </div>
 
+      {/* Closing brand flourish — anchors the bottom of the page so the footer
+          sits right under the content instead of floating below a large gap. */}
+      {!loading && (
+        <div className="mt-16 flex flex-col items-center gap-3 border-t border-black/[0.06] pt-10 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-cobalt/10 text-cobalt">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m11 17 2 2a1 1 0 1 0 3-3" />
+              <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" />
+              <path d="m21 3 1 11h-2" />
+              <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" />
+              <path d="M3 4h8" />
+            </svg>
+          </span>
+          <p className="max-w-xs text-sm text-muted">
+            {locale === 'en'
+              ? 'Renting handed over directly — tenant to tenant, no agents and no commission.'
+              : 'Аренда напрямую — от жильца к жильцу, без риелторов и комиссии.'}
+          </p>
+        </div>
+      )}
+
       <FiltersSheet
         open={filtersOpen}
         filters={filters}
