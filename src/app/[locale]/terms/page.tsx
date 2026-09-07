@@ -74,7 +74,7 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
             <b>Lister</b> — a User who posts a rental listing.
           </li>
           <li>
-            <b>Seeker</b> — a User who searches for housing and sends requests regarding listings of interest to them.
+            <b>Seeker</b> — a User who searches for premises and sends requests regarding listings of interest to them.
           </li>
           <li>
             <b>Tokens</b> — internal bonus units of the Service, provided by the Operator to Users (Seekers) for a fee or
@@ -109,7 +109,15 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
           <li>
             <b>Sber ID and T-ID</b> — universal digital tools for fast and secure authorisation (log-in) on third-party
             websites, mobile applications and services without the need to create new passwords and logins. They are
-            used by the Operator to identify Users on the Platform.
+            used by the Operator to identify Users on the Platform. Learn more:{' '}
+            <a href="https://www.sberbank.ru/ru/person/dist_services/sberid" target="_blank" rel="noopener noreferrer" className="text-cobalt hover:underline">
+              sberbank.ru/sberid
+            </a>{' '}
+            and{' '}
+            <a href="https://www.tbank.ru/t-id/" target="_blank" rel="noopener noreferrer" className="text-cobalt hover:underline">
+              tbank.ru/t-id
+            </a>
+            .
           </li>
         </UL>
 
@@ -347,8 +355,8 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
           <b>Листер</b> (от англ. “Lister”) — пользователь, размещающий объявление об аренде.
         </li>
         <li>
-          <b>Соискатель</b> — Пользователь, осуществляющий поиск жилья и направляющий запросы по заинтересовавшим его
-          объявлениям.
+          <b>Соискатель</b> — Пользователь, осуществляющий поиск помещения и направляющий запросы по заинтересовавшим
+          его объявлениям.
         </li>
         <li>
           <b>Токены</b> — внутренние бонусные единицы Сервиса, предоставляемые Оператором Пользователям (Соискателям) за
@@ -382,7 +390,15 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
         <li>
           <b>Sber ID и T-ID</b> — универсальные цифровые инструменты для быстрой и безопасной авторизации (входа) на
           сторонних сайтах, в мобильных приложениях и сервисах без необходимости заводить новые пароли и логины.
-          Используются Оператором для идентификации Пользователей на Платформе.
+          Используются Оператором для идентификации Пользователей на Платформе. Подробнее:{' '}
+          <a href="https://www.sberbank.ru/ru/person/dist_services/sberid" target="_blank" rel="noopener noreferrer" className="text-cobalt hover:underline">
+            sberbank.ru/sberid
+          </a>{' '}
+          и{' '}
+          <a href="https://www.tbank.ru/t-id/" target="_blank" rel="noopener noreferrer" className="text-cobalt hover:underline">
+            tbank.ru/t-id
+          </a>
+          .
         </li>
       </UL>
 

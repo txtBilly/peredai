@@ -20,9 +20,6 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
   const H = ({ children }: { children: React.ReactNode }) => (
     <h2 className="mb-2 mt-8 font-display text-xl font-semibold text-ink">{children}</h2>
   );
-  const Section = ({ children }: { children: React.ReactNode }) => (
-    <h2 className="mb-3 mt-12 border-t border-black/10 pt-8 font-display text-2xl font-bold text-ink">{children}</h2>
-  );
   const P = ({ children }: { children: React.ReactNode }) => <p className="mb-3">{children}</p>;
   const UL = ({ children }: { children: React.ReactNode }) => (
     <ul className="mb-3 ml-5 list-disc space-y-1.5">{children}</ul>
@@ -41,7 +38,7 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
   const AUTO = (
     <P>
       Персональные данные обрабатываются с использованием средств автоматизации. Обработка персональных данных
-      осуществляется в течение сроков действия Лицензионного соглашения и/или Правил пользования сайтом Ten2Ten и до
+      осуществляется в течение сроков действия Пользовательского соглашения и/или Правил пользования сайтом Ten2Ten и до
       истечения сроков хранения соответствующих данных, определяемых в соответствии с действующим законодательством
       Российской Федерации. Персональные данные уничтожаются при достижении целей их обработки или при наступлении иных
       законных оснований путём удаления информации.
@@ -50,8 +47,8 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
   // English counterpart of the repeated processing/retention boilerplate.
   const AUTO_EN = (
     <P>
-      Personal data is processed using automation tools. Personal data is processed for the term of the License
-      Agreement and/or the Ten2Ten site usage rules and until the expiry of the applicable retention periods
+      Personal data is processed using automation tools. Personal data is processed for the term of the Terms of Use
+      and/or the Ten2Ten site usage rules and until the expiry of the applicable retention periods
       determined in accordance with the current legislation of the Russian Federation. Personal data is destroyed
       upon achievement of the purposes of its processing or upon other lawful grounds by deleting the information.
     </P>
@@ -69,40 +66,9 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
           ‹ Back
         </Link>
 
-        <h1 className="mb-2 mt-4 font-display text-3xl font-bold text-ink">
-          Personal Data Processing Policy
-        </h1>
+        <h1 className="mb-2 mt-4 font-display text-3xl font-bold text-ink">Privacy Policy</h1>
         <p className="mb-8 text-sm text-muted">Version {CURRENT_CONSENT_VERSION} (September 2026).</p>
 
-        <H>1. General provisions</H>
-        <P>
-          This Policy on the processing of personal data (hereinafter, the “Policy”) is an integral part of the Terms
-          of Use and defines the procedure for processing and protecting the personal data of users of the Ten2Ten
-          (ТенТуТен) service, available on the ten2ten.ru website and in mobile applications (hereinafter collectively,
-          the “Service”).
-        </P>
-        <P>
-          The Policy has been developed in accordance with the Constitution of the Russian Federation, Federal Law
-          No. 152-FZ of 27 July 2006 “On Personal Data” (hereinafter, “Law No. 152-FZ”), Federal Law No. 149-FZ of
-          27 July 2006 “On Information, Information Technologies and Information Protection”, and other regulatory legal
-          acts of the Russian Federation.
-        </P>
-        <P>For specific services, Ten2Ten may publish additional terms that supplement this Policy.</P>
-        <P>The personal data operator is Ten2Ten LLC (ООО «Тен2Тен») (hereinafter, the “Operator”):</P>
-        <UL>
-          <li>INN: 9715532264</li>
-          <li>KPP: 771501001</li>
-          <li>OGRN: 1267700290989</li>
-          <li>Address: 127015, г. Москва, вн.тер.г. муниципальный округ Бутырский, ул. Новодмитровская, д. 2Б</li>
-          <li>Email: {mail}</li>
-          <li>Website: ten2ten.ru</li>
-        </UL>
-        <P>
-          By using the Service, the User confirms their agreement with this Policy. If the User does not agree, the
-          User must refrain from using the Service.
-        </P>
-
-        <Section>Privacy Policy</Section>
         <P>
           The Ten2Ten Privacy Policy (hereinafter, the “Policy”) contains information about how Ten2Ten processes and
           protects personal data.
@@ -110,8 +76,8 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
 
         <H>1. General provisions of the policy</H>
         <P>
-          1.1. This Policy is an integral part of the {termsLinkEn} and the License Agreement, as well as of other
-          agreements concluded with the User in the course of using the Ten2Ten Group Sites, where their terms
+          1.1. This Policy is an integral part of the {termsLinkEn}, as well as of other
+          agreements concluded with the User in the course of using the Ten2Ten Sites, where their terms
           expressly provide for this.
         </P>
         <P>
@@ -128,9 +94,9 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
         <H>2. Categories and purposes of personal data processing</H>
         <P>
           2.1. The primary purpose of personal data processing is to perform the obligations to the User provided for
-          by the Ten2Ten License Agreement and other agreements on the use of the services of the Ten2Ten Sites and
+          by the Ten2Ten Terms of Use and other agreements on the use of the services of the Ten2Ten Sites and
           mobile applications. More detailed information about the purposes of personal data processing and the
-          categories of processed data is set out in the Ten2Ten License Agreement and the relevant agreements with the
+          categories of processed data is set out in the Ten2Ten Terms of Use and the relevant agreements with the
           User.
         </P>
         <P>
@@ -356,8 +322,8 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
           concluded at the User’s initiative.
         </P>
         <P>
-          2.8. Processing of the User’s personal data is carried out during the terms provided for in the {termsLinkEn}
-          {' '}and the License Agreement, as well as in other agreements concluded with the User in the course of using
+          2.8. Processing of the User’s personal data is carried out during the terms provided for in the {termsLinkEn},
+          as well as in other agreements concluded with the User in the course of using
           the Ten2Ten Sites and/or mobile application. To terminate the processing of personal data by Ten2Ten, the User
           must perform the actions provided for by the documents referred to above; at the same time, the User’s
           personal data may continue to be processed thereafter for the period necessary to perform the obligations
@@ -389,10 +355,10 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
         <P>
           4.1. Personal data is obtained directly from Users in the course of using the Ten2Ten Sites and mobile
           applications, except in the cases provided for by the Policy, as well as in other agreements concluded with
-          the User in the course of using the Ten2Ten Group Sites, where their terms expressly provide for this.
+          the User in the course of using the Ten2Ten Sites, where their terms expressly provide for this.
         </P>
         <P>
-          4.2. The collection of personal data is carried out using the Ten2Ten Group Sites located in the territory of
+          4.2. The collection of personal data is carried out using the Ten2Ten Sites located in the territory of
           the Russian Federation.
         </P>
         <P>
@@ -401,11 +367,11 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
           User’s consent, as well as in the cases provided for by the legislation of the Russian Federation and on the
           basis of the requirements of federal laws. More detailed information about the third parties to whom personal
           data may be transferred, as well as about the conditions under which personal data is transferred to third
-          parties, is set out in the License Agreement, offer agreements, and other agreements that the User accepts when
-          applying for services on the Ten2Ten Group Sites.
+          parties, is set out in the Terms of Use, offer agreements, and other agreements that the User accepts when
+          applying for services on the Ten2Ten Sites.
         </P>
         <P>
-          4.4. Personal data processing is carried out during the term of the License Agreement, another agreement, or
+          4.4. Personal data processing is carried out during the term of the Terms of Use, another agreement, or
           agreement on the use of the services of the Ten2Ten Sites and mobile applications, and for the periods
           established by the legislation of the Russian Federation.
         </P>
@@ -535,39 +501,9 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
         ‹ Назад
       </Link>
 
-      <h1 className="mb-2 mt-4 font-display text-3xl font-bold text-ink">
-        Политика в отношении обработки персональных данных
-      </h1>
+      <h1 className="mb-2 mt-4 font-display text-3xl font-bold text-ink">Политика конфиденциальности</h1>
       <p className="mb-8 text-sm text-muted">Редакция {CURRENT_CONSENT_VERSION} (сентябрь 2026 г.)</p>
 
-      <H>1. Общие положения</H>
-      <P>
-        Настоящая Политика в отношении обработки персональных данных (далее — «Политика») является неотъемлемой частью
-        Пользовательского соглашения и определяет порядок обработки и защиты персональных данных пользователей сервиса
-        Ten2Ten (ТенТуТен), доступного на сайте ten2ten.ru и в мобильных приложениях (далее совместно — «Сервис»).
-      </P>
-      <P>
-        Политика разработана в соответствии с Конституцией Российской Федерации, Федеральным законом от 27.07.2006
-        № 152-ФЗ «О персональных данных» (далее — «Закон № 152-ФЗ»), Федеральным законом от 27.07.2006 № 149-ФЗ «Об
-        информации, информационных технологиях и о защите информации» и иными нормативными правовыми актами Российской
-        Федерации.
-      </P>
-      <P>Для конкретных услуг Ten2Ten может публиковать дополнительные условия, дополняющие настоящую политику.</P>
-      <P>Оператором персональных данных является ООО «Тен2Тен» (далее — «Оператор»):</P>
-      <UL>
-        <li>ИНН: 9715532264</li>
-        <li>КПП: 771501001</li>
-        <li>ОГРН: 1267700290989</li>
-        <li>Адрес: 127015, г. Москва, вн.тер.г. муниципальный округ Бутырский, ул. Новодмитровская, д. 2Б</li>
-        <li>Электронная почта: {mail}</li>
-        <li>Вебсайт: ten2ten.ru</li>
-      </UL>
-      <P>
-        Используя Сервис, Пользователь подтверждает согласие с настоящей Политикой. В случае несогласия Пользователь
-        обязан воздержаться от использования Сервиса.
-      </P>
-
-      <Section>Политика конфиденциальности</Section>
       <P>
         Политика конфиденциальности Ten2Ten (далее по тексту — «Политика») содержит информацию о том, как Ten2Ten
         осуществляет обработку и защищает персональные данные.
@@ -575,8 +511,8 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
 
       <H>1. Общие положения политики</H>
       <P>
-        1.1. Настоящая Политика является неотъемлемой частью {termsLink} и Лицензионного договора, а также иных
-        заключаемых с Пользователем договоров в процессе пользования Сайтами Группы Ten2Ten, когда это прямо
+        1.1. Настоящая Политика является неотъемлемой частью {termsLink}, а также иных
+        заключаемых с Пользователем договоров в процессе пользования Сайтами Ten2Ten, когда это прямо
         предусмотрено их условиями.
       </P>
       <P>
@@ -593,9 +529,9 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
       <H>2. Состав и цели обработки персональных данных</H>
       <P>
         2.1. Основной целью обработки персональных данных является выполнение обязательств перед Пользователем,
-        предусмотренных Лицензионным соглашением Ten2Ten и иными соглашениями по использованию сервисов Сайтов и
+        предусмотренных Пользовательским соглашением Ten2Ten и иными соглашениями по использованию сервисов Сайтов и
         мобильных приложений Ten2Ten. Более подробная информация о целях обработки персональных данных и составе
-        обрабатываемых данных приведена в Лицензионном соглашении Ten2Ten и соответствующих соглашениях с Пользователем.
+        обрабатываемых данных приведена в Пользовательском соглашении Ten2Ten и соответствующих соглашениях с Пользователем.
       </P>
       <P>
         2.2. Используя Сайт, мобильные приложения, отдельные Сервисы Ten2Ten (далее вместе именуемые Сервисы), субъект
@@ -821,7 +757,7 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
       </P>
       <P>
         2.8. Обработка персональных данных Пользователя осуществляется в течение сроков действия, предусмотренных в
-        {' '}{termsLink} и Лицензионном договоре, а также иных заключаемых с Пользователем договорах в процессе
+        {' '}{termsLink}, а также иных заключаемых с Пользователем договорах в процессе
         пользования Сайтами и/или мобильным приложением Ten2Ten. Для прекращения обработки персональных данных Ten2Ten
         Пользователю необходимо совершить действия, предусмотренные указанными выше документами, при этом персональные
         данные Пользователя могут обрабатываться и после этого в течение срока, необходимого для выполнения обязательств,
@@ -854,11 +790,11 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
       <P>
         4.1. Персональные данные получаются непосредственно от Пользователей в процессе пользования Сайтами и мобильными
         приложениями Ten2Ten, за исключением случаев, предусмотренных Политикой, а также в иных заключаемых с
-        Пользователем договорах в процессе пользования Сайтами Группы Ten2Ten, когда это прямо предусмотрено их
+        Пользователем договорах в процессе пользования Сайтами Ten2Ten, когда это прямо предусмотрено их
         условиями.
       </P>
       <P>
-        4.2. Сбор персональных данных осуществляется с использованием Сайтов группы Ten2Ten, расположенных на территории
+        4.2. Сбор персональных данных осуществляется с использованием Сайтов Ten2Ten, расположенных на территории
         Российской Федерации.
       </P>
       <P>
@@ -867,11 +803,11 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
         Пользователя, а также в случаях, предусмотренных законодательством Российской Федерации, и на основании
         требований федеральных законов. Более подробная информация о третьих лицах, которым могут быть переданы
         персональные данные, а также об условиях, когда осуществляется передача персональных данных третьим лицам,
-        приведена в Лицензионном соглашении, Договорах оферты и иных соглашениях, которые Пользователь принимает при
-        обращении за услугами на Сайтах Группы Ten2Ten.
+        приведена в Пользовательском соглашении, Договорах оферты и иных соглашениях, которые Пользователь принимает при
+        обращении за услугами на Сайтах Ten2Ten.
       </P>
       <P>
-        4.4. Обработка персональных данных осуществляется в течение срока действия Лицензионного соглашения, иного
+        4.4. Обработка персональных данных осуществляется в течение срока действия Пользовательского соглашения, иного
         Договора, соглашения по использованию сервисов Сайтов и мобильных приложений Ten2Ten, и сроков, установленных
         законодательством Российской Федерации.
       </P>
