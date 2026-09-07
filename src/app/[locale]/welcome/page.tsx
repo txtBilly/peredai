@@ -175,14 +175,6 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
         </div>
       </section>
 
-      {/* Trust */}
-      <section className="mx-auto max-w-6xl px-5 py-6">
-        <div className="flex flex-col gap-3 font-display text-lg font-semibold text-ink sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-10 sm:gap-y-2 sm:text-xl">
-          <span className="flex items-start gap-2.5"><span className="text-2xl leading-none text-leaf">✓</span> {dict.home.trustVerified}</span>
-          <span className="flex items-start gap-2.5"><span className="text-2xl leading-none text-leaf">✓</span> {dict.home.trustGratitude}</span>
-        </div>
-      </section>
-
       {/* Reviews */}
       <section className="mx-auto max-w-6xl px-5 py-12">
         <h2 className="mb-6 font-display text-2xl font-bold text-ink">{w.reviewsTitle}</h2>
