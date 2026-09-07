@@ -34,6 +34,7 @@ export default async function AdminAnalyticsPage() {
     usersTotal, users30, users7,
     listingsTotal, listings30, listings7,
     purchasesRes, redemptionsRes,
+    dailyUsersRes, dailyListingsRes, dailyChatsRes,
   ] = await Promise.all([
     countRows('profiles', (q) => q.is('deleted_at', null)),
     countRows('profiles', (q) => q.is('deleted_at', null).gte('created_at', since30)),
@@ -47,6 +48,9 @@ export default async function AdminAnalyticsPage() {
       .eq('event', 'purchase')
       .order('created_at', { ascending: false }),
     admin.from('coupon_redemptions').select('amount_discounted, created_at, payment_ref'),
+    admin.from('profiles').select('created_at').is('deleted_at', null).gte('created_at', since30),
+    admin.from('listings').select('created_at').eq('is_seed', false).gte('created_at', since30),
+    admin.from('chats').select('opened_at').gte('opened_at', since30),
   ]);
 
   type Purchase = {
@@ -83,6 +87,50 @@ export default async function AdminAnalyticsPage() {
     tokens30 * TOKEN_PRICE_RUB - discSum(redemptions.filter((r) => inWindow(r.created_at, since30)));
   const revenue7 =
     tokens7 * TOKEN_PRICE_RUB - discSum(redemptions.filter((r) => inWindow(r.created_at, since7)));
+
+  // --- Daily time-series (last 30 days, UTC calendar days) ---
+  const DAYS = 30;
+  const dayKeys: string[] = [];
+  for (let i = DAYS - 1; i >= 0; i--) {
+    dayKeys.push(new Date(now - i * DAY).toISOString().slice(0, 10));
+  }
+  const emptyCounts = () => new Map<string, number>(dayKeys.map((k) => [k, 0]));
+  const bucket = (rows: { at: string | null }[], counts: Map<string, number>) => {
+    for (const r of rows) {
+      const key = (r.at ?? '').slice(0, 10);
+      if (counts.has(key)) counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  };
+  const regByDay = bucket(
+    ((dailyUsersRes.data as { created_at: string }[] | null) ?? []).map((r) => ({ at: r.created_at })),
+    emptyCounts()
+  );
+  const listByDay = bucket(
+    ((dailyListingsRes.data as { created_at: string }[] | null) ?? []).map((r) => ({ at: r.created_at })),
+    emptyCounts()
+  );
+  const chatByDay = bucket(
+    ((dailyChatsRes.data as { opened_at: string }[] | null) ?? []).map((r) => ({ at: r.opened_at })),
+    emptyCounts()
+  );
+  const payByDay = bucket(
+    realPurchases.filter((p) => inWindow(p.created_at, since30)).map((p) => ({ at: p.created_at })),
+    emptyCounts()
+  );
+  const daily = [...dayKeys]
+    .reverse() // newest first for the table
+    .map((k) => ({
+      day: k,
+      reg: regByDay.get(k) ?? 0,
+      list: listByDay.get(k) ?? 0,
+      pay: payByDay.get(k) ?? 0,
+      chat: chatByDay.get(k) ?? 0,
+    }));
+  // Registrations bar chart (oldest → newest).
+  const regSeries = dayKeys.map((k) => regByDay.get(k) ?? 0);
+  const regMax = Math.max(1, ...regSeries);
+  const fmtDay = (k: string) => new Date(k + 'T00:00:00Z').toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
 
   const nf = (n: number) => n.toLocaleString('ru-RU');
   const rub = (n: number) => `${Math.max(0, Math.round(n)).toLocaleString('ru-RU')} ₽`;
@@ -159,6 +207,64 @@ export default async function AdminAnalyticsPage() {
           );
         })}
       </div>
+
+      {/* Daily time-series */}
+      <div className="mt-10 mb-3 flex items-baseline gap-3">
+        <h2 className="font-display text-xl text-paper">Трафик по дням</h2>
+        <span className="text-sm text-muted">последние 30 дней</span>
+      </div>
+
+      <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-5">
+        <p className="mb-2 text-sm text-muted">Регистрации по дням</p>
+        <svg viewBox="0 0 600 80" preserveAspectRatio="none" className="h-24 w-full" role="img" aria-label="Регистрации по дням">
+          {regSeries.map((v, i) => {
+            const h = (v / regMax) * 70;
+            return (
+              <rect
+                key={i}
+                x={i * 20 + 3}
+                y={76 - h}
+                width={14}
+                height={h}
+                rx={2}
+                className="fill-gold"
+              >
+                <title>{`${fmtDay(dayKeys[i])}: ${v}`}</title>
+              </rect>
+            );
+          })}
+        </svg>
+        <div className="mt-1 flex justify-between text-[11px] text-muted/70">
+          <span>{fmtDay(dayKeys[0])}</span>
+          <span>{fmtDay(dayKeys[dayKeys.length - 1])}</span>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-white/10">
+        <table className="w-full min-w-[560px] text-left text-sm">
+          <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-muted">
+            <tr>
+              <th className="px-4 py-3 font-medium">Дата</th>
+              <th className="px-4 py-3 font-medium text-right">Регистрации</th>
+              <th className="px-4 py-3 font-medium text-right">Объявления</th>
+              <th className="px-4 py-3 font-medium text-right">Платежи</th>
+              <th className="px-4 py-3 font-medium text-right">Диалоги</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/[0.06]">
+            {daily.map((d) => (
+              <tr key={d.day} className="hover:bg-white/[0.03]">
+                <td className="px-4 py-2.5 tabular-nums text-muted whitespace-nowrap">{fmtDay(d.day)}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-paper">{d.reg || '—'}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-paper">{d.list || '—'}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-paper">{d.pay || '—'}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-paper">{d.chat || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-xs text-muted/70">Дни по UTC. «Диалоги» — открытые чаты; «Платежи» — реальные покупки.</p>
 
       {/* Transactions ledger */}
       <div className="mt-10 mb-3 flex items-baseline gap-3">

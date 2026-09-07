@@ -4,6 +4,7 @@ import { isLocale, locales, defaultLocale } from '@/i18n/config';
 import type { Locale } from '@/i18n/config';
 import OpenChatGate from '@/components/OpenChatGate';
 import SiteFooter from '@/components/SiteFooter';
+import YandexMetrica from '@/components/YandexMetrica';
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -104,6 +105,7 @@ export default function LocaleLayout({
 
   return (
     <div className="flex min-h-[100dvh] flex-col">
+      <YandexMetrica />
       <OpenChatGate locale={locale} />
       <script
         type="application/ld+json"
