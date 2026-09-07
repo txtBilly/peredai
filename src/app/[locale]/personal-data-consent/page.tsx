@@ -20,9 +20,6 @@ export default function PersonalDataConsentPage({ params }: { params: { locale: 
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
 
-  const H = ({ children }: { children: React.ReactNode }) => (
-    <h2 className="mb-2 mt-8 font-display text-xl font-semibold text-ink">{children}</h2>
-  );
   const P = ({ children }: { children: React.ReactNode }) => <p className="mb-3">{children}</p>;
   const UL = ({ children }: { children: React.ReactNode }) => (
     <ul className="mb-3 ml-5 list-disc space-y-1.5">{children}</ul>
@@ -52,7 +49,7 @@ export default function PersonalDataConsentPage({ params }: { params: { locale: 
       </P>
       <P>3. Сведения об информационных ресурсах Оператора: ten2ten.ru (далее — «Сайт»).</P>
 
-      <H>4. Цели обработки персональных данных</H>
+      <P>4. Цели обработки персональных данных:</P>
       <UL>
         <li>
           для предоставления информации о лице, разместившем объявление, давшем комментарий, разместившем иную
@@ -68,7 +65,7 @@ export default function PersonalDataConsentPage({ params }: { params: { locale: 
         </li>
       </UL>
 
-      <H>5. Категории и перечень персональных данных, на обработку которых даётся согласие</H>
+      <P>5. Категории и перечень персональных данных, на обработку которых даётся согласие субъекта персональных данных:</P>
       <div className="my-3 overflow-x-auto">
         <table className="w-full min-w-[420px] border-collapse text-left text-[14px]">
           <thead>
@@ -91,7 +88,7 @@ export default function PersonalDataConsentPage({ params }: { params: { locale: 
       <P>6. Специальные категории персональных данных не распространяются.</P>
       <P>7. Биометрические персональные данные не распространяются.</P>
 
-      <H>8. Условия и запреты, устанавливаемые субъектом персональных данных</H>
+      <P>8. Категории и перечень персональных данных, для обработки которых субъект персональных данных устанавливает условия и запреты:</P>
       <UL>
         <li>Передача персональных данных Оператором неограниченному кругу лиц запрещена;</li>
         <li>Обработка персональных данных неограниченным кругом лиц запрещена.</li>
