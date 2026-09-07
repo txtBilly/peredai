@@ -107,8 +107,8 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
           <p className="mb-2.5 text-sm font-semibold text-cobalt">{w.value.seekTitle}</p>
           <ul className="flex flex-col gap-3 text-lg text-ink/90">
             {w.value.seekItems.map((t, i) => (
-              <li key={t} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cobalt/12 text-cobalt">
+              <li key={t} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cobalt/12 text-cobalt sm:mt-0.5">
                   <SeekIcon i={i} />
                 </span>
                 <span>{t}</span>
