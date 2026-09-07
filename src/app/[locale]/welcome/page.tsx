@@ -100,8 +100,9 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
             );
           })()}
         </h1>
+        </div>
 
-        {/* Value props for the one looking (the handover message is now the subtitle). */}
+        {/* Value props — full width so the lines run to the section's right edge. */}
         <div className="mt-6">
           <p className="mb-2.5 text-sm font-semibold text-cobalt">{w.value.seekTitle}</p>
           <ul className="flex flex-col gap-3 text-lg text-ink/90">
@@ -129,17 +130,17 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
             {w.listCta}
           </Link>
         </div>
-        </div>
       </section>
 
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-5 py-10">
-        <h2 className="mb-6 font-display text-3xl font-bold text-ink">{w.howTitle}</h2>
         <div className="grid gap-6 md:grid-cols-2 md:items-start md:gap-8">
-          {/* Steps */}
+          {/* Left: heading rides with the steps, so the rule tile top-aligns with the title */}
+          <div>
+          <h2 className="mb-6 font-display text-3xl font-bold text-ink">{w.howTitle}</h2>
           <ol className="flex flex-col gap-5">
             {steps.map((s) => (
-              <li key={s.n} className="grid grid-cols-[2.25rem_1fr] gap-3.5">
+              <li key={s.n} className="flex flex-col gap-2 sm:grid sm:grid-cols-[2.25rem_1fr] sm:gap-3.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-cobalt/15 font-display text-[15px] font-bold text-cobalt">
                   {s.n}
                 </span>
@@ -150,6 +151,7 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
               </li>
             ))}
           </ol>
+          </div>
 
           {/* Platform rule — the exclusivity logic, lifted out of the step cards */}
           <aside className="rounded-2xl border border-cobalt/25 bg-white p-6">
