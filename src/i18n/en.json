@@ -471,17 +471,28 @@
     "steps": [
       {
         "title": "Find a place leaving soon",
-        "body": "Browse verified apartments being passed on directly by the current renter."
+        "body": "Verified apartments passed on directly by the current renter — often before agents ever see them."
       },
       {
         "title": "Buy tokens",
-        "body": "Use a token to connect with a landlord. It gives you the exclusive right to talk to them on Ten2Ten: no one else can reach that landlord while your chat is open. You can talk to only one landlord at a time — one token per chat — and a landlord can have only one active listing. That’s how we stay a small, high-trust community of renters with no agents in between. Tokens you’ve bought but not used don’t expire — come back and search again whenever the right place appears."
+        "body": "A token opens an exclusive chat with the landlord — see how it works in the box alongside."
       },
       {
         "title": "Meet & take it over",
-        "body": "View the place, discuss, and agree on the move-in date and thank-you. Make sure the owner is ready to rent it to you at the stated price. Pay the landlord for their service (off-platform)."
+        "body": "View the place, meet the outgoing renter, and agree on a move-in date — at the stated price and terms. The thank-you and rent are paid directly, off-platform, with no Ten2Ten commission."
       }
     ],
+    "howRule": {
+      "kicker": "Platform rule",
+      "title": "One token, one exclusive chat",
+      "intro": "A token gives you the exclusive right to talk to a landlord on Ten2Ten. While your chat is open, no one else can reach them.",
+      "facts": [
+        "One active chat at a time, per token.",
+        "A landlord may have only one active listing — no more than 3 per year.",
+        "A small, high-trust community of renters with no agents in between.",
+        "Unused tokens don’t expire — come back and search again when the right place appears."
+      ]
+    },
     "value": {
       "seekTitle": "— for the one looking:",
       "seekItems": [

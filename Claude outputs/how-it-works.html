@@ -1,0 +1,298 @@
+<title>Ten2Ten — «Как это работает»</title>
+<style>
+  :root{
+    --paper:#FAFAF7; --surface:#ffffff; --ink:#14140F; --muted:#6E6A5E;
+    --line:rgba(20,20,15,.10); --line-soft:rgba(20,20,15,.06);
+    --cobalt:#1B4DE4; --cobalt2:#5B2BFF; --leaf:#0A9D57;
+    --cobalt-wash:rgba(27,77,228,.08); --cobalt-ring:rgba(27,77,228,.22);
+    --grad:linear-gradient(120deg,#1B4DE4,#5B2BFF);
+    --chrome-bg:#EFEEE8; --chrome-ink:#14140F; --chrome-muted:#6E6A5E;
+  }
+  :root:not([data-theme="light"]){}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#15161a; --surface:#1c1e24; --ink:#F3F2EC; --muted:#9EA0A8;
+      --line:rgba(255,255,255,.12); --line-soft:rgba(255,255,255,.07);
+      --cobalt:#7D9BFF; --cobalt2:#A98BFF; --leaf:#3FCB87;
+      --cobalt-wash:rgba(125,155,255,.12); --cobalt-ring:rgba(125,155,255,.30);
+      --grad:linear-gradient(120deg,#7D9BFF,#A98BFF);
+      --chrome-bg:#0f1013; --chrome-ink:#F3F2EC; --chrome-muted:#9EA0A8;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#15161a; --surface:#1c1e24; --ink:#F3F2EC; --muted:#9EA0A8;
+    --line:rgba(255,255,255,.12); --line-soft:rgba(255,255,255,.07);
+    --cobalt:#7D9BFF; --cobalt2:#A98BFF; --leaf:#3FCB87;
+    --cobalt-wash:rgba(125,155,255,.12); --cobalt-ring:rgba(125,155,255,.30);
+    --grad:linear-gradient(120deg,#7D9BFF,#A98BFF);
+    --chrome-bg:#0f1013; --chrome-ink:#F3F2EC; --chrome-muted:#9EA0A8;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--chrome-bg); color:var(--chrome-ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  .wrap{max-width:1120px; margin:0 auto; padding:40px 24px 72px}
+
+  /* page chrome */
+  .lede{margin:0 0 6px; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--cobalt); font-weight:700}
+  .lede-h{margin:0 0 10px; font-size:30px; font-weight:800; letter-spacing:-.01em; color:var(--chrome-ink); text-wrap:balance}
+  .lede-p{margin:0 0 8px; max-width:64ch; color:var(--chrome-muted); font-size:15.5px}
+
+  .variant{margin-top:44px}
+  .variant__tag{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px}
+  .variant__n{font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#fff; background:var(--grad); padding:4px 9px; border-radius:999px}
+  .variant__name{font-size:17px; font-weight:700; color:var(--chrome-ink)}
+  .variant__note{font-size:13.5px; color:var(--chrome-muted); flex:1 1 260px; min-width:0}
+
+  /* the "site canvas" each mockup sits on — always paper, to preview the real page */
+  .canvas{background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:20px; padding:36px 32px}
+  .canvas h2{margin:0 0 22px; font-size:26px; font-weight:800; letter-spacing:-.01em; color:var(--ink)}
+  .eyebrow{margin:0 0 4px; font-size:11.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--cobalt); font-weight:700}
+
+  .num{display:inline-flex; align-items:center; justify-content:center; font-weight:800; color:var(--cobalt); background:var(--cobalt-wash)}
+  .ico{width:22px; height:22px; stroke:var(--cobalt); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+  .title{font-weight:700; color:var(--ink)}
+  .body{color:var(--muted)}
+
+  /* ---------- V1 : vertical timeline ---------- */
+  .v1{position:relative; display:flex; flex-direction:column; gap:26px; padding-left:8px}
+  .v1__row{position:relative; display:grid; grid-template-columns:52px 1fr; gap:18px}
+  .v1__spine{position:absolute; left:25px; top:6px; bottom:6px; width:2px; background:linear-gradient(var(--cobalt-ring),transparent); }
+  .v1__node{position:relative; z-index:1; width:44px; height:44px; border-radius:50%; font-size:17px; border:2px solid var(--cobalt-ring); background:var(--surface)}
+  .v1 .title{font-size:16px; margin:6px 0 5px}
+  .v1 .body{font-size:15px; max-width:60ch}
+
+  /* ---------- V2 : equal cards, emphasized middle ---------- */
+  .v2{display:grid; gap:16px; grid-template-columns:repeat(3,1fr)}
+  .v2__card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:22px 20px 20px; display:flex; flex-direction:column; gap:10px}
+  .v2__card--hero{border-color:var(--cobalt-ring); box-shadow:0 1px 0 var(--line), 0 14px 30px -20px var(--cobalt-ring); position:relative; overflow:hidden}
+  .v2__card--hero::before{content:""; position:absolute; inset:0 0 auto 0; height:3px; background:var(--grad)}
+  .v2__head{display:flex; align-items:center; gap:11px}
+  .v2 .num{width:34px; height:34px; border-radius:10px; font-size:15px}
+  .v2 .title{font-size:15.5px}
+  .v2 .body{font-size:14px; line-height:1.55}
+  .v2__flag{margin-top:auto; align-self:flex-start; font-size:11.5px; font-weight:700; letter-spacing:.04em; color:var(--cobalt); background:var(--cobalt-wash); padding:4px 10px; border-radius:999px}
+
+  /* ---------- V3 : steps + rule callout ---------- */
+  .v3{display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start}
+  .v3__steps{display:flex; flex-direction:column; gap:16px}
+  .v3__step{display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:start}
+  .v3 .num{width:34px; height:34px; border-radius:50%; font-size:15px}
+  .v3 .title{font-size:15px; margin-bottom:3px}
+  .v3 .body{font-size:14px}
+  .v3__rule{background:var(--surface); border:1px solid var(--cobalt-ring); border-radius:16px; padding:24px}
+  .v3__rule .kicker{display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--cobalt); margin-bottom:12px}
+  .v3__rule h3{margin:0 0 10px; font-size:18px; font-weight:800; color:var(--ink); text-wrap:balance}
+  .v3__rule p{margin:0 0 12px; font-size:14.5px; color:var(--muted)}
+  .v3__facts{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px}
+  .v3__facts li{display:grid; grid-template-columns:20px 1fr; gap:9px; font-size:14px; color:var(--ink)}
+  .v3__facts svg{width:18px; height:18px; margin-top:2px; stroke:var(--leaf); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+
+  /* ---------- V4 : horizontal steps + token band ---------- */
+  .v4__row{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  .v4__card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:22px 20px; display:flex; flex-direction:column; gap:9px}
+  .v4__ic{width:46px; height:46px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; background:var(--cobalt-wash)}
+  .v4__ic .ico{width:24px; height:24px}
+  .v4__step{font-size:11.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  .v4 .title{font-size:15.5px}
+  .v4 .body{font-size:14px}
+  .v4__band{margin-top:16px; background:var(--grad); border-radius:16px; padding:22px 24px; color:#fff}
+  .v4__band h3{margin:0 0 4px; font-size:16px; font-weight:800}
+  .v4__band .sub{margin:0 0 16px; font-size:13.5px; color:rgba(255,255,255,.82); max-width:60ch}
+  .v4__facts{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
+  .v4__fact{border-top:2px solid rgba(255,255,255,.35); padding-top:10px}
+  .v4__fact b{display:block; font-size:14px; font-weight:700; margin-bottom:3px}
+  .v4__fact span{font-size:12.5px; color:rgba(255,255,255,.8); line-height:1.5}
+
+  @media (max-width:760px){
+    .v2,.v3,.v4__row,.v4__facts{grid-template-columns:1fr}
+    .v4__facts{grid-template-columns:1fr 1fr}
+    .canvas{padding:26px 20px}
+  }
+</style>
+
+<div class="wrap">
+  <p class="lede">Ten2Ten · черновики</p>
+  <h1 class="lede-h">Раздел «Как это работает» — четыре варианта</h1>
+  <p class="lede-p">Карточки 1 и 3 наполнены текстом, чтобы уравновесить длинный блок про токены, плюс иконки и разные способы подачи. Ниже — четыре компоновки одного и того же содержания; выберите, что ближе.</p>
+
+  <!-- ============ V1 : timeline ============ -->
+  <section class="variant">
+    <div class="variant__tag">
+      <span class="variant__n">Вариант 1</span>
+      <span class="variant__name">Вертикальный таймлайн</span>
+      <span class="variant__note">Шаги идут сверху вниз по «нити». Разная длина текста здесь смотрится естественно — ничего не растягивается.</span>
+    </div>
+    <div class="canvas">
+      <h2>Как это работает</h2>
+      <div class="v1">
+        <div class="v1__spine"></div>
+
+        <div class="v1__row">
+          <div class="v1__node num">1</div>
+          <div>
+            <div class="title">Найдите квартиру, которую скоро освобождают</div>
+            <div class="body">Смотрите проверенные квартиры, которые нынешние арендаторы передают напрямую — часто ещё до того, как они попадут к риелторам. Ищите по городу, району и дате освобождения, а понравившиеся варианты сохраняйте: мы пришлём уведомление, как только квартира станет доступна.</div>
+          </div>
+        </div>
+
+        <div class="v1__row">
+          <div class="v1__node num">2</div>
+          <div>
+            <div class="title">Купите токены</div>
+            <div class="body">Токен даёт эксклюзивное право на общение с арендодателем: пока ваш чат открыт, другие соискатели не смогут ему написать. Один токен — один диалог, а у арендодателя может быть только одно активное объявление. Так мы остаёмся небольшим сообществом арендаторов без риелторов и с высокой степенью доверия. Неиспользованные токены не сгорают — вернитесь к поиску, когда появится подходящий вариант.</div>
+          </div>
+        </div>
+
+        <div class="v1__row">
+          <div class="v1__node num">3</div>
+          <div>
+            <div class="title">Познакомьтесь и примите квартиру</div>
+            <div class="body">Осмотрите квартиру, познакомьтесь с уходящим арендатором и договоритесь о дате заезда. Убедитесь, что собственник готов сдать жильё на согласованных условиях и по означенной цене. Вознаграждение арендатору и оплата аренды — напрямую, вне платформы: Ten2Ten не берёт комиссию со сделки.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ V2 : emphasized middle cards ============ -->
+  <section class="variant">
+    <div class="variant__tag">
+      <span class="variant__n">Вариант 2</span>
+      <span class="variant__name">Карточки с акцентом на центр</span>
+      <span class="variant__note">Три равные карточки с иконками; средняя — ключевая механика — выделена градиентной кромкой. Внизу каждой — короткий тег-вывод.</span>
+    </div>
+    <div class="canvas">
+      <h2>Как это работает</h2>
+      <div class="v2">
+        <div class="v2__card">
+          <div class="v2__head">
+            <span class="num">1</span>
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+          </div>
+          <div class="title">Найдите квартиру, которую скоро освобождают</div>
+          <div class="body">Проверенные квартиры, которые арендаторы передают напрямую — часто раньше, чем их увидят риелторы. Ищите по городу, району и дате освобождения и сохраняйте варианты, чтобы получить уведомление, когда квартира станет доступна.</div>
+          <span class="v2__flag">Раньше рынка</span>
+        </div>
+
+        <div class="v2__card v2__card--hero">
+          <div class="v2__head">
+            <span class="num">2</span>
+            <svg class="ico" viewBox="0 0 24 24"><path d="M14.5 4.5a5 5 0 1 0 3.8 8.2l1.7 1.7 2-2M9 9l-5 5v3h3l1-1"/><circle cx="15.5" cy="8.5" r=".6" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <div class="title">Купите токены</div>
+          <div class="body">Токен открывает эксклюзивный чат с арендодателем: пока диалог идёт, другие соискатели ему не напишут. Один токен — один диалог, у арендодателя — одно активное объявление. Неиспользованные токены не сгорают.</div>
+          <span class="v2__flag">Один диалог за раз</span>
+        </div>
+
+        <div class="v2__card">
+          <div class="v2__head">
+            <span class="num">3</span>
+            <svg class="ico" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg>
+          </div>
+          <div class="title">Познакомьтесь и примите квартиру</div>
+          <div class="body">Осмотрите жильё, познакомьтесь с уходящим арендатором и договоритесь о дате заезда — на согласованных условиях и по означенной цене. Вознаграждение и оплата аренды происходят напрямую: Ten2Ten не берёт комиссию со сделки.</div>
+          <span class="v2__flag">Без комиссии</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ V3 : steps + rule callout ============ -->
+  <section class="variant">
+    <div class="variant__tag">
+      <span class="variant__n">Вариант 3</span>
+      <span class="variant__name">Шаги + «правило площадки»</span>
+      <span class="variant__note">Слева — три коротких шага, справа — вынесенный блок с логикой токенов. Длинный текст уходит из карточек в отдельный акцентный блок.</span>
+    </div>
+    <div class="canvas">
+      <h2>Как это работает</h2>
+      <div class="v3">
+        <div class="v3__steps">
+          <div class="v3__step">
+            <span class="num">1</span>
+            <div>
+              <div class="title">Найдите квартиру, которую скоро освобождают</div>
+              <div class="body">Проверенные квартиры, которые арендаторы передают напрямую — часто раньше, чем они попадут к риелторам.</div>
+            </div>
+          </div>
+          <div class="v3__step">
+            <span class="num">2</span>
+            <div>
+              <div class="title">Купите токены</div>
+              <div class="body">Токеном вы открываете эксклюзивный чат с арендодателем (как это устроено — справа).</div>
+            </div>
+          </div>
+          <div class="v3__step">
+            <span class="num">3</span>
+            <div>
+              <div class="title">Познакомьтесь и примите квартиру</div>
+              <div class="body">Осмотр, знакомство с уходящим арендатором и договорённость о заезде. Оплата — напрямую, без комиссии.</div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="v3__rule">
+          <span class="kicker">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M14.5 4.5a5 5 0 1 0 3.8 8.2l1.7 1.7 2-2M9 9l-5 5v3h3l1-1"/></svg>
+            Правило площадки
+          </span>
+          <h3>Один токен — один эксклюзивный диалог</h3>
+          <p>Токен даёт вам эксклюзивное право на общение с арендодателем на Ten2Ten. Пока ваш чат открыт, другие соискатели не смогут с ним связаться.</p>
+          <ul class="v3__facts">
+            <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Одновременно — только один диалог за один токен.</li>
+            <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>У арендодателя может быть лишь одно активное объявление.</li>
+            <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Небольшое сообщество арендаторов без риелторов и с высоким доверием.</li>
+            <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Неиспользованные токены не сгорают — вернитесь к поиску позже.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ V4 : horizontal steps + token band ============ -->
+  <section class="variant">
+    <div class="variant__tag">
+      <span class="variant__n">Вариант 4</span>
+      <span class="variant__name">Иконки + полоса «как работают токены»</span>
+      <span class="variant__note">Три ровные карточки-иконки с коротким текстом, а механика токенов вынесена в яркую полосу на всю ширину под ними.</span>
+    </div>
+    <div class="canvas">
+      <h2>Как это работает</h2>
+      <div class="v4__row">
+        <div class="v4__card">
+          <span class="v4__ic"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></span>
+          <div class="v4__step">Шаг 1</div>
+          <div class="title">Найдите квартиру</div>
+          <div class="body">Проверенные квартиры, которые арендаторы передают напрямую — часто раньше, чем их увидят риелторы. Сохраняйте варианты и получайте уведомления об освобождении.</div>
+        </div>
+        <div class="v4__card">
+          <span class="v4__ic"><svg class="ico" viewBox="0 0 24 24"><path d="M14.5 4.5a5 5 0 1 0 3.8 8.2l1.7 1.7 2-2M9 9l-5 5v3h3l1-1"/></svg></span>
+          <div class="v4__step">Шаг 2</div>
+          <div class="title">Купите токены</div>
+          <div class="body">Токеном вы открываете эксклюзивный чат с арендодателем. Подробнее о правилах — в полосе ниже.</div>
+        </div>
+        <div class="v4__card">
+          <span class="v4__ic"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg></span>
+          <div class="v4__step">Шаг 3</div>
+          <div class="title">Примите квартиру</div>
+          <div class="body">Осмотр, знакомство с уходящим арендатором и договорённость о заезде. Оплата — напрямую, без комиссии Ten2Ten.</div>
+        </div>
+      </div>
+
+      <div class="v4__band">
+        <h3>Как работают токены</h3>
+        <p class="sub">Токен — это ваше эксклюзивное право на разговор с арендодателем. Так мы держим сообщество небольшим и защищённым от спама.</p>
+        <div class="v4__facts">
+          <div class="v4__fact"><b>Эксклюзивный чат</b><span>Пока ваш диалог открыт, другие соискатели не напишут этому арендодателю.</span></div>
+          <div class="v4__fact"><b>Один за раз</b><span>Один токен — один активный диалог.</span></div>
+          <div class="v4__fact"><b>Одно объявление</b><span>У арендодателя может быть лишь одно активное объявление.</span></div>
+          <div class="v4__fact"><b>Не сгорают</b><span>Неиспользованные токены остаются с вами до следующего поиска.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

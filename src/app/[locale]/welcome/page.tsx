@@ -56,6 +56,14 @@ function SeekIcon({ i }: { i: number }) {
   return <IconWallet />;
 }
 
+function IconCheck() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-0.5 shrink-0">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
 // Public marketing landing — the acquisition front door. Anonymous visitors land
 // on Browse by default; this lives at /welcome and is linked from the nav and
 // used for campaigns. Copy is the current dictionary copy pending the copy sweep.
@@ -127,16 +135,43 @@ export default function WelcomePage({ params }: { params: { locale: string } }) 
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-5 py-10">
         <h2 className="mb-6 font-display text-3xl font-bold text-ink">{w.howTitle}</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {steps.map((s) => (
-            <div key={s.n} className="rounded-2xl border border-black/10 bg-black/[0.02] p-6">
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-cobalt/15 font-display text-lg font-bold text-cobalt">
-                {s.n}
-              </div>
-              <p className="mb-1.5 text-[14.4px] font-semibold text-ink">{s.title}</p>
-              <p className="text-base leading-relaxed text-muted">{s.body}</p>
-            </div>
-          ))}
+        <div className="grid gap-6 md:grid-cols-2 md:items-start md:gap-8">
+          {/* Steps */}
+          <ol className="flex flex-col gap-5">
+            {steps.map((s) => (
+              <li key={s.n} className="grid grid-cols-[2.25rem_1fr] gap-3.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-cobalt/15 font-display text-[15px] font-bold text-cobalt">
+                  {s.n}
+                </span>
+                <div>
+                  <p className="mb-1 text-[15px] font-semibold text-ink">{s.title}</p>
+                  <p className="text-base leading-relaxed text-muted">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          {/* Platform rule — the exclusivity logic, lifted out of the step cards */}
+          <aside className="rounded-2xl border border-cobalt/25 bg-white p-6">
+            <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-cobalt">
+              <span className="text-cobalt">
+                <IconChat />
+              </span>
+              {w.howRule.kicker}
+            </p>
+            <h3 className="mb-2.5 font-display text-xl font-bold text-ink [text-wrap:balance]">{w.howRule.title}</h3>
+            <p className="mb-4 text-base leading-relaxed text-muted">{w.howRule.intro}</p>
+            <ul className="flex flex-col gap-2.5">
+              {w.howRule.facts.map((f, i) => (
+                <li key={i} className="grid grid-cols-[1.25rem_1fr] gap-2.5 text-[15px] leading-snug text-ink">
+                  <span className="text-leaf">
+                    <IconCheck />
+                  </span>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+          </aside>
         </div>
       </section>
 
