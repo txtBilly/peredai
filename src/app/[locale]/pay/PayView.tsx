@@ -39,7 +39,7 @@ const COPY = {
     consentPrivacy: 'политику конфиденциальности',
     consentSuffix: '.',
     consentPdPrefix: 'Я даю ',
-    consentPdLabel: 'согласие на обработку персональных данных',
+    consentPdLabel: 'согласие на распространение персональных данных',
     consentPdSuffix: '.',
     formErrors: {
       invalid_name: 'Укажите ваше имя (от 2 до 80 символов).',
@@ -89,7 +89,7 @@ const COPY = {
     consentPrivacy: 'Privacy Policy',
     consentSuffix: '.',
     consentPdPrefix: 'I give my ',
-    consentPdLabel: 'consent to the processing of personal data',
+    consentPdLabel: 'consent to the distribution of personal data',
     consentPdSuffix: '.',
     formErrors: {
       invalid_name: 'Enter your name (2–80 characters).',

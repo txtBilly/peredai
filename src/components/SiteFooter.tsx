@@ -35,7 +35,7 @@ const T = {
     legal: [
       ['Условия', 'terms'],
       ['Конфиденциальность', 'privacy'],
-      ['Обработка перс. данных', 'personal-data-consent'],
+      ['Распространение перс. данных', 'personal-data-consent'],
       ['Проверка личности', 'identity-consent'],
     ],
     rent: [
@@ -75,7 +75,7 @@ const T = {
     legal: [
       ['Terms', 'terms'],
       ['Privacy', 'privacy'],
-      ['Data processing', 'personal-data-consent'],
+      ['Data distribution', 'personal-data-consent'],
       ['Identity check', 'identity-consent'],
     ],
     rent: [

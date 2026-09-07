@@ -47,6 +47,487 @@ export default function PrivacyPage({ params }: { params: { locale: string } }) 
       законных оснований путём удаления информации.
     </P>
   );
+  // English counterpart of the repeated processing/retention boilerplate.
+  const AUTO_EN = (
+    <P>
+      Personal data is processed using automation tools. Personal data is processed for the term of the License
+      Agreement and/or the Ten2Ten site usage rules and until the expiry of the applicable retention periods
+      determined in accordance with the current legislation of the Russian Federation. Personal data is destroyed
+      upon achievement of the purposes of its processing or upon other lawful grounds by deleting the information.
+    </P>
+  );
+
+  if (locale === 'en') {
+    const termsLinkEn = (
+      <Link href={`/${locale}/terms`} className="text-cobalt hover:underline">
+        Terms of Use
+      </Link>
+    );
+    return (
+      <main className="mx-auto max-w-3xl px-5 py-16 text-[15px] leading-relaxed text-ink/80">
+        <Link href={`/${locale}/welcome`} className="text-sm text-muted hover:text-ink">
+          ‹ Back
+        </Link>
+
+        <h1 className="mb-2 mt-4 font-display text-3xl font-bold text-ink">
+          Personal Data Processing Policy
+        </h1>
+        <p className="mb-8 text-sm text-muted">Version {CURRENT_CONSENT_VERSION} (September 2026).</p>
+
+        <H>1. General provisions</H>
+        <P>
+          This Policy on the processing of personal data (hereinafter, the “Policy”) is an integral part of the Terms
+          of Use and defines the procedure for processing and protecting the personal data of users of the Ten2Ten
+          (ТенТуТен) service, available on the ten2ten.ru website and in mobile applications (hereinafter collectively,
+          the “Service”).
+        </P>
+        <P>
+          The Policy has been developed in accordance with the Constitution of the Russian Federation, Federal Law
+          No. 152-FZ of 27 July 2006 “On Personal Data” (hereinafter, “Law No. 152-FZ”), Federal Law No. 149-FZ of
+          27 July 2006 “On Information, Information Technologies and Information Protection”, and other regulatory legal
+          acts of the Russian Federation.
+        </P>
+        <P>For specific services, Ten2Ten may publish additional terms that supplement this Policy.</P>
+        <P>The personal data operator is Ten2Ten LLC (ООО «Тен2Тен») (hereinafter, the “Operator”):</P>
+        <UL>
+          <li>INN: 9715532264</li>
+          <li>KPP: 771501001</li>
+          <li>OGRN: 1267700290989</li>
+          <li>Address: 127015, г. Москва, вн.тер.г. муниципальный округ Бутырский, ул. Новодмитровская, д. 2Б</li>
+          <li>Email: {mail}</li>
+          <li>Website: ten2ten.ru</li>
+        </UL>
+        <P>
+          By using the Service, the User confirms their agreement with this Policy. If the User does not agree, the
+          User must refrain from using the Service.
+        </P>
+
+        <Section>Privacy Policy</Section>
+        <P>
+          The Ten2Ten Privacy Policy (hereinafter, the “Policy”) contains information about how Ten2Ten processes and
+          protects personal data.
+        </P>
+
+        <H>1. General provisions of the policy</H>
+        <P>
+          1.1. This Policy is an integral part of the {termsLinkEn} and the License Agreement, as well as of other
+          agreements concluded with the User in the course of using the Ten2Ten Group Sites, where their terms
+          expressly provide for this.
+        </P>
+        <P>
+          1.2. This Policy applies to all personal data that Ten2Ten may receive from the User during the use of the
+          Ten2Ten Sites and mobile applications.
+        </P>
+        <P>
+          1.3. Ten2Ten does not control and is not responsible for third-party websites to which the User may navigate
+          via links available on the Ten2Ten sites. Third-party sites may have their own privacy policy, and other
+          personal data may be collected from or requested of the User there.
+        </P>
+        <P>For specific services, Ten2Ten may publish additional terms that supplement this Policy.</P>
+
+        <H>2. Categories and purposes of personal data processing</H>
+        <P>
+          2.1. The primary purpose of personal data processing is to perform the obligations to the User provided for
+          by the Ten2Ten License Agreement and other agreements on the use of the services of the Ten2Ten Sites and
+          mobile applications. More detailed information about the purposes of personal data processing and the
+          categories of processed data is set out in the Ten2Ten License Agreement and the relevant agreements with the
+          User.
+        </P>
+        <P>
+          2.2. By using the Site, mobile applications, and individual Ten2Ten Services (hereinafter collectively, the
+          Services), the personal data subject (an individual or a representative of a legal entity) thereby freely, by
+          their own will and in their own interest, provides their personal data to Ten2Ten for processing.
+        </P>
+        <P>
+          2.3. Personal data processing means the actions or set of actions provided for by Federal Law No. 152-FZ of
+          27 July 2006 “On Personal Data” performed with or without the use of automation tools with personal data,
+          including collection, recording, systematization, accumulation, storage, updating (renewal, alteration),
+          extraction, use, transfer (distribution, provision, access), removal, and destruction of personal data.
+        </P>
+        <P>
+          2.4. Processing of the personal data of a User who is an individual may be carried out for purposes
+          including:
+        </P>
+        <P>
+          2.4.1. Registration and subsequent authorization of the User (including through additional authorization
+          functions via external services or data exchange with them, for example, Sber ID, T ID, VK ID, mobile
+          operator services), provision of services to the User, and enabling the User to make contact regarding the
+          listings submitted. To achieve this purpose, the following are processed: full name, User identifier, email
+          address, phone number, place of residence address, registration address, date of birth, place of birth,
+          identity document details (passport data), User’s photograph, sex, INN, and information about a concluded
+          contract for mobile radiotelephone communication services.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.1.1. Registration and subsequent authorization of the User (including through additional authorization
+          functions via external services or data exchange with them, for example, Sber ID, T ID, VK ID, mobile
+          operator services), provision of services to the User, and enabling the User to make contact and exchange
+          numbers for the purposes of analyzing and selecting real estate properties solely for personal and family
+          needs unrelated to carrying out commercial activity to promote information, consulting, or other services or
+          to distribute any advertising information. To achieve this purpose, the following are processed: full name,
+          User identifier, email address, phone number, place of residence address, registration address, date of
+          birth, place of birth, identity document details (passport data), User’s photograph, user id (Telegram), sex,
+          INN, and information about a concluded contract for mobile radiotelephone communication services.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.2. Provision of customer support. To achieve this purpose, the following are processed: full name, email
+          address, mobile phone number, audio recordings of telephone conversations concerning the listings submitted,
+          User identifier, and purchases.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.3. Quality control of the listings presented on the ten2ten.ru website. To achieve this purpose, the
+          following are processed: full name, phone number, audio recordings of telephone conversations concerning the
+          listings submitted, passport data, date and place of birth, registration address, information about family
+          composition, INN, photograph, cadastral number of the real estate property, and the surname, first name, and
+          patronymic of the property owner.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.4. Processing of requests received from government authorities. To achieve this purpose, the following are
+          processed: full name, phone number, email address, and IP.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.5. Organization of targeted advertising and mailings, as well as other means of promoting the goods,
+          works, and services of Ten2Ten and/or Ten2Ten’s partners, including by making direct contact through means of
+          communication. To achieve this purpose, the following are processed: full name, email address, phone number,
+          and User identifier.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.6. Providing access to the Site’s Services, use of their functional capabilities, and maintaining their
+          security. Depending on the Service used, the following are processed: full name (including former names, if
+          previously changed), email address, phone number, User identifier, phone book contact details (when contact
+          details are created in the Site’s personal account), citizenship, sex, identity document details, date of
+          birth, place of birth, registration/residence address (including city), marital status, employment
+          information (including type of employment, position, length of service), taxpayer identification number,
+          number of the mandatory pension insurance certificate, information about the property status and real estate
+          properties belonging to the User (including from documents provided by the User confirming ownership or the
+          grounds for acquiring the real estate), information about financial status, income, and credit burden, payment
+          data, information about the location of the user’s device, photo, audio recording of a telephone call, video
+          image (except for biometric personal data), information about actions on the Site (including attendance (time
+          of day, day of the week, month, time at which actions were performed), views, number and frequency of visits,
+          time spent on the site), as well as the ID/type of the operating system of the device used by the User and IP
+          address, including through the use of metric software.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.7. Identifying reviews of the services rendered and assessing the work of employees in order to obtain
+          information about the performance of the contract concluded with the User for the use of the Site’s Services.
+          To achieve this purpose, the following are processed: User identifier, email address, mobile phone number, and
+          the User’s surname and first name.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.8. Conducting research into the needs, motivation, and preferences of Users, their actions, and their use
+          of the functions of the Site’s Services in order to improve the quality and functionality of the Site’s
+          Services and to prevent fraudulent actions. To achieve this purpose, the following are processed: User
+          identifier, phone number, email address, surname, first name, patronymic, sex, age, region, city of
+          residence, occupation, information about the listings presented on the Site, segment (user category), and
+          information about actions on the Company’s website/mobile application (about the User’s views, including taking
+          into account their preferences in searching for real estate, for example, the city/region of the search, term,
+          method of financing the purchase, category and class of real estate, promotional offers, price range, and
+          other search filters).
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.9. Organizing communication between the User and Ten2Ten’s partners (developers, real estate agencies,
+          etc.). To achieve this purpose, the following are processed: surname, first name, patronymic, User identifier,
+          email address, and mobile phone number.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.4.10. Conducting analytics of the use of the Site’s Services, including analysis of Users’ actions on the
+          Site, in order to adapt the Services to the needs of Users. To achieve this purpose, the following are
+          processed: User identifier, phone number, and information about the User’s actions on the Site.
+        </P>
+        <P>
+          2.4.11. Enabling participation in consultations, webinars, broadcasts, and other similar events held by real
+          estate professionals on matters of searching for and selecting real estate, and collecting feedback following
+          such events. To achieve this purpose, the following are processed: full name, User identifier, email address,
+          phone number, information about participation in events (including topic, date, time of the event), and a
+          photo and/or video image not used for identification purposes.
+        </P>
+        <P>
+          2.4.12. Ensuring Users’ compliance with the Terms of Use and achieving Ten2Ten’s other legitimate interests
+          in connection with the use of the Site’s Services (storing information about Users during the limitation
+          periods, information about facts of violation of the Terms of Use, etc.). To achieve this purpose, the
+          following are processed: full name, User identifier, email address, and mobile phone number.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5. Processing of the personal data of the representatives of a User that is a legal entity may be carried
+          out for purposes including:
+        </P>
+        <P>
+          2.5.1. Recording partner representatives for subsequent communication and conducting sales department
+          analytics. To achieve this purpose, the following are processed: full name, User identifier, email address,
+          phone number, purchases, and other metrics.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.2. Provision of customer support. To achieve this purpose, the following are processed: full name, User
+          identifier, audio recordings of telephone conversations concerning the listings submitted, place of work,
+          email address, and phone number.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.3. Quality control of the listings presented on the ten2ten.ru Site. To achieve this purpose, the
+          following are processed: full name, place of work and office address, email address, phone number, audio
+          recordings of telephone conversations concerning the listings submitted, and photograph.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.4. Providing access to the Site’s Services, use of their functional capabilities, and maintaining their
+          security. Depending on the Service used, the following are processed: full name, email address, phone number,
+          User identifier, phone book contact details (when contact details are created in the Site’s personal account),
+          information about the location of the user’s device, photo, audio recording of a telephone call, video image
+          (except for biometric personal data), information about actions on the Site (including attendance (time of
+          day, day of the week, month, time at which actions were performed), views, number and frequency of visits,
+          time spent on the site), as well as the ID/type of the operating system of the device used by the User and IP
+          address.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.5. Conducting research to understand the needs, motivation, and preferences of Users, their actions, and
+          their use of the functions of the Site’s Services in order to improve the quality and functionality of the
+          Site’s Services. To achieve this purpose, the following are processed: User identifier, phone number, email
+          address, surname, first name, patronymic, sex, age, region, city of residence, occupation, information about
+          the listings presented on the Site, and the name of the legal entity (agency, realtor, realtor’s partner).
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.6. Identifying reviews of the services rendered and assessing the work of employees in order to obtain
+          information about the performance of the contract concluded with the User for the use of the Site’s Services.
+          To achieve this purpose, the following are processed: User identifier, email address, mobile phone number, and
+          the User’s surname and first name.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.7. Organizing communication between the User and Ten2Ten’s partners (developers, real estate agencies,
+          etc.). To achieve this purpose, the following are processed: full name, User identifier, email address, mobile
+          phone number, place of work, and position.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.8. Enabling the holding of consultations, webinars, broadcasts, and other similar events by real estate
+          professionals on matters of searching for and selecting real estate, and collecting feedback following such
+          events. To achieve this purpose, the following are processed: full name, User identifier, email address, phone
+          number, place of work, position, profession, information about participation in events (including topic, date,
+          time of the event), and a photo and/or video image not used for identification purposes.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.9. Organizing client events and meetings. To achieve this purpose, the following are processed: full name,
+          User identifier, email address, mobile phone number, place of work, position, and a photo/video image not used
+          for identification purposes (as part of recording online meetings).
+        </P>
+        {AUTO_EN}
+        <P>
+          2.5.10. Ensuring Users’ compliance with the Terms of Use and achieving Ten2Ten’s other legitimate interests in
+          connection with the use of the Site’s Services (storing information about Users during the limitation periods,
+          information about facts of violation of the Terms of Use, etc.). To achieve this purpose, the following are
+          processed: full name, User identifier, email address, and mobile phone number.
+        </P>
+        {AUTO_EN}
+        <P>
+          2.6. To achieve the purposes defined in this Policy, Ten2Ten may transfer the User’s personal data to third
+          parties. The transfer of personal data to third parties is carried out to the extent necessary for the
+          purposes of its processing. The third parties to whom Ten2Ten may transfer the User’s personal data include:
+          real estate agencies (when using the realtor search service), communication service providers, providers of
+          services for mailing informational and advertising materials (if the User subscribes to such mailings),
+          partners providing Ten2Ten with services for the use of information and intermediary services (including when
+          transferring applications to credit institutions at the User’s initiative), as well as services for verifying
+          the reliability of a transaction carried out by the User, Ten2Ten’s affiliated persons, persons acting on
+          Ten2Ten’s behalf, and other third parties to whom the transfer of data is necessary to perform Ten2Ten’s
+          obligations to the User in accordance with this Policy. The transfer of personal data to third parties is
+          carried out under contracts concluded with third parties that include obligations to maintain the
+          confidentiality of the data received. The transfer of personal data may also be carried out in the territory
+          of foreign states.
+        </P>
+        <P>
+          2.7. When publishing listings, reviews, comments, or questions on the Site, as well as when posting other
+          information in their profile, the personal data contained in such information becomes available to an
+          indefinite range of persons. The User is notified that they disclose such data independently without providing
+          Ten2Ten, as the personal data operator, with separate consent. Ten2Ten processes such personal data for the
+          purpose of performing the contract (for the use of the Site’s functional capabilities) with the User,
+          concluded at the User’s initiative.
+        </P>
+        <P>
+          2.8. Processing of the User’s personal data is carried out during the terms provided for in the {termsLinkEn}
+          {' '}and the License Agreement, as well as in other agreements concluded with the User in the course of using
+          the Ten2Ten Sites and/or mobile application. To terminate the processing of personal data by Ten2Ten, the User
+          must perform the actions provided for by the documents referred to above; at the same time, the User’s
+          personal data may continue to be processed thereafter for the period necessary to perform the obligations
+          imposed on Ten2Ten in accordance with the legislation of the Russian Federation. In such a case, personal data
+          processing will be carried out to the extent necessary to comply with the said obligations.
+        </P>
+
+        <H>3. Principles and methods of personal data processing</H>
+        <P>3.1. When processing personal data, Ten2Ten is guided by the following principles:</P>
+        <UL>
+          <li>ensuring the lawfulness of the purposes and methods of personal data processing;</li>
+          <li>
+            conformity of the purposes of personal data processing with the purposes determined and stated in advance
+            at the time of collecting personal data;
+          </li>
+          <li>
+            conformity of the volume and nature of the processed personal data, as well as the methods of personal data
+            processing, with the purposes of personal data processing;
+          </li>
+          <li>the absence of personal data excessive in relation to the purposes stated at the time of collection;</li>
+          <li>ensuring the accuracy of the processed personal data;</li>
+          <li>the use of separate databases for incompatible purposes of personal data processing.</li>
+        </UL>
+        <P>
+          3.2. Ten2Ten processes personal data both with and without the use of automation tools.
+        </P>
+
+        <H>4. Rules of personal data processing</H>
+        <P>
+          4.1. Personal data is obtained directly from Users in the course of using the Ten2Ten Sites and mobile
+          applications, except in the cases provided for by the Policy, as well as in other agreements concluded with
+          the User in the course of using the Ten2Ten Group Sites, where their terms expressly provide for this.
+        </P>
+        <P>
+          4.2. The collection of personal data is carried out using the Ten2Ten Group Sites located in the territory of
+          the Russian Federation.
+        </P>
+        <P>
+          4.3. In the cases provided for by Ten2Ten’s personal data processing procedures, personal data may be
+          transferred to third parties. The transfer of personal data to third parties may be carried out with the
+          User’s consent, as well as in the cases provided for by the legislation of the Russian Federation and on the
+          basis of the requirements of federal laws. More detailed information about the third parties to whom personal
+          data may be transferred, as well as about the conditions under which personal data is transferred to third
+          parties, is set out in the License Agreement, offer agreements, and other agreements that the User accepts when
+          applying for services on the Ten2Ten Group Sites.
+        </P>
+        <P>
+          4.4. Personal data processing is carried out during the term of the License Agreement, another agreement, or
+          agreement on the use of the services of the Ten2Ten Sites and mobile applications, and for the periods
+          established by the legislation of the Russian Federation.
+        </P>
+
+        <H>5. Ensuring the security of personal data</H>
+        <P>
+          5.1. Ten2Ten takes all necessary protective measures, including those provided for by the legislation of the
+          Russian Federation, aimed at ensuring the confidentiality and security of personal data. The personal data
+          protection measures applied by Ten2Ten include, among others:
+        </P>
+        <UL>
+          <li>a person responsible for ensuring the security of personal data at Ten2Ten has been appointed;</li>
+          <li>current threats to the security of personal data have been identified;</li>
+          <li>
+            a set of protective measures has been developed and implemented to neutralize current security threats;
+          </li>
+          <li>rules for ensuring the security of personal data during its processing have been defined;</li>
+          <li>
+            periodic monitoring and assessment of the effectiveness of the personal data protection measures taken is
+            carried out.
+          </li>
+        </UL>
+
+        <H>6. Users’ rights in respect of their personal data</H>
+        <P>
+          6.1. In accordance with Federal Law No. 152-FZ of 27 July 2006 “On Personal Data”, Users have the right to:
+        </P>
+        <P>6.1.1. request information about their personal data processed by Ten2Ten, including:</P>
+        <UL>
+          <li>confirmation of the fact of personal data processing;</li>
+          <li>the legal grounds and purposes of personal data processing;</li>
+          <li>the methods of personal data processing applied;</li>
+          <li>
+            the full name and location of Ten2Ten, information about third parties who have access to personal data or
+            to whom personal data may be disclosed on the basis of a contract with Ten2Ten or on the basis of federal
+            law;
+          </li>
+          <li>the categories of processed personal data and the source from which they were obtained;</li>
+          <li>the periods of personal data processing, including the periods of their storage;</li>
+          <li>
+            the procedure for exercising the rights of the personal data subject provided for by law;
+          </li>
+          <li>information about any cross-border transfer of data carried out or intended;</li>
+          <li>
+            the name and address of the person processing personal data on Ten2Ten’s behalf, if the processing is or
+            will be entrusted to such a person;
+          </li>
+          <li>other information provided for by law;</li>
+        </UL>
+        <P>6.1.2. demand to be acquainted with the processed personal data;</P>
+        <P>
+          6.1.3. demand the clarification of personal data if it is incomplete, outdated, or inaccurate;
+        </P>
+        <P>
+          6.1.4. demand the blocking of personal data if it is incomplete, outdated, or inaccurate, or if its
+          processing by Ten2Ten is unlawful;
+        </P>
+        <P>
+          6.1.5. demand the destruction of personal data if it was obtained unlawfully or is not necessary for the
+          stated purpose of processing, or in the event of withdrawal of consent to the processing of personal data;
+        </P>
+        <P>
+          6.1.6. demand that Ten2Ten notify all persons to whom incorrect or incomplete personal data was previously
+          communicated of all exclusions, corrections, or additions made to it;
+        </P>
+        <P>
+          6.1.7. appeal, to the authorized body for the protection of the rights of personal data subjects or in court,
+          against unlawful actions or inaction of Ten2Ten in the processing and protection of their personal data.
+        </P>
+
+        <H>7. Clarification and destruction of personal data</H>
+        <P>
+          7.1. Clarification of personal data is carried out by the User independently using the functions of the Sites
+          and mobile applications.
+        </P>
+        <P>7.2. Personal data processed by Ten2Ten is subject to destruction in the following cases:</P>
+        <UL>
+          <li>
+            upon achievement of the purposes of its processing or in the event that the need to achieve them is lost,
+            within a period not exceeding thirty days from the moment the purpose of personal data processing is
+            achieved, unless otherwise provided by a contract to which the personal data subject is a party,
+            beneficiary, or guarantor, or by another agreement between Ten2Ten and the personal data subject;
+          </li>
+          <li>
+            in the event that unlawful processing of personal data by Ten2Ten is identified, within a period not
+            exceeding ten business days from the moment the unlawful processing of personal data is identified;
+          </li>
+          <li>
+            in the event that the personal data subject withdraws consent to the processing of their personal data, if
+            the retention of the personal data is no longer required for the purposes of personal data processing,
+            within a period not exceeding thirty days from the date of receipt of the said withdrawal, unless otherwise
+            provided by a contract to which the personal data subject is a party, beneficiary, or guarantor, or by
+            another agreement between Ten2Ten and the personal data subject;
+          </li>
+          <li>
+            in the event of the expiry of the personal data retention period, determined in accordance with the
+            legislation of the Russian Federation and Ten2Ten’s organizational and administrative documents;
+          </li>
+          <li>
+            in the event of an order from the authorized body for the protection of the rights of personal data
+            subjects, the Prosecutor’s Office of Russia, or a court decision.
+          </li>
+        </UL>
+        <P>
+          7.3. Consent to the processing of personal data may be withdrawn by the User at any time. To exercise the
+          right of withdrawal, the User must send the corresponding request to {mail}.
+        </P>
+        <P>
+          7.4. The withdrawal of the User’s consent to the processing of personal data cannot serve as grounds for the
+          termination of processing where Ten2Ten has the grounds provided for by clauses 2, 7, and 10 of part 1 of
+          article 6 of Federal Law No. 152-FZ of 27 July 2006 “On Personal Data”.
+        </P>
+
+        <H>8. Contact information</H>
+        <P>
+          For matters concerning the processing of personal data: Ten2Ten LLC (ООО «Тен2Тен»), INN 9715532264, OGRN
+          1267700290989, 127015, г. Москва, вн.тер.г. муниципальный округ Бутырский, ул. Новодмитровская, д. 2Б, email
+          {' '}{mail}.
+        </P>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-16 text-[15px] leading-relaxed text-ink/80">
