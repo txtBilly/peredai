@@ -33,7 +33,7 @@ export default function AdminReportActions({ reportId }: { reportId: string }) {
         onClick={() => act('confirm')}
         className="rounded-lg bg-gold px-6 py-3 text-sm font-semibold text-ink ring-1 ring-inset ring-gold/60 transition hover:brightness-110 disabled:opacity-60"
       >
-        Confirm + refund
+        Подтвердить и вернуть токен
       </button>
       <button
         type="button"
@@ -41,7 +41,7 @@ export default function AdminReportActions({ reportId }: { reportId: string }) {
         onClick={() => act('dismiss')}
         className="rounded-lg border border-white/25 px-6 py-3 text-sm font-medium text-paper ring-1 ring-inset ring-white/10 transition hover:border-white/50 hover:ring-white/20 disabled:opacity-60"
       >
-        Dismiss
+        Отклонить
       </button>
       {error && <span className="text-sm text-red-400">({error})</span>}
     </div>

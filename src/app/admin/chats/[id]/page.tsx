@@ -20,8 +20,8 @@ export default async function AdminChatPage({ params }: { params: { id: string }
   if (!chat) {
     return (
       <div>
-        <Link href="/admin" className="text-sm text-gold hover:underline">‹ Back to reports</Link>
-        <p className="mt-6 text-sm text-red-400">Chat not found.</p>
+        <Link href="/admin" className="text-sm text-gold hover:underline">‹ К жалобам</Link>
+        <p className="mt-6 text-sm text-red-400">Диалог не найден.</p>
       </div>
     );
   }
@@ -35,31 +35,31 @@ export default async function AdminChatPage({ params }: { params: { id: string }
   const nameOf = (id: string) => {
     const p = profiles.find((x) => x.id === id);
     const label = p?.full_name || p?.email || id.slice(0, 8);
-    const role = id === chat.seeker_id ? 'seeker' : id === chat.lister_id ? 'lister' : '';
+    const role = id === chat.seeker_id ? 'соискатель' : id === chat.lister_id ? 'арендодатель' : '';
     return role ? `${label} (${role})` : label;
   };
 
   return (
     <div>
-      <Link href="/admin" className="text-sm text-gold hover:underline">‹ Back to reports</Link>
+      <Link href="/admin" className="text-sm text-gold hover:underline">‹ К жалобам</Link>
 
       <div className="mt-4 mb-6">
-        <h1 className="font-display text-2xl text-paper">Conversation</h1>
+        <h1 className="font-display text-2xl text-paper">Диалог</h1>
         <p className="text-sm text-muted">
-          {nameOf(chat.seeker_id)} ↔ {nameOf(chat.lister_id)} · status {chat.status}
-          {chat.closed_reason ? ` (${chat.closed_reason})` : ''} · listing {chat.listing_id?.slice(0, 8)}
+          {nameOf(chat.seeker_id)} ↔ {nameOf(chat.lister_id)} · статус {chat.status}
+          {chat.closed_reason ? ` (${chat.closed_reason})` : ''} · объявление {chat.listing_id?.slice(0, 8)}
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
         {messages.length === 0 ? (
-          <p className="text-sm text-muted">No messages.</p>
+          <p className="text-sm text-muted">Сообщений нет.</p>
         ) : (
           messages.map((m) => (
             <div key={m.id} className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-2">
               <div className="mb-0.5 flex items-center justify-between text-xs text-muted">
                 <span>{nameOf(m.sender_id)}</span>
-                <span>{new Date(m.created_at).toLocaleString()}</span>
+                <span>{new Date(m.created_at).toLocaleString('ru-RU')}</span>
               </div>
               <p className="text-sm text-paper">{m.body}</p>
             </div>

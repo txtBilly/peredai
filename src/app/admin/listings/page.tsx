@@ -24,9 +24,9 @@ export default async function AdminSuspendedListingsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 font-display text-2xl text-paper">Suspended listings</h1>
+      <h1 className="mb-6 font-display text-2xl text-paper">Скрытые объявления</h1>
       {rows.length === 0 ? (
-        <p className="text-sm text-muted">No suspended listings.</p>
+        <p className="text-sm text-muted">Скрытых объявлений нет.</p>
       ) : (
         <div className="flex flex-col gap-2">
           {rows.map((l) => (

@@ -11,8 +11,8 @@ export default function AdminListingActions({ listingId, status }: { listingId: 
   async function moderate(newStatus: 'active' | 'suspended') {
     const message =
       newStatus === 'suspended'
-        ? 'Hide (suspend) this listing? It will be removed from Browse.'
-        : 'Restore this listing to active?';
+        ? 'Скрыть объявление? Оно исчезнет из поиска.'
+        : 'Восстановить объявление (сделать активным)?';
     if (!window.confirm(message)) return;
     setBusy(true);
     setError('');
@@ -39,7 +39,7 @@ export default function AdminListingActions({ listingId, status }: { listingId: 
           onClick={() => moderate('suspended')}
           className="rounded-lg border border-amber-400/40 px-6 py-3 text-sm font-medium text-amber-300 ring-1 ring-inset ring-amber-400/20 transition hover:bg-amber-500/10 disabled:opacity-60"
         >
-          Hide (suspend)
+          Скрыть
         </button>
       )}
       {status !== 'active' && (
@@ -49,7 +49,7 @@ export default function AdminListingActions({ listingId, status }: { listingId: 
           onClick={() => moderate('active')}
           className="rounded-lg bg-gold px-6 py-3 text-sm font-semibold text-ink ring-1 ring-inset ring-gold/60 transition hover:brightness-110 disabled:opacity-60"
         >
-          Restore (active)
+          Восстановить
         </button>
       )}
       {error && <span className="text-sm text-red-400">({error})</span>}

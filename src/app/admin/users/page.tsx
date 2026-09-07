@@ -126,10 +126,10 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
             .from('id-documents')
             .createSignedUrl(doc.storage_path, 300);
           viewUrl = signed?.signedUrl ?? null;
-          viewLabel = 'View upload';
+          viewLabel = 'Открыть загрузку';
         } else if (doc.kind === 'stripe' && doc.vendor_ref) {
           viewUrl = `https://dashboard.stripe.com/identity/verification-sessions/${doc.vendor_ref}`;
-          viewLabel = 'Open in Stripe';
+          viewLabel = 'Открыть в Stripe';
         }
         const arr = docsByUser.get(doc.user_id) ?? [];
         arr.push({
@@ -188,21 +188,21 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
 
   return (
     <div>
-      <h1 className="mb-4 font-display text-2xl text-paper">Users</h1>
+      <h1 className="mb-4 font-display text-2xl text-paper">Пользователи</h1>
 
       <form method="GET" action="/admin/users" className="mb-6 flex gap-2">
         <input
           name="q"
           defaultValue={q}
-          placeholder="Search by email, name, or phone…"
+          placeholder="Поиск по email, имени или телефону…"
           className="w-full max-w-md rounded-lg border border-white/15 bg-ink/40 px-3 py-2.5 text-paper placeholder:text-muted/60 outline-none focus-visible:ring-2 focus-visible:ring-gold"
         />
         <button className="rounded-lg bg-gold px-5 py-2.5 text-sm font-medium text-ink transition hover:brightness-110">
-          Search
+          Поиск
         </button>
       </form>
 
-      {q && results.length === 0 && <p className="text-sm text-muted">No members match “{q}”.</p>}
+      {q && results.length === 0 && <p className="text-sm text-muted">Никто не найден по запросу «{q}».</p>}
 
       <div className="flex flex-col gap-3">
         {results.map((r) => {
@@ -215,24 +215,24 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
                 <span className="text-sm text-muted">{r.email}</span>
               </div>
               <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted">
-                <span>{verified ? '✓ verified' : 'unverified'}</span>
-                <span>{r.strikes} strike(s)</span>
-                {p?.is_banned && <span className="font-medium text-red-400">⛔ fully banned</span>}
-                {p?.is_shadow_banned && <span className="text-red-300">shadow-banned</span>}
-                {p?.is_suppressed && <span className="text-amber-300">suppressed</span>}
+                <span>{verified ? '✓ проверен' : 'не подтверждён'}</span>
+                <span>{r.strikes} предупр.</span>
+                {p?.is_banned && <span className="font-medium text-red-400">⛔ полная блокировка</span>}
+                {p?.is_shadow_banned && <span className="text-red-300">теневой бан</span>}
+                {p?.is_suppressed && <span className="text-amber-300">ограничен</span>}
                 {p?.duplicate_review && (
                   <span className="text-amber-300">
-                    ⚠ duplicate review{p.duplicate_reason ? ` (${p.duplicate_reason.replace(/_/g, ' ')})` : ''}
+                    ⚠ проверка дубликата{p.duplicate_reason ? ` (${p.duplicate_reason.replace(/_/g, ' ')})` : ''}
                   </span>
                 )}
-                <span>{r.balance} credit(s)</span>
-                <span>{p?.rating_count ? `${p.rating_avg}★ (${p.rating_count})` : 'no ratings'}</span>
+                <span>{r.balance} токен(ов)</span>
+                <span>{p?.rating_count ? `${p.rating_avg}★ (${p.rating_count})` : 'нет оценок'}</span>
               </div>
 
               <div className="mt-2 text-xs text-muted">
-                <span className="text-paper">Listings ({r.listings.length}):</span>{' '}
+                <span className="text-paper">Объявления ({r.listings.length}):</span>{' '}
                 {r.listings.length === 0
-                  ? 'none'
+                  ? 'нет'
                   : r.listings.map((l) => (
                       <Link key={l.id} href={`/admin/listings/${l.id}`} className="mr-2 text-gold hover:underline">
                         {l.neighborhood ?? '—'} ({l.status})
@@ -240,12 +240,12 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
                     ))}
               </div>
               <div className="mt-1 text-xs text-muted">
-                <span className="text-paper">Conversations ({r.chats.length}):</span>{' '}
+                <span className="text-paper">Диалоги ({r.chats.length}):</span>{' '}
                 {r.chats.length === 0
-                  ? 'none'
+                  ? 'нет'
                   : r.chats.map((c) => (
                       <Link key={c.id} href={`/admin/chats/${c.id}`} className="mr-2 text-gold hover:underline">
-                        as {c.role} ({c.status})
+                        как {c.role} ({c.status})
                       </Link>
                     ))}
               </div>
@@ -253,22 +253,22 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
               {/* Identity verification (customer-service audit view). */}
               <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-muted">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="text-paper">ID verification:</span>
+                  <span className="text-paper">Проверка личности:</span>
                   {p?.identity_verified_at ? (
                     <span className="text-sage">
-                      ✓ {p.id_type ? p.id_type.replace(/_/g, ' ') : 'document'}
+                      ✓ {p.id_type ? p.id_type.replace(/_/g, ' ') : 'документ'}
                       {p.id_last4 ? ` ····${p.id_last4}` : ''} ·{' '}
-                      {new Date(p.identity_verified_at).toLocaleDateString()}
+                      {new Date(p.identity_verified_at).toLocaleDateString('ru-RU')}
                     </span>
                   ) : (
-                    <span>no verified ID on file</span>
+                    <span>подтверждённого документа нет</span>
                   )}
                 </div>
                 {r.idDocs.length > 0 && (
                   <ul className="mt-1.5 flex flex-col gap-1">
                     {r.idDocs.map((doc) => (
                       <li key={doc.id} className="flex flex-wrap items-center gap-x-2">
-                        <span className="text-paper/80">{new Date(doc.created_at).toLocaleString()}</span>
+                        <span className="text-paper/80">{new Date(doc.created_at).toLocaleString('ru-RU')}</span>
                         <span>· {doc.kind}</span>
                         <span>· {doc.status}</span>
                         {doc.doc_type && <span>· {doc.doc_type.replace(/_/g, ' ')}</span>}

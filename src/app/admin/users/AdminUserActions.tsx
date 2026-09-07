@@ -21,12 +21,12 @@ export default function AdminUserActions({
   const [msg, setMsg] = useState('');
 
   const CONFIRM: Record<Action, string> = {
-    ban: 'Shadow-ban this member? They’ll be hidden and blocked from listing/connecting — silently.',
-    unban: 'Remove the shadow-ban on this member?',
-    refund: 'Grant this member +1 contact credit?',
-    clear_review: 'Clear the duplicate-review flag? This member will be able to publish listings.',
-    full_ban: 'Fully ban this member? They’ll be locked out of the platform entirely.',
-    lift_full_ban: 'Lift the full ban on this member?',
+    ban: 'Выдать теневой бан? Пользователь будет скрыт и не сможет размещать объявления и открывать диалоги — незаметно для него.',
+    unban: 'Снять теневой бан с пользователя?',
+    refund: 'Начислить пользователю +1 токен?',
+    clear_review: 'Снять пометку дубликата? Пользователь сможет публиковать объявления.',
+    full_ban: 'Полностью заблокировать пользователя? Доступ к платформе будет закрыт.',
+    lift_full_ban: 'Снять полную блокировку с пользователя?',
   };
 
   async function act(action: Action) {
@@ -44,7 +44,7 @@ export default function AdminUserActions({
       setMsg(`error: ${d.error ?? 'failed'}`);
       return;
     }
-    if (action === 'refund') setMsg('+1 credit granted');
+    if (action === 'refund') setMsg('+1 токен начислен');
     router.refresh();
   }
 
@@ -57,7 +57,7 @@ export default function AdminUserActions({
           onClick={() => act('unban')}
           className="rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-ink ring-1 ring-inset ring-gold/60 transition hover:brightness-110 disabled:opacity-60"
         >
-          Unban
+          Снять теневой бан
         </button>
       ) : (
         <button
@@ -66,7 +66,7 @@ export default function AdminUserActions({
           onClick={() => act('ban')}
           className="rounded-lg border border-red-500/40 px-5 py-2.5 text-sm font-medium text-red-400 ring-1 ring-inset ring-red-500/20 transition hover:bg-red-500/10 disabled:opacity-60"
         >
-          Shadow-ban
+          Теневой бан
         </button>
       )}
       <button
@@ -75,7 +75,7 @@ export default function AdminUserActions({
         onClick={() => act('refund')}
         className="rounded-lg border border-white/25 px-5 py-2.5 text-sm font-medium text-paper ring-1 ring-inset ring-white/10 transition hover:border-white/50 disabled:opacity-60"
       >
-        Refund +1 credit
+        Вернуть +1 токен
       </button>
       {duplicateReview && (
         <button
@@ -84,7 +84,7 @@ export default function AdminUserActions({
           onClick={() => act('clear_review')}
           className="rounded-lg border border-amber-400/40 px-5 py-2.5 text-sm font-medium text-amber-300 ring-1 ring-inset ring-amber-400/20 transition hover:bg-amber-400/10 disabled:opacity-60"
         >
-          Clear duplicate review
+          Снять пометку дубликата
         </button>
       )}
       {fullBanned ? (
@@ -94,7 +94,7 @@ export default function AdminUserActions({
           onClick={() => act('lift_full_ban')}
           className="rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-ink ring-1 ring-inset ring-gold/60 transition hover:brightness-110 disabled:opacity-60"
         >
-          Lift full ban
+          Снять полную блокировку
         </button>
       ) : (
         <button
@@ -103,7 +103,7 @@ export default function AdminUserActions({
           onClick={() => act('full_ban')}
           className="rounded-lg border border-red-500/50 bg-red-500/10 px-5 py-2.5 text-sm font-semibold text-red-300 ring-1 ring-inset ring-red-500/30 transition hover:bg-red-500/20 disabled:opacity-60"
         >
-          Full ban
+          Полная блокировка
         </button>
       )}
       {msg && <span className="text-sm text-muted">{msg}</span>}

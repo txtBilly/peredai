@@ -1,18 +1,18 @@
+import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/server';
 import { TOKEN_PRICE_RUB } from '@/lib/yookassa';
 
 export const dynamic = 'force-dynamic';
 
-// Staff analytics — core KPI tiles (all-time, last 30 days, last 7 days).
-// Gated by the /admin layout's is_staff check. Reads via the service-role client.
+// Аналитика для персонала — ключевые показатели (за всё время / 30 дней / 7 дней).
+// Доступ ограничен проверкой is_staff в layout. Чтение через сервис-клиент.
 //
-// Notes on the numbers:
-//  - "New listings" excludes cold-start seed rows (is_seed = true).
-//  - Payments / Tokens / Revenue count REAL purchases only: mock-mode and
-//    100%-off (free-coupon) grants are excluded by their ledger ref prefix.
-//  - Revenue is an estimate — the ledger stores the token count, not the ₽ paid,
-//    so revenue ≈ paid tokens × TOKEN_PRICE_RUB − coupon discounts. For an exact
-//    figure we'd add an amount_rub column written by the YooKassa webhook.
+// Примечания к цифрам:
+//  - «Новые объявления» не учитывают засев (is_seed = true).
+//  - «Платежи» / «Куплено токенов» / «Выручка» учитывают только реальные покупки:
+//    тестовый режим и купоны «100% скидка» исключены по префиксу ссылки платежа.
+//  - Выручка — оценка: в реестре хранится число токенов, а не уплаченная сумма,
+//    поэтому выручка ≈ оплаченные токены × TOKEN_PRICE_RUB − скидки по купонам.
 export default async function AdminAnalyticsPage() {
   const admin = createAdminClient();
 
@@ -21,7 +21,6 @@ export default async function AdminAnalyticsPage() {
   const since7 = new Date(now - 7 * DAY).toISOString();
   const since30 = new Date(now - 30 * DAY).toISOString();
 
-  // Count helper (head:true → no rows transferred, just the count).
   async function countRows(
     table: string,
     build: (q: ReturnType<ReturnType<typeof admin.from>['select']>) => ReturnType<ReturnType<typeof admin.from>['select']>
@@ -74,44 +73,59 @@ export default async function AdminAnalyticsPage() {
   const nf = (n: number) => n.toLocaleString('ru-RU');
   const rub = (n: number) => `${Math.max(0, Math.round(n)).toLocaleString('ru-RU')} ₽`;
 
-  const tiles: { label: string; total: string; d30: string; d7: string; note?: string }[] = [
-    { label: 'Registered users', total: nf(usersTotal), d30: nf(users30), d7: nf(users7) },
-    { label: 'New listings', total: nf(listingsTotal), d30: nf(listings30), d7: nf(listings7), note: 'excl. seed' },
-    { label: 'Payments', total: nf(paymentsTotal), d30: nf(payments30), d7: nf(payments7), note: 'real, excl. mock/free' },
-    { label: 'Tokens purchased', total: nf(tokensTotal), d30: nf(tokens30), d7: nf(tokens7) },
-    { label: 'Revenue (est.)', total: rub(revenueTotal), d30: rub(revenue30), d7: rub(revenue7), note: '≈ tokens × price − discounts' },
+  const tiles: { label: string; total: string; d30: string; d7: string; note?: string; href?: string }[] = [
+    { label: 'Зарегистрированные пользователи', total: nf(usersTotal), d30: nf(users30), d7: nf(users7), href: '/admin/analytics/users' },
+    { label: 'Новые объявления', total: nf(listingsTotal), d30: nf(listings30), d7: nf(listings7), note: 'без засева', href: '/admin/analytics/listings' },
+    { label: 'Платежи', total: nf(paymentsTotal), d30: nf(payments30), d7: nf(payments7), note: 'реальные, без тестовых' },
+    { label: 'Куплено токенов', total: nf(tokensTotal), d30: nf(tokens30), d7: nf(tokens7) },
+    { label: 'Выручка (оценка)', total: rub(revenueTotal), d30: rub(revenue30), d7: rub(revenue7), note: '≈ токены × цена − скидки' },
   ];
 
   return (
     <div>
       <div className="mb-6 flex items-baseline justify-between">
-        <h1 className="font-display text-2xl text-paper">Analytics</h1>
-        <span className="text-xs text-muted">Updated just now · all-time / 30d / 7d</span>
+        <h1 className="font-display text-2xl text-paper">Аналитика</h1>
+        <span className="text-xs text-muted">За всё время · 30 дн. · 7 дн.</span>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {tiles.map((t) => (
-          <div key={t.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
-            <p className="text-sm text-muted">{t.label}</p>
-            <p className="mt-1 font-display text-3xl font-bold text-paper">{t.total}</p>
-            <div className="mt-3 flex gap-5 text-xs text-muted">
-              <span>
-                <span className="font-semibold text-paper">{t.d30}</span> · 30d
-              </span>
-              <span>
-                <span className="font-semibold text-paper">{t.d7}</span> · 7d
-              </span>
+        {tiles.map((t) => {
+          const inner = (
+            <>
+              <p className="text-sm text-muted">
+                {t.label}
+                {t.href && <span className="ml-1 text-gold" aria-hidden="true">→</span>}
+              </p>
+              <p className="mt-1 font-display text-3xl font-bold text-paper">{t.total}</p>
+              <div className="mt-3 flex gap-5 text-xs text-muted">
+                <span>
+                  <span className="font-semibold text-paper">{t.d30}</span> · 30 дн.
+                </span>
+                <span>
+                  <span className="font-semibold text-paper">{t.d7}</span> · 7 дн.
+                </span>
+              </div>
+              {t.note && <p className="mt-2 text-[11px] text-muted/70">{t.note}</p>}
+            </>
+          );
+          const cls = 'block rounded-xl border border-white/10 bg-white/[0.03] p-5';
+          return t.href ? (
+            <Link key={t.label} href={t.href} className={`${cls} transition hover:border-white/25 hover:bg-white/[0.06]`}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={t.label} className={cls}>
+              {inner}
             </div>
-            {t.note && <p className="mt-2 text-[11px] text-muted/70">{t.note}</p>}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <p className="mt-6 max-w-2xl text-xs leading-relaxed text-muted/70">
-        Revenue is an estimate: the credit ledger stores the token count, not the ₽ actually paid, so it is computed as
-        paid tokens × {TOKEN_PRICE_RUB} ₽ minus coupon discounts. Mock-mode and 100%-off grants are excluded from
-        Payments, Tokens and Revenue. For an exact revenue figure, add an <code>amount_rub</code> column to the ledger,
-        written by the YooKassa webhook.
+        Выручка — оценка: в реестре хранится число токенов, а не уплаченная сумма, поэтому она считается как
+        оплаченные токены × {TOKEN_PRICE_RUB} ₽ минус скидки по купонам. Тестовые платежи и купоны «100% скидка» в
+        показатели «Платежи», «Куплено токенов» и «Выручка» не входят. Для точной выручки нужно добавить в реестр
+        колонку <code>amount_rub</code>, заполняемую вебхуком YooKassa.
       </p>
     </div>
   );

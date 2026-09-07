@@ -5,9 +5,9 @@ import AdminListingActions from './AdminListingActions';
 
 export const dynamic = 'force-dynamic';
 
-// Staff-only listing viewer — shows a listing at ANY status (active, closed,
-// suspended, removed) so reported/hidden listings remain reviewable. Uses the
-// service role (the public page refuses non-active listings).
+// Просмотр объявления для персонала — показывает объявление в ЛЮБОМ статусе
+// (активно, закрыто, скрыто, удалено), чтобы жалобы можно было разбирать. Через
+// сервис-клиент (публичная страница отдаёт только активные объявления).
 export default async function AdminListingPage({ params }: { params: { id: string } }) {
   const admin = createAdminClient();
   const { data: listing } = await admin.from('listings').select('*').eq('id', params.id).maybeSingle();
@@ -15,8 +15,8 @@ export default async function AdminListingPage({ params }: { params: { id: strin
   if (!listing) {
     return (
       <div>
-        <Link href="/admin/listings" className="text-sm text-gold hover:underline">‹ Back to listings</Link>
-        <p className="mt-6 text-sm text-red-400">Listing not found.</p>
+        <Link href="/admin/listings" className="text-sm text-gold hover:underline">‹ К объявлениям</Link>
+        <p className="mt-6 text-sm text-red-400">Объявление не найдено.</p>
       </div>
     );
   }
@@ -32,27 +32,26 @@ export default async function AdminListingPage({ params }: { params: { id: strin
   ]);
 
   const rows: [string, unknown][] = [
-    ['Status', listing.status],
-    ['Neighborhood', listing.neighborhood],
-    ['Cross streets', listing.cross_streets],
-    ['Full address', listing.full_address],
-    ['Zip', listing.zip],
-    ['Type', listing.type],
-    ['Rent', listing.monthly_rent != null ? `$${listing.monthly_rent}/mo` : null],
-    ['Min credit score', listing.min_credit_score],
-    ['Gratitude', listing.gratitude_amount != null ? `$${listing.gratitude_amount}` : null],
-    ['Available from', listing.available_from],
-    ['Contact', `${listing.contact_name ?? '—'} · ${listing.contact_phone ?? '—'}`],
-    ['Lister', `${lister?.full_name || lister?.email || listing.lister_id.slice(0, 8)}${lister?.is_shadow_banned ? ' · shadow-banned' : ''}`],
+    ['Статус', listing.status],
+    ['Район', listing.neighborhood],
+    ['Ближайшие улицы', listing.cross_streets],
+    ['Полный адрес', listing.full_address],
+    ['Город', listing.city],
+    ['Тип', listing.type],
+    ['Аренда', listing.monthly_rent != null ? `${Number(listing.monthly_rent).toLocaleString('ru-RU')} ₽/мес` : null],
+    ['Благодарность', listing.gratitude_amount != null ? `${Number(listing.gratitude_amount).toLocaleString('ru-RU')} ₽` : null],
+    ['Доступна с', listing.available_from],
+    ['Контакт', `${listing.contact_name ?? '—'} · ${listing.contact_phone ?? '—'}`],
+    ['Арендодатель', `${lister?.full_name || lister?.email || listing.lister_id.slice(0, 8)}${lister?.is_shadow_banned ? ' · теневой бан' : ''}`],
   ];
 
   return (
     <div>
       <div className="flex flex-wrap gap-4">
-        <Link href="/admin" className="text-sm text-gold hover:underline">‹ Back to reports</Link>
-        <Link href="/admin/listings" className="text-sm text-muted hover:text-paper">Suspended listings</Link>
+        <Link href="/admin" className="text-sm text-gold hover:underline">‹ К жалобам</Link>
+        <Link href="/admin/listings" className="text-sm text-muted hover:text-paper">Скрытые объявления</Link>
       </div>
-      <h1 className="mb-4 mt-4 font-display text-2xl text-paper">{listing.neighborhood ?? 'Listing'}</h1>
+      <h1 className="mb-4 mt-4 font-display text-2xl text-paper">{listing.neighborhood ?? 'Объявление'}</h1>
 
       {photos && photos.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-2">
@@ -79,13 +78,13 @@ export default async function AdminListingPage({ params }: { params: { id: strin
 
       {listing.description && (
         <div className="mb-6">
-          <p className="mb-1 text-sm text-muted">Description</p>
+          <p className="mb-1 text-sm text-muted">Описание</p>
           <p className="whitespace-pre-wrap text-sm text-paper">{listing.description}</p>
         </div>
       )}
 
       <div className="mb-8">
-        <p className="mb-2 text-sm text-muted">Reports against this listing ({reports?.length ?? 0})</p>
+        <p className="mb-2 text-sm text-muted">Жалобы на объявление ({reports?.length ?? 0})</p>
         {reports && reports.length > 0 ? (
           <div className="flex flex-col gap-2">
             {reports.map((r) => (
@@ -96,7 +95,7 @@ export default async function AdminListingPage({ params }: { params: { id: strin
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted">None.</p>
+          <p className="text-sm text-muted">Нет.</p>
         )}
       </div>
 
