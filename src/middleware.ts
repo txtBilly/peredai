@@ -59,8 +59,12 @@ export async function middleware(req: NextRequest) {
   const passcode = process.env.SITE_PASSCODE;
   if (passcode) {
     const isGate = bare === '/gate';
+    // Legal documents stay openly accessible even while the pre-launch passcode
+    // gate is active (required to be publicly reachable).
+    const LEGAL_PUBLIC = ['/terms', '/privacy', '/personal-data-consent', '/identity-consent'];
+    const isLegalPublic = LEGAL_PUBLIC.some((p) => bare === p || bare.startsWith(p + '/'));
     const unlocked = req.cookies.get('t2t_gate')?.value === (await gateToken(passcode));
-    if (!unlocked && !isGate) {
+    if (!unlocked && !isGate && !isLegalPublic) {
       const url = req.nextUrl.clone();
       url.pathname = `/${locale}/gate`;
       url.search = `?next=${encodeURIComponent(pathname)}`;
