@@ -1,6 +1,7 @@
 import {
   tochkaBase,
   tochkaToken,
+  probeConnectivity,
   probeAccounts,
   probeBalances,
   probeSbpLegalEntities,
@@ -58,18 +59,17 @@ export default async function AdminTochkaPage() {
   const token = tochkaToken();
   const legalId = process.env.TOCHKA_LEGAL_ID || 'LB0003583607';
 
-  // Run the read-only probes in parallel. Skip the network entirely if there's
-  // no token, so the page still renders and tells us the env var is missing.
-  const [accounts, balances, sbpLegal, sbpMerchants] = token
-    ? await Promise.all([
-        probeAccounts(),
-        probeBalances(),
-        probeSbpLegalEntities(),
-        probeSbpMerchants(legalId),
-      ])
-    : ([{ ok: false, status: 0, error: 'no_token' }] as TochkaResult[]).concat(
-        Array(3).fill({ ok: false, status: 0, error: 'no_token' })
-      );
+  // Reachability first (no auth), then the authenticated probes. Run in parallel.
+  // If there's no token, still run connectivity so we learn whether the host is
+  // even reachable from this server.
+  const noToken: TochkaResult = { ok: false, status: 0, error: 'no_token' };
+  const [connectivity, accounts, balances, sbpLegal, sbpMerchants] = await Promise.all([
+    probeConnectivity(),
+    token ? probeAccounts() : Promise.resolve(noToken),
+    token ? probeBalances() : Promise.resolve(noToken),
+    token ? probeSbpLegalEntities() : Promise.resolve(noToken),
+    token ? probeSbpMerchants(legalId) : Promise.resolve(noToken),
+  ]);
 
   const env: Array<[string, string]> = [
     ['TOCHKA_API_TOKEN', mask(token)],
@@ -110,6 +110,7 @@ export default async function AdminTochkaPage() {
         </p>
       </section>
 
+      <Probe title="Доступность хоста" path={`${tochkaBase().replace(/\/uapi$/, '')}/`} r={connectivity} />
       <Probe title="Счета" path="/open-banking/v1.0/accounts" r={accounts} />
       <Probe title="Балансы" path="/open-banking/v1.0/balances" r={balances} />
       <Probe title="СБП · юрлица" path="/sbp/v1.0/legal-entity" r={sbpLegal} />

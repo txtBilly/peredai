@@ -37,6 +37,35 @@ export type TochkaResult = {
   error?: string;
 };
 
+// undici (Node's fetch) collapses every network-level failure into the opaque
+// "fetch failed". The real reason lives on error.cause (and sometimes a nested
+// AggregateError). Surface it so we can tell a geo/connection block (ECONNRESET,
+// ETIMEDOUT, ECONNREFUSED) from a TLS trust problem (CERT_*/self-signed) from a
+// DNS miss (ENOTFOUND).
+export function describeError(e: unknown): string {
+  let msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+  const cause = (e as { cause?: unknown } | null)?.cause;
+  if (cause) {
+    if (cause instanceof Error) {
+      const code = (cause as { code?: string }).code;
+      msg += ` — cause: ${cause.message}${code ? ` (${code})` : ''}`;
+      const inner = (cause as { errors?: unknown[] }).errors;
+      if (Array.isArray(inner)) {
+        msg += ` [${inner
+          .map((x) =>
+            x instanceof Error
+              ? `${x.message}${(x as { code?: string }).code ? ` (${(x as { code?: string }).code})` : ''}`
+              : String(x)
+          )
+          .join('; ')}]`;
+      }
+    } else {
+      msg += ` — cause: ${String(cause)}`;
+    }
+  }
+  return msg;
+}
+
 // Low-level request. Never throws — always returns a TochkaResult so callers
 // (and the diagnostic page) can render the real status/body, including errors.
 export async function tochkaFetch(
@@ -75,7 +104,28 @@ export async function tochkaFetch(
       text: json === undefined ? raw.slice(0, 2000) : undefined,
     };
   } catch (e) {
-    return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    return { ok: false, status: 0, error: describeError(e) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Raw reachability check to the Tochka host, with NO auth and NO API path — just
+// "can this server open a TLS connection to enter.tochka.com at all". Isolates a
+// host-level block from a wrong path or bad token.
+export async function probeConnectivity(): Promise<TochkaResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const base = new URL(tochkaBase());
+    const res = await fetch(`${base.protocol}//${base.host}/`, {
+      method: 'GET',
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    return { ok: true, status: res.status, text: `reachable — HTTP ${res.status}` };
+  } catch (e) {
+    return { ok: false, status: 0, error: describeError(e) };
   } finally {
     clearTimeout(timer);
   }
