@@ -181,3 +181,92 @@ export function probeSbpLegalEntities(): Promise<TochkaResult> {
 export function probeSbpMerchants(legalId: string): Promise<TochkaResult> {
   return tochkaFetch(`/sbp/v1.0/merchant/legal-entity/${encodeURIComponent(legalId)}`);
 }
+
+// --- SBP QR payments ---
+
+// Resolve the RUB settlement account. Prefers the explicit TOCHKA_ACCOUNT_ID env;
+// otherwise discovers it once from the accounts endpoint and caches it per-instance.
+let cachedAccountId: string | null | undefined;
+export async function resolveAccountId(): Promise<string | null> {
+  if (process.env.TOCHKA_ACCOUNT_ID) return process.env.TOCHKA_ACCOUNT_ID;
+  if (cachedAccountId !== undefined) return cachedAccountId;
+  const r = await probeAccounts();
+  const accounts = (
+    r.json as { Data?: { Account?: Array<{ accountId?: string; currency?: string; status?: string }> } }
+  )?.Data?.Account;
+  const acct = Array.isArray(accounts)
+    ? accounts.find((a) => a.currency === 'RUB' && a.status === 'Enabled') ?? accounts[0]
+    : undefined;
+  cachedAccountId = acct?.accountId ?? null;
+  return cachedAccountId;
+}
+
+export type RegisteredQr = { qrcId: string; payload: string; imageDataUrl?: string };
+
+// Register a DYNAMIC (qrcType 02), fixed-amount, one-time SBP QR. amountRub is in
+// whole rubles here; Tochka wants kopecks, so we ×100. The accountId keeps its
+// "account/BIC" slash and becomes two path segments — it must NOT be URL-encoded.
+export async function registerDynamicQr(params: {
+  amountRub: number;
+  paymentPurpose: string;
+  ttlMinutes?: number;
+  redirectUrl?: string;
+  accountId?: string;
+}): Promise<{ ok: true; qr: RegisteredQr } | { ok: false; status: number; error: string }> {
+  const merchantId = process.env.TOCHKA_MERCHANT_ID;
+  if (!merchantId) return { ok: false, status: 0, error: 'no_merchant_id' };
+  const accountId = params.accountId ?? (await resolveAccountId());
+  if (!accountId) return { ok: false, status: 0, error: 'no_account_id' };
+
+  const path = `/sbp/v1.0/qr-code/merchant/${encodeURIComponent(merchantId)}/${accountId}`;
+  const r = await tochkaFetch(path, {
+    method: 'POST',
+    body: {
+      Data: {
+        amount: Math.round(params.amountRub * 100),
+        currency: 'RUB',
+        paymentPurpose: params.paymentPurpose.slice(0, 140),
+        qrcType: '02',
+        imageParams: { width: 300, height: 300, mediaType: 'image/png' },
+        sourceName: 'ten2ten.ru',
+        ttl: params.ttlMinutes ?? 60,
+        ...(params.redirectUrl ? { redirectUrl: params.redirectUrl } : {}),
+      },
+    },
+  });
+  if (!r.ok) return { ok: false, status: r.status, error: r.error || `HTTP ${r.status}` };
+
+  const data = (
+    r.json as {
+      Data?: { qrcId?: string; payload?: string; image?: { content?: string; mediaType?: string } };
+    }
+  )?.Data;
+  if (!data?.qrcId || !data?.payload) {
+    return { ok: false, status: r.status, error: 'malformed_register_response' };
+  }
+  const imageDataUrl = data.image?.content
+    ? `data:${data.image.mediaType || 'image/png'};base64,${data.image.content}`
+    : undefined;
+  return { ok: true, qr: { qrcId: data.qrcId, payload: data.payload, imageDataUrl } };
+}
+
+export type SbpPaymentStatus =
+  | 'NotStarted'
+  | 'Received'
+  | 'InProgress'
+  | 'Accepted'
+  | 'Rejected'
+  | 'Unknown';
+
+// Payment status for a QR. "Accepted" means the money arrived. trxId is the
+// Tochka operation id — the idempotency key for granting tokens.
+export async function getQrPaymentStatus(
+  qrcId: string
+): Promise<{ status: SbpPaymentStatus; trxId?: string; raw: TochkaResult }> {
+  const r = await tochkaFetch(`/sbp/v1.0/qr-codes/${encodeURIComponent(qrcId)}/payment-status`);
+  const list = (
+    r.json as { Data?: { paymentList?: Array<{ qrcId?: string; status?: string; trxId?: string }> } }
+  )?.Data?.paymentList;
+  const entry = Array.isArray(list) ? list.find((p) => p.qrcId === qrcId) ?? list[0] : undefined;
+  return { status: (entry?.status as SbpPaymentStatus) || 'Unknown', trxId: entry?.trxId, raw: r };
+}
