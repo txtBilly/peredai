@@ -294,6 +294,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
                 shadowBanned={!!p?.is_shadow_banned}
                 duplicateReview={!!p?.duplicate_review}
                 fullBanned={!!p?.is_banned}
+                balance={r.balance}
               />
             </div>
           );

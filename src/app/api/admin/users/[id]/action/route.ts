@@ -73,5 +73,39 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ ok: true });
   }
 
+  // Void tokens after a money refund (e.g. an SBP bank refund in Tochka). Writes
+  // a negative 'refund_admin' ledger row so the balance drops. Guarded: you can
+  // only void what's still on the balance — if it's 0 (already spent / nothing
+  // left), voiding is blocked, which is also why a refund isn't warranted.
+  if (action === 'void_tokens') {
+    const n = Math.floor(Number((body as { amount?: unknown }).amount ?? 1));
+    if (!Number.isFinite(n) || n < 1) {
+      return NextResponse.json({ error: 'invalid_amount' }, { status: 400 });
+    }
+    const { data: rows, error: balErr } = await admin
+      .from('credit_ledger')
+      .select('amount')
+      .eq('seeker_id', params.id);
+    if (balErr) {
+      console.error('[admin] void balance lookup failed', balErr);
+      return NextResponse.json({ error: 'balance_lookup_failed' }, { status: 500 });
+    }
+    const balance = ((rows as { amount: number }[] | null) ?? []).reduce((s, r) => s + r.amount, 0);
+    if (balance <= 0) return NextResponse.json({ error: 'no_balance', balance }, { status: 400 });
+    if (n > balance) return NextResponse.json({ error: 'exceeds_balance', balance }, { status: 400 });
+
+    const { error } = await admin.from('credit_ledger').insert({
+      seeker_id: params.id,
+      event: 'refund_admin',
+      amount: -n,
+      note: `Admin void ${n} token(s) — bank refund, by ${staff.id.slice(0, 8)}`,
+    });
+    if (error) {
+      console.error('[admin] void_tokens failed', error);
+      return NextResponse.json({ error: 'void_failed' }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, voided: n, balance: balance - n });
+  }
+
   return NextResponse.json({ error: 'invalid_action' }, { status: 400 });
 }
