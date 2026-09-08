@@ -269,6 +269,41 @@ export async function getQr(
   return { ok: true, qr: { qrcId: data.qrcId, payload: data.payload, imageDataUrl } };
 }
 
+// --- Webhooks ---
+
+export function webhookClientId(): string | undefined {
+  return process.env.TOCHKA_CLIENT_ID || undefined;
+}
+
+// Subscribe our URL to Tochka events (PUT replaces the app's subscription list).
+export function registerWebhook(
+  url: string,
+  events: string[] = ['incomingSbpPayment']
+): Promise<TochkaResult> {
+  const clientId = webhookClientId();
+  if (!clientId) return Promise.resolve({ ok: false, status: 0, error: 'no_client_id' });
+  return tochkaFetch(`/webhook/v1.0/${encodeURIComponent(clientId)}`, {
+    method: 'PUT',
+    body: { webhooksList: events, url },
+  });
+}
+
+export function getWebhooks(): Promise<TochkaResult> {
+  const clientId = webhookClientId();
+  if (!clientId) return Promise.resolve({ ok: false, status: 0, error: 'no_client_id' });
+  return tochkaFetch(`/webhook/v1.0/${encodeURIComponent(clientId)}`);
+}
+
+// Ask Tochka to POST a test event of the given type to our registered URL.
+export function sendTestWebhook(webhookType = 'incomingSbpPayment'): Promise<TochkaResult> {
+  const clientId = webhookClientId();
+  if (!clientId) return Promise.resolve({ ok: false, status: 0, error: 'no_client_id' });
+  return tochkaFetch(`/webhook/v1.0/${encodeURIComponent(clientId)}/test_send`, {
+    method: 'POST',
+    body: { webhookType },
+  });
+}
+
 export type SbpPaymentStatus =
   | 'NotStarted'
   | 'Received'
