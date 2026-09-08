@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type Action = 'ban' | 'unban' | 'refund' | 'clear_review' | 'full_ban' | 'lift_full_ban';
+type Action = 'ban' | 'unban' | 'clear_review' | 'full_ban' | 'lift_full_ban';
 
 export default function AdminUserActions({
   userId,
@@ -51,7 +51,6 @@ export default function AdminUserActions({
   const CONFIRM: Record<Action, string> = {
     ban: 'Выдать теневой бан? Пользователь будет скрыт и не сможет размещать объявления и открывать диалоги — незаметно для него.',
     unban: 'Снять теневой бан с пользователя?',
-    refund: 'Начислить пользователю +1 токен?',
     clear_review: 'Снять пометку дубликата? Пользователь сможет публиковать объявления.',
     full_ban: 'Полностью заблокировать пользователя? Доступ к платформе будет закрыт.',
     lift_full_ban: 'Снять полную блокировку с пользователя?',
@@ -72,7 +71,6 @@ export default function AdminUserActions({
       setMsg(`error: ${d.error ?? 'failed'}`);
       return;
     }
-    if (action === 'refund') setMsg('+1 токен начислен');
     router.refresh();
   }
 
@@ -97,15 +95,6 @@ export default function AdminUserActions({
           Теневой бан
         </button>
       )}
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => act('refund')}
-        className="rounded-lg border border-white/25 px-5 py-2.5 text-sm font-medium text-paper ring-1 ring-inset ring-white/10 transition hover:border-white/50 disabled:opacity-60"
-      >
-        Вернуть +1 токен
-      </button>
-
       {balance > 0 ? (
         <div className="flex items-center gap-2 rounded-lg border border-red-500/30 px-3 py-1.5">
           <span className="text-xs text-muted">Аннулировать</span>

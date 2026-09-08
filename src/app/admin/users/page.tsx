@@ -23,6 +23,15 @@ type Profile = {
 
 type ListingLite = { id: string; neighborhood: string | null; status: string };
 type ChatLite = { id: string; status: string; role: 'seeker' | 'lister' };
+type LedgerRow = { created_at: string; event: string; amount: number; note: string | null };
+
+// Human-readable labels for credit_ledger events.
+const EVENT_LABEL: Record<string, string> = {
+  purchase: 'Покупка',
+  consume: 'Открытие диалога',
+  refund_report: 'Возврат (жалоба)',
+  refund_admin: 'Аннулирование (возврат)',
+};
 // One row of the identity_documents audit trail, plus a resolved view link
 // (signed URL for self-hosted uploads, Stripe dashboard link for sessions).
 type IdDoc = {
@@ -45,6 +54,7 @@ type Result = {
   listings: ListingLite[];
   chats: ChatLite[];
   idDocs: IdDoc[];
+  ledger: LedgerRow[];
 };
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: { q?: string } }) {
@@ -86,7 +96,11 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
               'id, full_name, verification_status, is_shadow_banned, is_banned, is_suppressed, rating_avg, rating_count, id_type, id_last4, identity_verified_at, duplicate_review, duplicate_reason, duplicate_matched_id'
             )
             .in('id', ids),
-          admin.from('credit_ledger').select('seeker_id, amount').in('seeker_id', ids),
+          admin
+            .from('credit_ledger')
+            .select('seeker_id, amount, event, note, created_at')
+            .in('seeker_id', ids)
+            .order('created_at', { ascending: false }),
           admin.from('strikes').select('user_id').in('user_id', ids),
           admin.from('listings').select('id, neighborhood, status, lister_id').in('lister_id', ids),
           admin
@@ -165,10 +179,18 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
         }
       );
       const pmap = new Map(((profs as Profile[] | null) ?? []).map((p) => [p.id, p]));
+      const ledgerRows =
+        (ledger as
+          | { seeker_id: string; amount: number; event: string; note: string | null; created_at: string }[]
+          | null) ?? [];
       const balance = new Map<string, number>();
-      ((ledger as { seeker_id: string; amount: number }[] | null) ?? []).forEach((l) =>
-        balance.set(l.seeker_id, (balance.get(l.seeker_id) ?? 0) + l.amount)
-      );
+      const ledgerByUser = new Map<string, LedgerRow[]>();
+      ledgerRows.forEach((l) => {
+        balance.set(l.seeker_id, (balance.get(l.seeker_id) ?? 0) + l.amount);
+        const arr = ledgerByUser.get(l.seeker_id) ?? [];
+        arr.push({ created_at: l.created_at, event: l.event, amount: l.amount, note: l.note });
+        ledgerByUser.set(l.seeker_id, arr);
+      });
       const strikeCount = new Map<string, number>();
       ((strikes as { user_id: string }[] | null) ?? []).forEach((s) =>
         strikeCount.set(s.user_id, (strikeCount.get(s.user_id) ?? 0) + 1)
@@ -182,6 +204,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
         listings: listingsByUser.get(id) ?? [],
         chats: chatsByUser.get(id) ?? [],
         idDocs: docsByUser.get(id) ?? [],
+        ledger: ledgerByUser.get(id) ?? [],
       }));
     }
   }
@@ -249,6 +272,31 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
                       </Link>
                     ))}
               </div>
+
+              {/* Token ledger — how tokens were accrued and used. */}
+              <details className="mt-2 text-xs text-muted">
+                <summary className="cursor-pointer text-paper">
+                  История токенов ({r.ledger.length}) · баланс {r.balance}
+                </summary>
+                {r.ledger.length === 0 ? (
+                  <p className="mt-1">нет операций</p>
+                ) : (
+                  <ul className="mt-1.5 flex flex-col gap-1">
+                    {r.ledger.map((row, i) => (
+                      <li key={i} className="flex flex-wrap items-center gap-x-2">
+                        <span className="text-paper/80">
+                          {new Date(row.created_at).toLocaleString('ru-RU')}
+                        </span>
+                        <span>· {EVENT_LABEL[row.event] ?? row.event}</span>
+                        <span className={row.amount < 0 ? 'text-red-300' : 'text-sage'}>
+                          {row.amount > 0 ? `+${row.amount}` : row.amount}
+                        </span>
+                        {row.note && <span className="text-muted/70">· {row.note}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </details>
 
               {/* Identity verification (customer-service audit view). */}
               <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-muted">

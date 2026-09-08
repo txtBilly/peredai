@@ -25,9 +25,24 @@ export default async function AccountPage({ params }: { params: { locale: string
 
   const { data: ledger } = await supabase
     .from('credit_ledger')
-    .select('amount')
-    .eq('seeker_id', user.id);
-  const creditBalance = (ledger ?? []).reduce((sum, r) => sum + (r.amount ?? 0), 0);
+    .select('amount, event, created_at')
+    .eq('seeker_id', user.id)
+    .order('created_at', { ascending: false });
+  const ledgerRows = (ledger ?? []) as { amount: number; event: string; created_at: string }[];
+  const creditBalance = ledgerRows.reduce((sum, r) => sum + (r.amount ?? 0), 0);
+
+  const en = locale === 'en';
+  // User-facing event labels. Internal ledger notes (staff ids etc.) are NOT
+  // shown here — only what the token movement was.
+  const eventLabel = (ev: string): string =>
+    ((
+      {
+        purchase: en ? 'Token purchase' : 'Покупка токенов',
+        consume: en ? 'Chat opened' : 'Открытие диалога',
+        refund_report: en ? 'Report refund' : 'Возврат по жалобе',
+        refund_admin: en ? 'Refund' : 'Возврат средств',
+      } as Record<string, string>
+    )[ev] ?? ev);
 
   const verificationStatus = profile?.verification_status ?? 'unverified';
   // Verification comes ONLY from the identity flow (Sber ID / T-ID). The legacy
@@ -104,6 +119,36 @@ export default async function AccountPage({ params }: { params: { locale: string
         <span className="text-sm text-muted">{a.creditsLabel}</span>
         <span className="font-display text-xl text-ink">{creditBalance}</span>
       </div>
+
+      {/* Token history */}
+      {ledgerRows.length > 0 && (
+        <div className="mb-6 overflow-hidden rounded-xl border border-black/10">
+          <div className="border-b border-black/[0.08] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted">
+            {en ? 'Token history' : 'История токенов'}
+          </div>
+          <ul className="divide-y divide-black/[0.06]">
+            {ledgerRows.map((row, i) => (
+              <li key={i} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <span className="flex flex-col">
+                  <span className="text-ink">{eventLabel(row.event)}</span>
+                  <span className="text-xs text-muted">
+                    {new Date(row.created_at).toLocaleDateString(en ? 'en-US' : 'ru-RU', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </span>
+                <span
+                  className={`font-medium tabular-nums ${row.amount < 0 ? 'text-red-600' : 'text-leaf'}`}
+                >
+                  {row.amount > 0 ? `+${row.amount}` : row.amount}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Nav links */}
       <nav aria-label="Account navigation">

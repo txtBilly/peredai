@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { requireStaff } from '@/lib/adminAuth';
 
-// Staff-only member actions: shadow-ban / unban, and a manual credit refund
-// override (grants +1 to the member's ledger).
+// Staff-only member actions: shadow-ban / unban, full ban, clear duplicate
+// review, and void tokens after a money refund. (There is deliberately no manual
+// "+1 token" grant — that invited CS abuse; token refunds happen only via the
+// automated confirmed-report path and the guarded void action below.)
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const staff = await requireStaff();
   if (!staff) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
@@ -56,20 +58,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .update({ duplicate_review: false, duplicate_reason: null, duplicate_matched_id: null })
       .eq('id', params.id);
     if (error) return NextResponse.json({ error: 'action_failed' }, { status: 500 });
-    return NextResponse.json({ ok: true });
-  }
-
-  if (action === 'refund') {
-    const { error } = await admin.from('credit_ledger').insert({
-      seeker_id: params.id,
-      event: 'refund_report',
-      amount: 1,
-      note: `Admin refund override by ${staff.id.slice(0, 8)}`,
-    });
-    if (error) {
-      console.error('[admin] refund override failed', error);
-      return NextResponse.json({ error: 'refund_failed' }, { status: 500 });
-    }
     return NextResponse.json({ ok: true });
   }
 
