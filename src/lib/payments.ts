@@ -1,12 +1,25 @@
-// Whether payments run in mock mode (preview/dev): no real processor is
-// configured, so purchases complete instantly instead of going through YooKassa.
-// Active when PAYMENTS_PROVIDER=mock, or when YooKassa credentials are absent or
-// still the placeholder. Single source of truth used by the checkout routes and
-// the pay screen so they always agree.
+// Which payment provider is active. Single source of truth for the checkout
+// routes and the pay screen so they always agree.
+//
+//   PAYMENTS_PROVIDER=mock     → purchases complete instantly (dev/preview)
+//   PAYMENTS_PROVIDER=tochka   → Tochka SBP dynamic QR
+//   PAYMENTS_PROVIDER=yookassa → YooKassa redirect (legacy)
+//
+// If PAYMENTS_PROVIDER is unset, we fall back to YooKassa when its credentials
+// are configured, otherwise mock — so a fresh/preview environment is never
+// accidentally charging.
+export type PaymentProvider = 'mock' | 'tochka' | 'yookassa';
+
+export function paymentProvider(): PaymentProvider {
+  const p = process.env.PAYMENTS_PROVIDER;
+  if (p === 'mock') return 'mock';
+  if (p === 'tochka') return 'tochka';
+  if (p === 'yookassa') return 'yookassa';
+  const shopId = process.env.YOOKASSA_SHOP_ID;
+  if (shopId && shopId !== 'test-shop-id') return 'yookassa';
+  return 'mock';
+}
+
 export function paymentsAreMock(): boolean {
-  return (
-    process.env.PAYMENTS_PROVIDER === 'mock' ||
-    !process.env.YOOKASSA_SHOP_ID ||
-    process.env.YOOKASSA_SHOP_ID === 'test-shop-id'
-  );
+  return paymentProvider() === 'mock';
 }

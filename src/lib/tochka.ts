@@ -250,6 +250,25 @@ export async function registerDynamicQr(params: {
   return { ok: true, qr: { qrcId: data.qrcId, payload: data.payload, imageDataUrl } };
 }
 
+// Fetch a registered QR's metadata (payload + base64 image). Used to render the
+// QR on the pay page from just a qrcId, without persisting the image ourselves.
+export async function getQr(
+  qrcId: string
+): Promise<{ ok: true; qr: RegisteredQr } | { ok: false; status: number; error: string }> {
+  const r = await tochkaFetch(`/sbp/v1.0/qr-code/${encodeURIComponent(qrcId)}`);
+  if (!r.ok) return { ok: false, status: r.status, error: r.error || `HTTP ${r.status}` };
+  const data = (
+    r.json as {
+      Data?: { qrcId?: string; payload?: string; image?: { content?: string; mediaType?: string } };
+    }
+  )?.Data;
+  if (!data?.qrcId || !data?.payload) return { ok: false, status: r.status, error: 'malformed_get_response' };
+  const imageDataUrl = data.image?.content
+    ? `data:${data.image.mediaType || 'image/png'};base64,${data.image.content}`
+    : undefined;
+  return { ok: true, qr: { qrcId: data.qrcId, payload: data.payload, imageDataUrl } };
+}
+
 export type SbpPaymentStatus =
   | 'NotStarted'
   | 'Received'

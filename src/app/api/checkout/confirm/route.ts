@@ -4,7 +4,8 @@ import { mintSessionForEmail } from '@/lib/auth-session';
 import { CURRENT_CONSENT_VERSION } from '@/lib/consent';
 import { grantPurchaseCredits } from '@/lib/credits';
 import { TOKEN_PRICE_RUB, MAX_TOKENS_PER_PURCHASE, createContactPayment } from '@/lib/yookassa';
-import { paymentsAreMock } from '@/lib/payments';
+import { paymentsAreMock, paymentProvider } from '@/lib/payments';
+import { registerDynamicQr } from '@/lib/tochka';
 import { validateCoupon, priceForCoupon, recordRedemption, normalizeCouponCode } from '@/lib/coupons';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -149,6 +150,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'checkout_failed' }, { status: 500 });
     }
     return NextResponse.redirect(successUrl, 303);
+  }
+
+  // Real, non-free, Tochka SBP: register a dynamic QR for the discounted amount,
+  // persist the purchase intent keyed by qrcId (SBP QRs carry no metadata of
+  // ours), and send the seeker to the on-site QR page. Tokens + coupon
+  // redemption are applied when the payment reaches "Accepted" (polled on that
+  // page, and/or via the webhook) — never here.
+  if (paymentProvider() === 'tochka') {
+    const successPath = listingId
+      ? `/${locale}/browse/${listingId}?purchase=success`
+      : `/${locale}/account?purchase=success`;
+    const reg = await registerDynamicQr({
+      amountRub: priceRub,
+      paymentPurpose: `Токены Ten2Ten (${credits} шт.). Без НДС`,
+      ttlMinutes: 60,
+      redirectUrl: `${appUrl}${successPath}`,
+    });
+    if (!reg.ok) {
+      console.error('[checkout/confirm] tochka register failed', reg.status, reg.error);
+      return backWith('form_error=checkout_failed');
+    }
+    const admin = createAdminClient();
+    const { error: insErr } = await admin.from('sbp_intents').insert({
+      qrc_id: reg.qr.qrcId,
+      seeker_id: seekerId,
+      credits,
+      price_rub: Math.round(priceRub),
+      coupon_id: couponId,
+      coupon_code: resolvedCode,
+      discount_rub: Math.round(discountRub),
+      status: 'pending',
+    });
+    if (insErr) {
+      console.error('[checkout/confirm] sbp_intents insert failed', insErr);
+      return backWith('form_error=checkout_failed');
+    }
+    const qrUrl = `${appUrl}/${locale}/pay/qr?qrc=${encodeURIComponent(reg.qr.qrcId)}&next=${encodeURIComponent(successPath)}`;
+    return NextResponse.redirect(qrUrl, 303);
   }
 
   // Real, non-free: create a YooKassa payment for the discounted amount. Tokens
