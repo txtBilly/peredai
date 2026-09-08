@@ -26,13 +26,17 @@ function stripLocale(pathname: string): string {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/admin') || // non-localized staff area (gated in its layout)
-    pathname.includes('.')
-  ) {
+  if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.')) {
     return NextResponse.next();
+  }
+
+  // Non-localized staff area — skip locale + passcode gating entirely (it's gated
+  // in its own layout). Forward the request path as x-pathname so the admin
+  // layout can let /admin/login bypass its staff gate (avoiding a redirect loop).
+  if (pathname.startsWith('/admin')) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-pathname', pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // Ensure locale prefix
