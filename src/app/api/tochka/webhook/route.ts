@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getQrPaymentStatus } from '@/lib/tochka';
 import { grantPurchaseCredits } from '@/lib/credits';
@@ -6,47 +7,45 @@ import { recordRedemption } from '@/lib/coupons';
 
 export const runtime = 'nodejs';
 
-// Inbound Tochka webhook (incomingSbpPayment). We do NOT trust the posted body:
-// we extract a qrcId, then re-confirm the payment against Tochka's payment-status
-// API before granting anything — so a forged POST can't grant tokens. The grant
-// is idempotent (credit_ledger key = tochka_<qrcId>), so it's safe alongside the
-// /pay/qr poller. Every delivery is logged to tochka_webhook_log for inspection
-// (the payload shape / signature aren't documented, so we capture the real one).
+// Inbound Tochka webhook. The body is a signed JWT (JWS, RS256) whose payload is
+// the incomingSbpPayment event: { qrcId, operationId, amount, webhookType, … }.
+//
+// Trust model, in order:
+//   1. If TOCHKA_WEBHOOK_PUBLIC_KEY is set, verify the RS256 signature and reject
+//      anything that fails (a forged/tampered POST is dropped before processing).
+//   2. Regardless, the grant is re-confirmed against Tochka's payment-status API
+//      before any token is issued — so even an unverified event can't grant on
+//      its own say-so.
+//   3. The grant is idempotent (credit_ledger key = tochka_<qrcId>), so it's safe
+//      alongside the /pay/qr poller.
+// Every delivery is logged to tochka_webhook_log for inspection.
 
-// Best-effort qrcId extraction: works whether the body is a JSON object or a
-// signed JWT (header.payload.signature) whose payload segment is base64url JSON.
-function extractQrcId(body: string): string | undefined {
-  const scan = (obj: unknown): string | undefined => {
-    if (!obj || typeof obj !== 'object') return undefined;
-    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-      if (k === 'qrcId' && typeof v === 'string') return v;
-      if (v && typeof v === 'object') {
-        const r = scan(v);
-        if (r) return r;
-      }
-    }
-    return undefined;
-  };
+function b64urlToBuf(s: string): Buffer {
+  return Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.trim().split('.');
+  if (parts.length < 2) return null;
   try {
-    const r = scan(JSON.parse(body));
-    if (r) return r;
+    return JSON.parse(b64urlToBuf(parts[1]).toString('utf8')) as Record<string, unknown>;
   } catch {
-    /* not JSON — try JWT below */
+    return null;
   }
-  const parts = body.trim().split('.');
-  if (parts.length === 3) {
-    try {
-      const payloadJson = Buffer.from(
-        parts[1].replace(/-/g, '+').replace(/_/g, '/'),
-        'base64'
-      ).toString('utf8');
-      const r = scan(JSON.parse(payloadJson));
-      if (r) return r;
-    } catch {
-      /* not a decodable JWT */
-    }
+}
+
+// RS256 (RSASSA-PKCS1-v1_5 + SHA-256) verification of a compact JWS.
+function verifyRs256(token: string, publicKeyPem: string): boolean {
+  const parts = token.trim().split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const v = crypto.createVerify('RSA-SHA256');
+    v.update(`${parts[0]}.${parts[1]}`);
+    v.end();
+    return v.verify(publicKeyPem, b64urlToBuf(parts[2]));
+  } catch {
+    return false;
   }
-  return undefined;
 }
 
 export async function POST(req: NextRequest) {
@@ -58,67 +57,87 @@ export async function POST(req: NextRequest) {
     headers[k] = v;
   });
 
-  const qrcId = extractQrcId(body);
-  let action = qrcId ? 'captured' : 'captured_no_qrc';
+  const isJwt = body.trim().split('.').length === 3;
+  const claims = decodeJwtPayload(body);
+  const qrcId = (typeof claims?.qrcId === 'string' && claims.qrcId) || undefined;
+  const webhookType = typeof claims?.webhookType === 'string' ? claims.webhookType : undefined;
 
-  if (qrcId) {
-    try {
-      const { data } = await admin
-        .from('sbp_intents')
-        .select('seeker_id, credits, discount_rub, coupon_id, coupon_code, status')
-        .eq('qrc_id', qrcId)
-        .maybeSingle();
-      if (!data) {
-        action = 'no_intent';
-      } else if (data.status === 'granted') {
-        action = 'already_granted';
-      } else {
-        const { status, trxId } = await getQrPaymentStatus(qrcId);
-        if (status === 'Accepted') {
-          const ref = `tochka_${qrcId}`;
-          if (data.coupon_id) {
-            await recordRedemption({
-              couponId: data.coupon_id,
-              userId: data.seeker_id,
-              amountDiscounted: data.discount_rub ?? 0,
-              creditsGranted: data.credits,
-              paymentRef: ref,
-            });
-          }
-          await grantPurchaseCredits({
-            seekerId: data.seeker_id,
-            stripePaymentIntent: ref,
-            amount: data.credits,
-            note: data.coupon_code
-              ? `Purchase (coupon ${data.coupon_code}): ${data.credits} tokens`
-              : undefined,
-          });
-          await admin
-            .from('sbp_intents')
-            .update({ status: 'granted', trx_id: trxId ?? null, updated_at: new Date().toISOString() })
-            .eq('qrc_id', qrcId);
-          action = 'granted';
-        } else {
-          action = `status_${status}`;
-        }
-      }
-    } catch (e) {
-      console.error('[tochka webhook] processing failed', e);
-      action = 'error';
-    }
+  // Signature check (opt-in via env). When a key is configured, a bad signature
+  // is dropped without processing.
+  const pubKey = process.env.TOCHKA_WEBHOOK_PUBLIC_KEY;
+  let sig: 'verified' | 'invalid' | 'unverified' = 'unverified';
+  if (pubKey && isJwt) sig = verifyRs256(body, pubKey) ? 'verified' : 'invalid';
+
+  const log = (action: string, parsedQrc?: string) =>
+    admin
+      .from('tochka_webhook_log')
+      .insert({
+        content_type: headers['content-type'] ?? null,
+        headers,
+        body: body.slice(0, 8000),
+        parsed_qrc_id: parsedQrc ?? null,
+        action: `${action}·sig=${sig}`,
+      })
+      .then(
+        () => undefined,
+        (e) => console.error('[tochka webhook] log insert failed', e)
+      );
+
+  if (sig === 'invalid') {
+    await log('bad_signature', qrcId);
+    return NextResponse.json({ result: true });
+  }
+  if (!qrcId || (webhookType && webhookType !== 'incomingSbpPayment')) {
+    await log(qrcId ? `ignored_type_${webhookType}` : 'no_qrc', qrcId);
+    return NextResponse.json({ result: true });
   }
 
+  let action = 'captured';
   try {
-    await admin.from('tochka_webhook_log').insert({
-      content_type: headers['content-type'] ?? null,
-      headers,
-      body: body.slice(0, 8000),
-      parsed_qrc_id: qrcId ?? null,
-      action,
-    });
+    const { data } = await admin
+      .from('sbp_intents')
+      .select('seeker_id, credits, discount_rub, coupon_id, coupon_code, status')
+      .eq('qrc_id', qrcId)
+      .maybeSingle();
+    if (!data) {
+      action = 'no_intent';
+    } else if (data.status === 'granted') {
+      action = 'already_granted';
+    } else {
+      const { status, trxId } = await getQrPaymentStatus(qrcId);
+      if (status === 'Accepted') {
+        const ref = `tochka_${qrcId}`;
+        if (data.coupon_id) {
+          await recordRedemption({
+            couponId: data.coupon_id,
+            userId: data.seeker_id,
+            amountDiscounted: data.discount_rub ?? 0,
+            creditsGranted: data.credits,
+            paymentRef: ref,
+          });
+        }
+        await grantPurchaseCredits({
+          seekerId: data.seeker_id,
+          stripePaymentIntent: ref,
+          amount: data.credits,
+          note: data.coupon_code
+            ? `Purchase (coupon ${data.coupon_code}): ${data.credits} tokens`
+            : undefined,
+        });
+        await admin
+          .from('sbp_intents')
+          .update({ status: 'granted', trx_id: trxId ?? null, updated_at: new Date().toISOString() })
+          .eq('qrc_id', qrcId);
+        action = 'granted';
+      } else {
+        action = `status_${status}`;
+      }
+    }
   } catch (e) {
-    console.error('[tochka webhook] log insert failed', e);
+    console.error('[tochka webhook] processing failed', e);
+    action = 'error';
   }
 
+  await log(action, qrcId);
   return NextResponse.json({ result: true });
 }
