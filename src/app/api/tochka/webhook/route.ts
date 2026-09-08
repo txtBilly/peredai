@@ -34,15 +34,29 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
+// Load the configured webhook public key. Accepts either a JWK (JSON object, as
+// Tochka publishes it) or a PEM string.
+function loadPublicKey(raw: string): crypto.KeyObject | string | null {
+  const s = raw.trim();
+  if (s.startsWith('{')) {
+    try {
+      return crypto.createPublicKey({ key: JSON.parse(s), format: 'jwk' });
+    } catch {
+      return null;
+    }
+  }
+  return s; // PEM
+}
+
 // RS256 (RSASSA-PKCS1-v1_5 + SHA-256) verification of a compact JWS.
-function verifyRs256(token: string, publicKeyPem: string): boolean {
+function verifyRs256(token: string, key: crypto.KeyObject | string): boolean {
   const parts = token.trim().split('.');
   if (parts.length !== 3) return false;
   try {
     const v = crypto.createVerify('RSA-SHA256');
     v.update(`${parts[0]}.${parts[1]}`);
     v.end();
-    return v.verify(publicKeyPem, b64urlToBuf(parts[2]));
+    return v.verify(key, b64urlToBuf(parts[2]));
   } catch {
     return false;
   }
@@ -64,9 +78,12 @@ export async function POST(req: NextRequest) {
 
   // Signature check (opt-in via env). When a key is configured, a bad signature
   // is dropped without processing.
-  const pubKey = process.env.TOCHKA_WEBHOOK_PUBLIC_KEY;
+  const pubKeyRaw = process.env.TOCHKA_WEBHOOK_PUBLIC_KEY;
   let sig: 'verified' | 'invalid' | 'unverified' = 'unverified';
-  if (pubKey && isJwt) sig = verifyRs256(body, pubKey) ? 'verified' : 'invalid';
+  if (pubKeyRaw && isJwt) {
+    const key = loadPublicKey(pubKeyRaw);
+    sig = key ? (verifyRs256(body, key) ? 'verified' : 'invalid') : 'unverified';
+  }
 
   const log = (action: string, parsedQrc?: string) =>
     admin
