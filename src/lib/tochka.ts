@@ -12,7 +12,18 @@
 //   TOCHKA_LEGAL_ID    — SBP legal-entity id (LB…)
 //   TOCHKA_CLIENT_ID   — application (client) id, for webhook management
 
+import https from 'node:https';
+import tls from 'node:tls';
+import { RUSSIAN_TRUSTED_ROOT_CA, RUSSIAN_TRUSTED_SUB_CA } from './russianTrustedCa';
+
 const DEFAULT_BASE = 'https://enter.tochka.com/uapi';
+
+// enter.tochka.com serves a TLS cert chaining to the Russian Trusted Root CA,
+// which Node doesn't bundle. We trust it IN ADDITION to the standard CA bundle,
+// and only for these outbound requests — full verification stays on (no
+// rejectUnauthorized:false). Setting `ca` replaces the defaults, so we
+// concatenate the built-in roots with the two Russian certs.
+const TOCHKA_CA: string[] = [...tls.rootCertificates, RUSSIAN_TRUSTED_ROOT_CA, RUSSIAN_TRUSTED_SUB_CA];
 
 export function tochkaBase(): string {
   return (process.env.TOCHKA_API_BASE || DEFAULT_BASE).replace(/\/+$/, '');
@@ -44,6 +55,8 @@ export type TochkaResult = {
 // DNS miss (ENOTFOUND).
 export function describeError(e: unknown): string {
   let msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+  const topCode = (e as { code?: string } | null)?.code;
+  if (topCode) msg += ` (${topCode})`;
   const cause = (e as { cause?: unknown } | null)?.cause;
   if (cause) {
     if (cause instanceof Error) {
@@ -66,69 +79,88 @@ export function describeError(e: unknown): string {
   return msg;
 }
 
-// Low-level request. Never throws — always returns a TochkaResult so callers
-// (and the diagnostic page) can render the real status/body, including errors.
-export async function tochkaFetch(
+// Core request over node:https so we can pin the Russian Trusted CA (Node's
+// global fetch/undici can't take a per-request CA without an extra dependency).
+// Never throws — always resolves a TochkaResult so callers and the diagnostic
+// page can render the real status/body, including network errors.
+function tochkaRequest(
+  urlStr: string,
+  opts: { method?: string; body?: unknown; withAuth?: boolean; timeoutMs?: number } = {}
+): Promise<TochkaResult> {
+  const { method = 'GET', body, withAuth = true, timeoutMs = 15000 } = opts;
+  return new Promise<TochkaResult>((resolve) => {
+    let u: URL;
+    try {
+      u = new URL(urlStr);
+    } catch {
+      resolve({ ok: false, status: 0, error: `bad_url: ${urlStr}` });
+      return;
+    }
+    const token = tochkaToken();
+    const payload = body === undefined ? undefined : JSON.stringify(body);
+
+    const req = https.request(
+      {
+        protocol: u.protocol,
+        hostname: u.hostname,
+        port: u.port || 443,
+        path: `${u.pathname}${u.search}`,
+        method,
+        ca: TOCHKA_CA, // trust Russian Trusted CA + defaults; verification stays ON
+        headers: {
+          Accept: 'application/json',
+          ...(withAuth && token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(payload
+            ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+            : {}),
+        },
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => {
+          const raw = Buffer.concat(chunks).toString('utf8');
+          const status = res.statusCode ?? 0;
+          let json: unknown;
+          try {
+            json = raw ? JSON.parse(raw) : undefined;
+          } catch {
+            /* non-JSON — keep as text */
+          }
+          resolve({
+            ok: status >= 200 && status < 300,
+            status,
+            json,
+            text: json === undefined ? raw.slice(0, 2000) : undefined,
+          });
+        });
+      }
+    );
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`request timeout after ${timeoutMs}ms`)));
+    req.on('error', (e) => resolve({ ok: false, status: 0, error: describeError(e) }));
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
+
+// Low-level API request against the configured base URL (authenticated).
+export function tochkaFetch(
   path: string,
   init?: { method?: string; body?: unknown }
 ): Promise<TochkaResult> {
-  const token = tochkaToken();
-  if (!token) return { ok: false, status: 0, error: 'no_token' };
-
+  if (!tochkaToken()) return Promise.resolve({ ok: false, status: 0, error: 'no_token' });
   const url = `${tochkaBase()}${path.startsWith('/') ? path : `/${path}`}`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
-  try {
-    const res = await fetch(url, {
-      method: init?.method ?? 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      ...(init?.body ? { body: JSON.stringify(init.body) } : {}),
-      signal: controller.signal,
-      cache: 'no-store',
-    });
-    const raw = await res.text();
-    let json: unknown;
-    try {
-      json = raw ? JSON.parse(raw) : undefined;
-    } catch {
-      /* non-JSON response — keep as text below */
-    }
-    return {
-      ok: res.ok,
-      status: res.status,
-      json,
-      text: json === undefined ? raw.slice(0, 2000) : undefined,
-    };
-  } catch (e) {
-    return { ok: false, status: 0, error: describeError(e) };
-  } finally {
-    clearTimeout(timer);
-  }
+  return tochkaRequest(url, { method: init?.method, body: init?.body });
 }
 
-// Raw reachability check to the Tochka host, with NO auth and NO API path — just
-// "can this server open a TLS connection to enter.tochka.com at all". Isolates a
-// host-level block from a wrong path or bad token.
+// Raw reachability check to the Tochka host — NO auth, NO API path — just "can
+// this server open a (now CA-trusted) TLS connection to enter.tochka.com". Any
+// HTTP status back (even 404) proves reachability + TLS trust.
 export async function probeConnectivity(): Promise<TochkaResult> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
-  try {
-    const base = new URL(tochkaBase());
-    const res = await fetch(`${base.protocol}//${base.host}/`, {
-      method: 'GET',
-      signal: controller.signal,
-      cache: 'no-store',
-    });
-    return { ok: true, status: res.status, text: `reachable — HTTP ${res.status}` };
-  } catch (e) {
-    return { ok: false, status: 0, error: describeError(e) };
-  } finally {
-    clearTimeout(timer);
-  }
+  const base = new URL(tochkaBase());
+  const r = await tochkaRequest(`${base.protocol}//${base.host}/`, { withAuth: false });
+  if (r.status > 0) return { ...r, ok: true, text: `reachable — HTTP ${r.status}` };
+  return r;
 }
 
 // --- Read-only probes for the connection diagnostic ---
