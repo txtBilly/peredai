@@ -5,7 +5,8 @@ import { CURRENT_CONSENT_VERSION } from '@/lib/consent';
 import { grantPurchaseCredits } from '@/lib/credits';
 import { TOKEN_PRICE_RUB, MAX_TOKENS_PER_PURCHASE, createContactPayment } from '@/lib/yookassa';
 import { paymentsAreMock, paymentProvider } from '@/lib/payments';
-import { registerDynamicQr } from '@/lib/tochka';
+import { createPaymentWithReceipt } from '@/lib/tochka';
+import { randomUUID } from 'crypto';
 import { validateCoupon, priceForCoupon, recordRedemption, normalizeCouponCode } from '@/lib/coupons';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -152,28 +153,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(successUrl, 303);
   }
 
-  // Real, non-free, Tochka SBP: register a dynamic QR for the discounted amount,
-  // persist the purchase intent keyed by qrcId (SBP QRs carry no metadata of
-  // ours), and send the seeker to the on-site QR page. Tokens + coupon
-  // redemption are applied when the payment reaches "Accepted" (polled on that
-  // page, and/or via the webhook) — never here.
+  // Real, non-free, Tochka: create an internet-acquiring payment WITH a fiscal
+  // receipt. This returns a Tochka-hosted SBP payment page and has Точка Касса
+  // email the 54-ФЗ check (the raw SBP QR can't carry a receipt). We persist the
+  // intent — qrc_id holds our own ref, trx_id holds Tochka's operationId — and
+  // send the buyer to the payment page. Tokens + coupon redemption are applied
+  // when the operation is APPROVED (polled on /pay/return, and via the webhook).
   if (paymentProvider() === 'tochka') {
+    if (!seekerEmail) return backWith('form_error=invalid_email');
     const successPath = listingId
       ? `/${locale}/browse/${listingId}?purchase=success`
       : `/${locale}/account?purchase=success`;
-    const reg = await registerDynamicQr({
+    const ref = randomUUID();
+    const returnUrl = `${appUrl}/${locale}/pay/return?ref=${ref}&next=${encodeURIComponent(successPath)}`;
+    const pay = await createPaymentWithReceipt({
       amountRub: priceRub,
-      paymentPurpose: `Токены Ten2Ten (${credits} шт.). Без НДС`,
+      purpose: `Токены Ten2Ten (${credits} шт.). Без НДС`,
+      clientEmail: seekerEmail,
+      clientName: nameInput || undefined,
+      itemName: `Токены Ten2Ten (${credits} шт.)`,
+      redirectUrl: returnUrl,
+      failRedirectUrl: payUrl,
       ttlMinutes: 60,
-      redirectUrl: `${appUrl}${successPath}`,
+      paymentLinkId: ref,
     });
-    if (!reg.ok) {
-      console.error('[checkout/confirm] tochka register failed', reg.status, reg.error);
+    if (!pay.ok) {
+      console.error('[checkout/confirm] tochka acquiring create failed', pay.status, pay.error, pay.raw);
       return backWith('form_error=checkout_failed');
     }
     const admin = createAdminClient();
     const { error: insErr } = await admin.from('sbp_intents').insert({
-      qrc_id: reg.qr.qrcId,
+      qrc_id: ref,
+      trx_id: pay.payment.operationId,
       seeker_id: seekerId,
       credits,
       price_rub: Math.round(priceRub),
@@ -186,8 +197,7 @@ export async function POST(req: NextRequest) {
       console.error('[checkout/confirm] sbp_intents insert failed', insErr);
       return backWith('form_error=checkout_failed');
     }
-    const qrUrl = `${appUrl}/${locale}/pay/qr?qrc=${encodeURIComponent(reg.qr.qrcId)}&next=${encodeURIComponent(successPath)}`;
-    return NextResponse.redirect(qrUrl, 303);
+    return NextResponse.redirect(pay.payment.paymentLink, 303);
   }
 
   // Real, non-free: create a YooKassa payment for the discounted amount. Tokens

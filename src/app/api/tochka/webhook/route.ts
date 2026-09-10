@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/server';
-import { getQrPaymentStatus } from '@/lib/tochka';
+import { getQrPaymentStatus, getAcquiringOperation } from '@/lib/tochka';
 import { grantPurchaseCredits } from '@/lib/credits';
 import { recordRedemption } from '@/lib/coupons';
 
@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
   const isJwt = body.trim().split('.').length === 3;
   const claims = decodeJwtPayload(body);
   const qrcId = (typeof claims?.qrcId === 'string' && claims.qrcId) || undefined;
+  const operationId = (typeof claims?.operationId === 'string' && claims.operationId) || undefined;
   const webhookType = typeof claims?.webhookType === 'string' ? claims.webhookType : undefined;
 
   // Signature check (opt-in via env). When a key is configured, a bad signature
@@ -101,9 +102,65 @@ export async function POST(req: NextRequest) {
       );
 
   if (sig === 'invalid') {
-    await log('bad_signature', qrcId);
+    await log('bad_signature', qrcId ?? operationId);
     return NextResponse.json({ result: true });
   }
+
+  // Acquiring payment-with-receipt (the fiscalized flow): the intent stores the
+  // operationId in trx_id. Re-check the operation, grant idempotently on APPROVED.
+  // This is the backstop; the /pay/return poller usually grants first.
+  if (webhookType === 'acquiringInternetPayment' || operationId) {
+    let action = 'acq_captured';
+    if (!operationId) {
+      await log('acq_no_operation_id', undefined);
+      return NextResponse.json({ result: true });
+    }
+    try {
+      const { data } = await admin
+        .from('sbp_intents')
+        .select('qrc_id, seeker_id, credits, discount_rub, coupon_id, coupon_code, status')
+        .eq('trx_id', operationId)
+        .maybeSingle();
+      if (!data) {
+        action = 'acq_no_intent';
+      } else if (data.status === 'granted') {
+        action = 'acq_already_granted';
+      } else {
+        const { status } = await getAcquiringOperation(operationId);
+        if (status === 'APPROVED') {
+          const gref = `tochka_${operationId}`;
+          if (data.coupon_id) {
+            await recordRedemption({
+              couponId: data.coupon_id,
+              userId: data.seeker_id,
+              amountDiscounted: data.discount_rub ?? 0,
+              creditsGranted: data.credits,
+              paymentRef: gref,
+            });
+          }
+          await grantPurchaseCredits({
+            seekerId: data.seeker_id,
+            stripePaymentIntent: gref,
+            amount: data.credits,
+            note: data.coupon_code ? `Purchase (coupon ${data.coupon_code}): ${data.credits} tokens` : undefined,
+          });
+          await admin
+            .from('sbp_intents')
+            .update({ status: 'granted', updated_at: new Date().toISOString() })
+            .eq('trx_id', operationId);
+          action = 'acq_granted';
+        } else {
+          action = `acq_status_${status}`;
+        }
+      }
+    } catch (e) {
+      console.error('[tochka webhook] acquiring processing failed', e);
+      action = 'acq_error';
+    }
+    await log(action, operationId);
+    return NextResponse.json({ result: true });
+  }
+
   if (!qrcId || (webhookType && webhookType !== 'incomingSbpPayment')) {
     await log(qrcId ? `ignored_type_${webhookType}` : 'no_qrc', qrcId);
     return NextResponse.json({ result: true });

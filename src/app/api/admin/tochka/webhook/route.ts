@@ -17,7 +17,10 @@ export async function POST(req: NextRequest) {
   const back = (q: string) => NextResponse.redirect(`${origin}/admin/tochka?${q}`, 303);
 
   if (action === 'register') {
-    const r = await registerWebhook(`${origin}/api/tochka/webhook`, ['incomingSbpPayment']);
+    const r = await registerWebhook(`${origin}/api/tochka/webhook`, [
+      'incomingSbpPayment',
+      'acquiringInternetPayment',
+    ]);
     return back(`wh=${r.ok ? 'registered' : `error_${r.status}`}`);
   }
   if (action === 'test') {
