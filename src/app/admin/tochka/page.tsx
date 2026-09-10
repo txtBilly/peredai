@@ -70,6 +70,8 @@ const WH_MESSAGES: Record<string, string> = {
   unknown_action: 'Неизвестное действие.',
   acquiring_ok: 'Тест эквайринга прошёл — ссылка на оплату создана. Смотрите ответ в журнале ниже.',
   acquiring_err: 'Тест эквайринга не прошёл — смотрите ошибку в журнале ниже (нужен эквайринг + право MakeAcquiringOperation).',
+  receipt_checked: 'Данные последнего платежа записаны в журнал ниже — разверните строку receipt_check и посмотрите, есть ли в ответе блок чека/ОФД.',
+  receipt_none: 'Нет ни одного проведённого платежа с operationId, чтобы проверить чек.',
 };
 
 export default async function AdminTochkaPage({
@@ -198,14 +200,29 @@ export default async function AdminTochkaPage({
           токена есть право MakeAcquiringOperation. Деньги не двигаются; ответ появится в журнале
           ниже. Если оплатить ссылку, тестовый чек придёт на ваш staff-email.
         </p>
-        <form action="/api/admin/tochka/acquiring-test" method="post" className="mt-3">
-          <button
-            type="submit"
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:bg-white/[0.06]"
-          >
-            Создать тестовый платёж с чеком (10 ₽)
-          </button>
-        </form>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <form action="/api/admin/tochka/acquiring-test" method="post">
+            <button
+              type="submit"
+              className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:bg-white/[0.06]"
+            >
+              Создать тестовый платёж с чеком (10 ₽)
+            </button>
+          </form>
+          <form action="/api/admin/tochka/receipt-check" method="post">
+            <button
+              type="submit"
+              className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:bg-white/[0.06]"
+            >
+              Проверить чек последнего платежа
+            </button>
+          </form>
+        </div>
+        <p className="mt-2 text-[11px] text-muted/70">
+          «Проверить чек» запрашивает у Точки полные данные последней проведённой операции и пишет их
+          в журнал ниже. Если в ответе нет блока чека/ОФД — платёж прошёл, но фискальный чек не
+          сформирован (не подключена Точка Касса).
+        </p>
       </section>
 
       {/* --- Webhook delivery log --- */}
