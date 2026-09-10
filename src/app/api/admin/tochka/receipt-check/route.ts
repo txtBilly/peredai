@@ -29,28 +29,59 @@ export async function POST(req: NextRequest) {
 
   const { status, raw } = await getAcquiringOperation(intent.trx_id);
 
+  // Pull the single operation object out of the response.
+  const op =
+    ((raw.json as { Data?: { Operation?: Array<Record<string, unknown>> } })?.Data?.Operation?.[0]) ??
+    (raw.json as { Data?: Record<string, unknown> })?.Data ??
+    null;
+
+  // Build a SMALL, copyable receipt-focused summary. The question is: did Точка
+  // fiscalize a check? That shows up as a receipt/OFD block (a receipt url or a
+  // fiscal document number). We also confirm our own payload reached Точка intact
+  // (Client.email + Items) so the check will fire once a касса is bound.
+  const opKeys = op ? Object.keys(op) : [];
+  const receiptKeyRe = /(receipt|ofd|fiscal|check|kkt|касс|чек|fn|fd|fp)/i;
+  const receiptKeys = opKeys.filter((k) => receiptKeyRe.test(k));
+  const receiptFields: Record<string, unknown> = {};
+  for (const k of receiptKeys) receiptFields[k] = (op as Record<string, unknown>)[k];
+
+  const client = (op as { Client?: unknown } | null)?.Client ?? null;
+  const items = (op as { Items?: unknown[] } | null)?.Items ?? null;
+
+  const summary = {
+    operationStatus: status,
+    amount: (op as { amount?: unknown } | null)?.amount ?? null,
+    taxSystemCode: (op as { taxSystemCode?: unknown } | null)?.taxSystemCode ?? null,
+    // Did we send the buyer's email + line items? (needed for a check)
+    clientEchoed: client,
+    itemsCount: Array.isArray(items) ? items.length : items === null ? 'MISSING' : 'present',
+    firstItem: Array.isArray(items) ? items[0] ?? null : null,
+    // The decisive bit: any receipt/OFD/fiscal fields present on the operation?
+    receiptFieldsFound: receiptKeys.length ? receiptFields : 'NONE — no fiscal/OFD block on operation',
+    allOperationKeys: opKeys,
+  };
+
   await admin
     .from('tochka_webhook_log')
     .insert({
       content_type: 'admin-action',
-      action: `receipt_check op=${intent.trx_id} status=${status}`.slice(0, 200),
+      action: `receipt_check op=${intent.trx_id} status=${status} receipt=${
+        receiptKeys.length ? 'present' : 'none'
+      }`.slice(0, 200),
       parsed_qrc_id: intent.qrc_id ?? null,
       body: JSON.stringify(
         {
           intent: {
-            qrc_id: intent.qrc_id,
             operationId: intent.trx_id,
             credits: intent.credits,
             price_rub: intent.price_rub,
             status: intent.status,
-            created_at: intent.created_at,
           },
-          operationStatus: status,
-          rawOperation: raw.json ?? raw.text ?? raw.error ?? null,
+          summary,
         },
         null,
         2
-      ).slice(0, 8000),
+      ).slice(0, 4000),
     })
     .then(
       () => undefined,
