@@ -175,13 +175,29 @@ export async function POST(req: NextRequest) {
       redirectUrl: returnUrl,
       failRedirectUrl: payUrl,
       ttlMinutes: 60,
-      paymentLinkId: ref,
     });
+    const admin = createAdminClient();
     if (!pay.ok) {
       console.error('[checkout/confirm] tochka acquiring create failed', pay.status, pay.error, pay.raw);
+      // Surface the exact Tochka response on the /admin/tochka log so a create
+      // failure (e.g. HTTP 400) is diagnosable without Vercel logs.
+      await admin
+        .from('tochka_webhook_log')
+        .insert({
+          content_type: 'checkout-error',
+          body: JSON.stringify(
+            { amount: priceRub, credits, status: pay.status, error: pay.error, raw: pay.raw ?? null },
+            null,
+            2
+          ).slice(0, 8000),
+          action: `checkout_acquiring:err http=${pay.status} ${pay.error}`.slice(0, 200),
+        })
+        .then(
+          () => undefined,
+          (e) => console.error('[checkout/confirm] log insert failed', e)
+        );
       return backWith('form_error=checkout_failed');
     }
-    const admin = createAdminClient();
     const { error: insErr } = await admin.from('sbp_intents').insert({
       qrc_id: ref,
       trx_id: pay.payment.operationId,
