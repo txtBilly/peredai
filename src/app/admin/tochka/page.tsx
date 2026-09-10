@@ -68,6 +68,8 @@ const WH_MESSAGES: Record<string, string> = {
   registered: 'Вебхук зарегистрирован на /api/tochka/webhook.',
   test_sent: 'Тестовое событие отправлено — обновите страницу, оно появится в журнале ниже.',
   unknown_action: 'Неизвестное действие.',
+  acquiring_ok: 'Тест эквайринга прошёл — ссылка на оплату создана. Смотрите ответ в журнале ниже.',
+  acquiring_err: 'Тест эквайринга не прошёл — смотрите ошибку в журнале ниже (нужен эквайринг + право MakeAcquiringOperation).',
 };
 
 export default async function AdminTochkaPage({
@@ -185,6 +187,25 @@ export default async function AdminTochkaPage({
           «Зарегистрировать» подписывает наш URL на событие incomingSbpPayment. «Тестовое событие»
           просит Точку прислать пример — он появится в журнале ниже (обновите страницу).
         </p>
+      </section>
+
+      {/* --- Acquiring (fiscal receipt) test --- */}
+      <section className="rounded-xl border border-white/10 p-4">
+        <h2 className="font-display text-base text-paper">Эквайринг · тест чека</h2>
+        <p className="mt-1 max-w-2xl text-xs text-muted">
+          Создаёт одну реальную (неоплаченную) ссылку на оплату с чеком через
+          /acquiring/v1.0/payments_with_receipt — проверяет, что интернет-эквайринг подключён и у
+          токена есть право MakeAcquiringOperation. Деньги не двигаются; ответ появится в журнале
+          ниже. Если оплатить ссылку, тестовый чек придёт на ваш staff-email.
+        </p>
+        <form action="/api/admin/tochka/acquiring-test" method="post" className="mt-3">
+          <button
+            type="submit"
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-paper hover:bg-white/[0.06]"
+          >
+            Создать тестовый платёж с чеком (10 ₽)
+          </button>
+        </form>
       </section>
 
       {/* --- Webhook delivery log --- */}

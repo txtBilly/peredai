@@ -324,3 +324,98 @@ export async function getQrPaymentStatus(
   const entry = Array.isArray(list) ? list.find((p) => p.qrcId === qrcId) ?? list[0] : undefined;
   return { status: (entry?.status as SbpPaymentStatus) || 'Unknown', trxId: entry?.trxId, raw: r };
 }
+
+// --- Internet acquiring: payment link WITH fiscal receipt (Точка Касса) ---
+// SBP QR can't carry a check, so the paid flow uses this acquiring endpoint,
+// which creates an SBP payment AND has Точка Касса email the 54-ФЗ receipt.
+// Requires internet acquiring enabled on the account and the JWT to hold the
+// MakeAcquiringOperation permission.
+
+// The 9-char customer code (from the accounts endpoint). Cached per-instance.
+let cachedCustomerCode: string | null | undefined;
+export async function resolveCustomerCode(): Promise<string | null> {
+  if (process.env.TOCHKA_CUSTOMER_CODE) return process.env.TOCHKA_CUSTOMER_CODE;
+  if (cachedCustomerCode !== undefined) return cachedCustomerCode;
+  const r = await probeAccounts();
+  const accounts = (r.json as { Data?: { Account?: Array<{ customerCode?: string }> } })?.Data?.Account;
+  cachedCustomerCode = (Array.isArray(accounts) && accounts[0]?.customerCode) || null;
+  return cachedCustomerCode;
+}
+
+export type AcquiringPayment = { operationId: string; paymentLink: string; status: string };
+
+// Create an SBP payment link that also issues a fiscal receipt to the buyer.
+// amountRub is whole rubles (the acquiring API wants a "1234.00" string, unlike
+// SBP QR's kopecks). One receipt line item, vatType 'none' (УСН «доходы»).
+export async function createPaymentWithReceipt(params: {
+  amountRub: number;
+  purpose: string;
+  clientEmail: string;
+  clientName?: string;
+  itemName: string;
+  redirectUrl: string;
+  failRedirectUrl?: string;
+  ttlMinutes?: number;
+  paymentLinkId?: string;
+}): Promise<
+  { ok: true; payment: AcquiringPayment } | { ok: false; status: number; error: string; raw?: unknown }
+> {
+  const customerCode = await resolveCustomerCode();
+  if (!customerCode) return { ok: false, status: 0, error: 'no_customer_code' };
+
+  const amount = params.amountRub.toFixed(2); // rubles as "0.10"
+  const data: Record<string, unknown> = {
+    customerCode,
+    amount,
+    purpose: params.purpose.slice(0, 140),
+    paymentMode: ['sbp'],
+    redirectUrl: params.redirectUrl,
+    ttl: params.ttlMinutes ?? 60,
+    taxSystemCode: 'usn_income',
+    Client: { email: params.clientEmail, ...(params.clientName ? { name: params.clientName } : {}) },
+    Items: [
+      {
+        name: params.itemName.slice(0, 128),
+        amount, // single line = full total (quantity 1) so items sum == amount
+        quantity: 1,
+        vatType: 'none',
+        paymentMethod: 'full_payment',
+        paymentObject: 'service',
+        measure: 'шт.',
+      },
+    ],
+  };
+  if (params.failRedirectUrl) data.failRedirectUrl = params.failRedirectUrl;
+  if (params.paymentLinkId) data.paymentLinkId = params.paymentLinkId;
+  if (process.env.TOCHKA_ACQUIRING_MERCHANT_ID) data.merchantId = process.env.TOCHKA_ACQUIRING_MERCHANT_ID;
+
+  const r = await tochkaFetch('/acquiring/v1.0/payments_with_receipt', { method: 'POST', body: { Data: data } });
+  if (!r.ok) return { ok: false, status: r.status, error: r.error || `HTTP ${r.status}`, raw: r.json ?? r.text };
+  const d = (r.json as { Data?: { operationId?: string; paymentLink?: string; status?: string } })?.Data;
+  if (!d?.operationId || !d?.paymentLink) return { ok: false, status: r.status, error: 'malformed_response', raw: r.json };
+  return { ok: true, payment: { operationId: d.operationId, paymentLink: d.paymentLink, status: d.status || 'CREATED' } };
+}
+
+export type AcquiringStatus =
+  | 'CREATED'
+  | 'APPROVED'
+  | 'AUTHORIZED'
+  | 'ON-REFUND'
+  | 'REFUNDED'
+  | 'REFUNDED_PARTIALLY'
+  | 'EXPIRED'
+  | 'WAIT_FULL_PAYMENT'
+  | 'Unknown';
+
+// Status of an acquiring payment operation. 'APPROVED' means paid.
+export async function getAcquiringOperation(
+  operationId: string
+): Promise<{ status: AcquiringStatus; raw: TochkaResult }> {
+  const r = await tochkaFetch(`/acquiring/v1.0/payments/${encodeURIComponent(operationId)}`);
+  const d = (r.json as { Data?: { Operation?: Array<{ status?: string }>; status?: string } })?.Data;
+  const status =
+    (d?.status as AcquiringStatus) ||
+    (Array.isArray(d?.Operation) ? (d?.Operation?.[0]?.status as AcquiringStatus) : undefined) ||
+    'Unknown';
+  return { status, raw: r };
+}
