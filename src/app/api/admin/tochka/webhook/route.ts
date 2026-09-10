@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/adminAuth';
-import { registerWebhook, sendTestWebhook } from '@/lib/tochka';
+import { upsertWebhook, sendTestWebhook } from '@/lib/tochka';
 import { createAdminClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -46,11 +46,13 @@ export async function POST(req: NextRequest) {
   };
 
   if (action === 'register') {
-    const r = await registerWebhook(`${origin}/api/tochka/webhook`, [
+    // Create the subscription, or (if one already exists with a different event
+    // list) delete + re-create so both events are covered.
+    const r = await upsertWebhook(`${origin}/api/tochka/webhook`, [
       'incomingSbpPayment',
       'acquiringInternetPayment',
     ]);
-    await logResult('webhook_register', r);
+    await logResult(r.recreated ? 'webhook_register(recreated)' : 'webhook_register', r);
     return back(`wh=${r.ok ? 'registered' : `error_${r.status}`}`);
   }
   if (action === 'test') {

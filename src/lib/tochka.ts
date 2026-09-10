@@ -294,6 +294,34 @@ export function getWebhooks(): Promise<TochkaResult> {
   return tochkaFetch(`/webhook/v1.0/${encodeURIComponent(clientId)}`);
 }
 
+// Remove the app's existing webhook subscription. Tochka's create (PUT) refuses
+// to overwrite an existing subscription ("Object already exists"), so to CHANGE
+// the event list we delete first and re-create.
+export function deleteWebhook(): Promise<TochkaResult> {
+  const clientId = webhookClientId();
+  if (!clientId) return Promise.resolve({ ok: false, status: 0, error: 'no_client_id' });
+  return tochkaFetch(`/webhook/v1.0/${encodeURIComponent(clientId)}`, { method: 'DELETE' });
+}
+
+// Ensure the subscription lists exactly `events` for `url`. Tries create; if it
+// already exists, deletes and re-creates so the event list is updated. Returns
+// the create result plus whether a delete was needed.
+export async function upsertWebhook(
+  url: string,
+  events: string[]
+): Promise<TochkaResult & { recreated?: boolean }> {
+  const first = await registerWebhook(url, events);
+  if (first.ok) return first;
+  // "Object already exists" (HTTP 400) → delete then re-create.
+  const errText = JSON.stringify(first.json ?? first.text ?? '').toLowerCase();
+  if (first.status === 400 && errText.includes('already exists')) {
+    await deleteWebhook();
+    const second = await registerWebhook(url, events);
+    return { ...second, recreated: true };
+  }
+  return first;
+}
+
 // Ask Tochka to POST a test event of the given type to our registered URL.
 export function sendTestWebhook(webhookType = 'incomingSbpPayment'): Promise<TochkaResult> {
   const clientId = webhookClientId();
