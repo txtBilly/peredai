@@ -28,7 +28,7 @@ function parseQuantity(raw: FormDataEntryValue | null | undefined): number {
 //
 // Price/tokens are always recomputed server-side; the client preview is never trusted.
 export async function POST(req: NextRequest) {
-  const appUrl = req.nextUrl.origin;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
   const supabase = createClient();
   let {
     data: { user },

@@ -461,7 +461,18 @@
     "noActiveListing": "You don't have an active listing yet.",
     "noDrafts": "No drafts yet.",
     "createCta": "Create a listing",
-    "yearlyCounter": "{count} of 3 published this year"
+    "yearlyCounter": "{count} of 3 published this year",
+    "unpublishCta": "Unpublish",
+    "unpublishConfirmTitle": "Unpublish this listing?",
+    "unpublishWarning": "An unpublished listing still counts toward your limit of 3 per year — the slot is not returned.",
+    "unpublishConfirmCta": "Unpublish",
+    "cancelCta": "Cancel",
+    "unpublishing": "Unpublishing…",
+    "unpublishChatOpen": "You can't unpublish while a chat is open.",
+    "closedSectionTitle": "Unpublished listings",
+    "statusClosed": "Unpublished",
+    "rentPerMonth": "₽/mo",
+    "republishCta": "Re-publish"
   },
   "welcome": {
     "findCta": "Find a place",

@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+npm-debug.log*
+seed-photos
+.env
+.env.*
+!.env.example
+.vercel
+.DS_Store
+*.md
+docs
+certs

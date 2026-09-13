@@ -1,0 +1,23 @@
+# Ten2Ten frontend — runs the Next.js app next to the Supabase stack on the VM.
+# Reads ./.env for both build args (NEXT_PUBLIC_*) and runtime env.
+# Deploy:  docker compose -f docker-compose.frontend.yml up -d --build
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_IDENTITY_PROVIDERS: ${NEXT_PUBLIC_IDENTITY_PROVIDERS}
+    image: ten2ten-frontend:latest
+    container_name: ten2ten-frontend
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:3000:3000"
+    # Server-side calls to api.ten2ten.ru resolve to the local nginx (which holds
+    # the cert and proxies to the Supabase gateway) instead of hairpinning out to
+    # the public IP.
+    extra_hosts:
+      - "api.ten2ten.ru:host-gateway"

@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server';
 export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
   const ru = params.locale !== 'en';
   return {
-    title: ru ? 'Поиск жилья' : 'Find a home',
+    title: { absolute: ru ? 'Снять квартиру без посредников Ten2Ten' : 'Rent an apartment without middlemen — Ten2Ten' },
     description: ru
       ? 'Смотрите квартиры, комнаты и студии от прежних жильцов в Москве и Санкт-Петербурге — без риелторов и комиссии.'
       : 'Browse apartments, rooms and studios from previous tenants in Moscow and Saint Petersburg — no realtors, no commission.',

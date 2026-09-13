@@ -26,7 +26,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
 
   const [phase, setPhase] = useState<'checking' | 'loading' | 'ready' | 'published' | 'error' | 'pending_review'>('checking');
   const [listingId, setListingId] = useState<string | null>(null);
-  const [listingStatus, setListingStatus] = useState<'draft' | 'active' | 'negotiating'>('draft');
+  const [listingStatus, setListingStatus] = useState<'draft' | 'active' | 'negotiating' | 'closed'>('draft');
   const [retryKey, setRetryKey] = useState(0);
   const hydrated = useRef(false);
 
@@ -182,7 +182,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
           .select('*')
           .eq('id', requestedId)
           .eq('lister_id', user.id)
-          .in('status', ['draft', 'active', 'negotiating'])
+          .in('status', ['draft', 'active', 'negotiating', 'closed'])
           .maybeSingle();
         if (settled) return;
         draft = requested;
@@ -223,7 +223,7 @@ export default function ListForm({ locale }: { locale: Locale }) {
       }
 
       setListingId(draft.id);
-      setListingStatus((draft.status as 'draft' | 'active' | 'negotiating') ?? 'draft');
+      setListingStatus((draft.status as 'draft' | 'active' | 'negotiating' | 'closed') ?? 'draft');
       setType((draft.type as ListingTypeValue) ?? '');
       setCity(draft.city ?? DEFAULT_CITY);
       setNeighborhood(draft.neighborhood ?? '');

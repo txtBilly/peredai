@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const listingIdRaw = form?.get('listing_id');
   const listingId = typeof listingIdRaw === 'string' && listingIdRaw ? listingIdRaw : null;
 
-  const appUrl = req.nextUrl.origin;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
   const admin = createAdminClient();
 
   // Model A: anonymous seekers can start the funnel — the /pay screen collects

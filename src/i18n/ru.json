@@ -461,7 +461,18 @@
     "noActiveListing": "У вас пока нет активного объявления.",
     "noDrafts": "Пока нет черновиков.",
     "createCta": "Создать объявление",
-    "yearlyCounter": "{count} из 3 опубликовано за год"
+    "yearlyCounter": "{count} из 3 опубликовано за год",
+    "unpublishCta": "Снять с публикации",
+    "unpublishConfirmTitle": "Снять объявление с публикации?",
+    "unpublishWarning": "Снятое объявление учитывается в лимите 3 объявления в год — слот не возвращается.",
+    "unpublishConfirmCta": "Снять с публикации",
+    "cancelCta": "Отмена",
+    "unpublishing": "Снимаем…",
+    "unpublishChatOpen": "Нельзя снять объявление, пока открыт чат.",
+    "closedSectionTitle": "Снятые объявления",
+    "statusClosed": "Снято",
+    "rentPerMonth": "₽/мес",
+    "republishCta": "Опубликовать снова"
   },
   "welcome": {
     "findCta": "Найти квартиру",
