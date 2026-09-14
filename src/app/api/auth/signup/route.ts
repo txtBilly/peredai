@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Signed in. Model A: no forced identity step — seekers never need Sber ID, and
-  // listers are prompted to verify only when they go to post a listing (/list).
-  return NextResponse.json({ ok: true, next: `/${locale}/browse` });
+  // listers came here to post, so send them straight into Sber ID verification
+  // after email + consent (seekers never use /signup — they sign up at /pay).
+  return NextResponse.json({ ok: true, next: `/${locale}/verify?next=list` });
 }
