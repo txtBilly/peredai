@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 // consumer Sber ID / magic-link flow — a normal member's credentials, even if
 // valid, are rejected unless the e-mail is allowlisted.
 export async function POST(req: NextRequest) {
-  const origin = req.nextUrl.origin;
+  const origin = (process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin);
   const form = await req.formData().catch(() => null);
   const email = String(form?.get('email') ?? '')
     .trim()

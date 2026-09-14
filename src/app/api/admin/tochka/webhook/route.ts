@@ -14,7 +14,7 @@ export const runtime = 'nodejs';
 // (action=webhook_register:ok/err, webhook_test:ok/err) so a non-2xx (e.g. the
 // HTTP 400 on register) is inspectable on the panel's delivery log.
 export async function POST(req: NextRequest) {
-  const origin = req.nextUrl.origin;
+  const origin = (process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin);
   const staff = await requireStaff();
   if (!staff) return NextResponse.redirect(`${origin}/admin/login`, 303);
 

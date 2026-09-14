@@ -8,5 +8,5 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   const supabase = createClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(`${req.nextUrl.origin}/admin/login`, 303);
+  return NextResponse.redirect(`${(process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin)}/admin/login`, 303);
 }

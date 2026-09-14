@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 // fiscalization block when Точка Касса issued one; its absence means the payment
 // cleared but no 54-ФЗ check was fiscalized (касса not connected/active).
 export async function POST(req: NextRequest) {
-  const origin = req.nextUrl.origin;
+  const origin = (process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin);
   const staff = await requireStaff();
   if (!staff) return NextResponse.redirect(`${origin}/admin/login`, 303);
   const back = (q: string) => NextResponse.redirect(`${origin}/admin/tochka?${q}`, 303);

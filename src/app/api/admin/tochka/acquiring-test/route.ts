@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 // full response (or error) is written to tochka_webhook_log so it shows on the
 // /admin/tochka panel. If staff pays the link, the test check goes to their email.
 export async function POST(req: NextRequest) {
-  const origin = req.nextUrl.origin;
+  const origin = (process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin);
   const staff = await requireStaff();
   if (!staff) return NextResponse.redirect(`${origin}/admin/login`, 303);
 
